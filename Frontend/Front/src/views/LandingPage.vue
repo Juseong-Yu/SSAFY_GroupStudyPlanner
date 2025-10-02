@@ -22,6 +22,7 @@
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
 /* 화면 정중앙 배치 */
 .landing {
   min-height: 100vh;
@@ -34,7 +35,7 @@
 }
 
 /* 헤드라인을 세리프로 (이미지 느낌) */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+
 .landing-title {
   font-family: 'Playfair Display', serif;
   letter-spacing: -0.5px;
