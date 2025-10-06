@@ -1,6 +1,7 @@
 <template>
-  <div class="container vh-100 d-flex align-items-center">
-    <div class="row w-100">
+  <div class="container min-vh-100 py-5 d-flex align-items-center signup-page">
+    <!-- ✅ row에 gutter 추가 -->
+    <div class="row w-100 g-5">
       <!-- 왼쪽 이미지 영역 -->
       <div class="col-lg-6 signup-image d-flex justify-content-center align-items-center">
         <img src="@/assets/signup.png" alt="스터디 이미지" class="img-fluid" style="max-width: 100%;">
@@ -8,7 +9,7 @@
 
       <!-- 오른쪽 회원가입 폼 -->
       <div class="col-lg-6 col-12 d-flex align-items-center">
-        <div class="signup-form-wrapper w-75">
+        <div class="signup-form-wrapper">
           <h3 class="fw-bold mb-3 title-text">
             당신의 목표를 함께 이뤄줄<br/>스터디 파트너
           </h3>
@@ -18,11 +19,11 @@
           <div class="d-flex gap-2 mb-3">
             <button class="btn btn-google w-50 d-flex align-items-center justify-content-center gap-2">
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" />
-              Google
+              Sign Up with Google
             </button>
             <button class="btn btn-kakao w-50 d-flex align-items-center justify-content-center gap-2">
               <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/kakaotalk.svg" alt="Kakao" width="20" height="20" />
-              Kakao
+              Sign Up with Kakao
             </button>
           </div>
 
@@ -125,7 +126,7 @@ import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // 예: http://127.0.0.1:8000
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 const router = useRouter()
 const nickname = ref('')
@@ -135,9 +136,8 @@ const confirmPassword = ref('')
 const agree = ref(false)
 const loading = ref(false)
 
-// 서버 에러 수신 저장용
-const serverErrors = ref({})       // { field: 'message' }
-const nonFieldError = ref('')      // 공통 에러/메시지
+const serverErrors = ref({})
+const nonFieldError = ref('')
 
 const passwordsMatch = computed(() => {
   return confirmPassword.value === '' || password.value === confirmPassword.value
@@ -155,7 +155,6 @@ const canSubmit = computed(() => {
   )
 })
 
-// 특정 필드 에러 메시지 반환 (없으면 '')
 const fieldError = (field) => {
   if (!serverErrors.value) return ''
   return serverErrors.value[field] || ''
@@ -171,8 +170,6 @@ const onSubmit = async () => {
   resetErrors()
   loading.value = true
   try {
-    // 백엔드 스펙에 맞춰 payload 구성
-    // nickName / conformPassword 키 주의!
     const payload = {
       email: email.value,
       nickName: nickname.value,
@@ -180,28 +177,18 @@ const onSubmit = async () => {
       conformPassword: confirmPassword.value,
     }
 
-    const res = await axios.post(`${API_BASE}/users/signup`, payload, {
+    await axios.post(`${API_BASE}/users/signup`, payload, {
       headers: { 'Content-Type': 'application/json' },
-      // 필요 시 withCredentials: true
     })
 
-    // 성공 처리 (백엔드 설계에 따라 200/201 등)
-    // 보통은 로그인 페이지로 이동 or 자동 로그인
-    // 여기서는 로그인 페이지로 이동 예시
     router.push({ path: '/login', query: { signedup: '1' } })
   } catch (err) {
-    // 에러 응답 파싱
-    // 예상 형태:
-    // { email: "...", nickName: "...", password: "...", conformPassword: "...", detail: "..." }
     if (err.response && err.response.data) {
       const data = err.response.data
       const mapped = {}
-
-      // 필드별 매핑 (문자열/배열 모두 수용)
       ;['email', 'nickName', 'password', 'conformPassword'].forEach((k) => {
         if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
       })
-
       serverErrors.value = mapped
       nonFieldError.value = data.detail ? String(data.detail) : ''
     } else {
@@ -214,12 +201,29 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-@media (max-width: 992px) {  /* Bootstrap lg 이하 */
-  .signup-image { display: none !important; }
+/* 컨테이너를 화면 높이 이상으로 늘릴 수 있게 하고, 넘치면 스크롤 */
+.signup-page {
+  overflow-y: auto;
+}
+
+/* 폼 폭: 모바일에서 넉넉하게, 데스크탑에서는 가운데  */
+.signup-form-wrapper {
+  width: 100%;
+  max-width: 560px;       /* 모바일/태블릿에서 읽기 좋은 폭 */
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 992px) {
   .signup-form-wrapper {
-    margin-left: auto;
-    margin-right: auto;  /* 작은 화면에서만 중앙 정렬 */
+    max-width: 640px;     /* 데스크탑에서 살짝 더 넓게 */
+    /* ✅ 이미지와 폼 사이 추가 여백 */
+    margin-left: 2rem;
   }
+}
+
+/* lg 이하에서 좌측 이미지 제거 → 폼 높이 확보 */
+@media (max-width: 992px) {
+  .signup-image { display: none !important; }
 }
 
 /* ===== Signup 버튼 ===== */
