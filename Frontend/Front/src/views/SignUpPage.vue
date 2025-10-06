@@ -165,39 +165,47 @@ const resetErrors = () => {
   nonFieldError.value = ''
 }
 
-const onSubmit = async () => {
-  if (!canSubmit.value) return
-  resetErrors()
-  loading.value = true
-  try {
-    const payload = {
-      email: email.value,
-      nickName: nickname.value,
-      password: password.value,
-      conformPassword: confirmPassword.value,
-    }
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+};
 
-    await axios.post(`${API_BASE}/users/signup`, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    router.push({ path: '/login', query: { signedup: '1' } })
-  } catch (err) {
-    if (err.response && err.response.data) {
-      const data = err.response.data
-      const mapped = {}
-      ;['email', 'nickName', 'password', 'conformPassword'].forEach((k) => {
-        if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
-      })
-      serverErrors.value = mapped
-      nonFieldError.value = data.detail ? String(data.detail) : ''
-    } else {
-      nonFieldError.value = '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
-    }
-  } finally {
-    loading.value = false
+// CSRF 쿠키가 없으면 먼저 발급
+const ensureCsrf = async () => {
+  if (!getCookie('csrftoken')) {
+    await axios.get(`${API_BASE}/accounts/csrf/`, { withCredentials: true });
   }
-}
+};
+
+const onSubmit = async () => {
+  if (!canSubmit.value) return;
+  resetErrors();
+  loading.value = true;
+
+  try {
+    await ensureCsrf();
+    const csrftoken = getCookie('csrftoken');
+
+    const params = new URLSearchParams();
+    // 폼이 기대하는 키들: 기본 UserCreationForm → username, password1, password2
+    params.append('username', nickname.value);
+    params.append('password1', password.value);
+    params.append('password2', confirmPassword.value);
+
+    await axios.post(`${API_BASE}/accounts/signup/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+
 </script>
 
 <style scoped>
