@@ -33,14 +33,14 @@
             <div class="mb-3">
               <label class="form-label">닉네임</label>
               <input
-                v-model.trim="nickname"
+                v-model.trim="username"
                 type="text"
                 class="form-control"
-                :class="{'is-invalid': fieldError('nickName')}"
+                :class="{'is-invalid': fieldError('username')}"
                 placeholder="닉네임 입력"
               />
-              <div class="invalid-feedback" v-if="fieldError('nickName')">
-                {{ fieldError('nickName') }}
+              <div class="invalid-feedback" v-if="fieldError('username')">
+                {{ fieldError('username') }}
               </div>
             </div>
 
@@ -129,7 +129,7 @@ import { useRouter } from 'vue-router'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 const router = useRouter()
-const nickname = ref('')
+const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -145,7 +145,7 @@ const passwordsMatch = computed(() => {
 
 const canSubmit = computed(() => {
   return (
-    nickname.value &&
+    username.value &&
     email.value &&
     password.value &&
     confirmPassword.value &&
@@ -189,7 +189,8 @@ const onSubmit = async () => {
 
     const params = new URLSearchParams();
     // 폼이 기대하는 키들: 기본 UserCreationForm → username, password1, password2
-    params.append('username', nickname.value);
+    params.append('username', username.value);
+    params.append('email', email.value)
     params.append('password1', password.value);
     params.append('password2', confirmPassword.value);
 
