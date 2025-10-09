@@ -178,6 +178,8 @@ const ensureCsrf = async () => {
   }
 };
 
+
+
 const onSubmit = async () => {
   if (!canSubmit.value) return;
   resetErrors();
@@ -188,9 +190,9 @@ const onSubmit = async () => {
     const csrftoken = getCookie('csrftoken');
 
     const params = new URLSearchParams();
-    // 폼이 기대하는 키들: 기본 UserCreationForm → username, password1, password2
+    // Django UserCreationForm 기본 필드
     params.append('username', username.value);
-    params.append('email', email.value)
+    params.append('email', email.value);
     params.append('password1', password.value);
     params.append('password2', confirmPassword.value);
 
@@ -201,10 +203,18 @@ const onSubmit = async () => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
+
+    // ✅ 회원가입 성공 시 로그인 페이지로 이동
+    router.push('/login')
+    
+  } catch (err) {
+    console.error(err)
+    // 필요하면 에러 처리 로직 추가
   } finally {
     loading.value = false;
   }
 };
+
 
 
 </script>

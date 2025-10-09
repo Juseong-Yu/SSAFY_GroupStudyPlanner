@@ -130,38 +130,67 @@ const onSocial = (provider) => {
   console.log('social login:', provider)
 }
 
+//백엔드와 통신하는 페이지에서는 무조건 필요한 코드(쿠키 가져오기, csrf 확인하기.)
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+};
+
+const ensureCsrf = async () => {
+  if (!getCookie('csrftoken')) {
+    await axios.get(`${API_BASE}/accounts/csrf/`, { withCredentials: true });
+  }
+};
+
+// ✅ onSubmit: form-urlencoded + CSRF + username/password (순수 JS)
 const onSubmit = async () => {
-  if (!canSubmit.value) return
-  resetErrors()
-  loading.value = true
+  if (!canSubmit.value || loading.value) return;
+  resetErrors();
+  loading.value = true;
+
   try {
-    const payload = {
-      email: email.value,
-      password: password.value,
-      remember: rememberMe.value,
-    }
+    // CSRF 쿠키 준비
+    await ensureCsrf();
+    const csrftoken = getCookie('csrftoken');
 
-    await axios.post(`${API_BASE}/users/login`, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    // Django가 바로 읽는 포맷으로 전송
+    const params = new URLSearchParams();
+    params.set('username', String(email.value || '').trim()); // 이메일을 username으로 사용
+    params.set('password', String(password.value || ''));
 
-    router.push({ path: '/', query: { loggedin: '1' } })
+    await axios.post(`${API_BASE}/accounts/login/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    router.push({ path: '/', query: { loggedin: '1' } });
   } catch (err) {
-    if (err.response && err.response.data) {
-      const data = err.response.data
-      const mapped = {}
-      ;['email', 'password'].forEach((k) => {
-        if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
-      })
-      serverErrors.value = mapped
-      nonFieldError.value = data.detail ? String(data.detail) : '로그인에 실패했습니다.'
+    // 에러 매핑 (username/password/non_field_errors/detail 우선순위)
+    if (err && err.response && err.response.data) {
+      const data = err.response.data;
+      const mapped = {};
+      ['username', 'password', 'non_field_errors', 'detail'].forEach(function (k) {
+        if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k]);
+      });
+      serverErrors.value = {
+        username: mapped.username,
+        password: mapped.password,
+      };
+      nonFieldError.value = mapped.non_field_errors || mapped.detail || '로그인에 실패했습니다.';
     } else {
-      nonFieldError.value = '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+      nonFieldError.value = '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
+
+
+
 </script>
 
 <style scoped>
