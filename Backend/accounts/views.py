@@ -25,6 +25,8 @@ def login(request):
     if form.is_valid():
         auth_login(request, form.get_user())
         return JsonResponse({"detail": "logged in"}, status=200)
+    else:
+        print(form.errors)
     return JsonResponse(form.errors, status=400)
 
 # 로그아웃 (POST 권장)
@@ -42,7 +44,7 @@ def signup(request):
         # 자동 로그인까지 원하면:
         # auth_login(request, user)
         return JsonResponse(
-            {"id": user.id, "email": getattr(user, "email", ""), "nickName": getattr(user, "nickname", "")},
+            {"id": user.id, "email": getattr(user, "email", ""), "username": getattr(user, "username", "")},
             status=201
         )
     return JsonResponse(form.errors, status=400)
