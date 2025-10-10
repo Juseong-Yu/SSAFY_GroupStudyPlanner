@@ -4,25 +4,42 @@
     <div class="row w-100 g-5">
       <!-- 왼쪽 이미지 영역 -->
       <div class="col-lg-6 signup-image d-flex justify-content-center align-items-center">
-        <img src="@/assets/signup.png" alt="스터디 이미지" class="img-fluid" style="max-width: 100%;">
+        <img
+          src="@/assets/signup.png"
+          alt="스터디 이미지"
+          class="img-fluid"
+          style="max-width: 100%"
+        />
       </div>
 
       <!-- 오른쪽 회원가입 폼 -->
       <div class="col-lg-6 col-12 d-flex align-items-center">
         <div class="signup-form-wrapper">
-          <h3 class="fw-bold mb-3 title-text">
-            당신의 목표를 함께 이뤄줄<br/>스터디 파트너
-          </h3>
-          <p class="text-muted">집중을 위한 출석 관리<br/>목표 달성을 돕는 일정 알림</p>
+          <h3 class="fw-bold mb-3 title-text">당신의 목표를 함께 이뤄줄<br />스터디 파트너</h3>
+          <p class="text-muted">집중을 위한 출석 관리<br />목표 달성을 돕는 일정 알림</p>
 
           <!-- 소셜 로그인 버튼 -->
           <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-google w-50 d-flex align-items-center justify-content-center gap-2">
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" />
+            <button
+              class="btn btn-google w-50 d-flex align-items-center justify-content-center gap-2"
+            >
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+                width="20"
+                height="20"
+              />
               Sign Up with Google
             </button>
-            <button class="btn btn-kakao w-50 d-flex align-items-center justify-content-center gap-2">
-              <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/kakaotalk.svg" alt="Kakao" width="20" height="20" />
+            <button
+              class="btn btn-kakao w-50 d-flex align-items-center justify-content-center gap-2"
+            >
+              <img
+                src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/kakaotalk.svg"
+                alt="Kakao"
+                width="20"
+                height="20"
+              />
               Sign Up with Kakao
             </button>
           </div>
@@ -36,7 +53,7 @@
                 v-model.trim="username"
                 type="text"
                 class="form-control"
-                :class="{'is-invalid': fieldError('username')}"
+                :class="{ 'is-invalid': fieldError('username') }"
                 placeholder="닉네임 입력"
               />
               <div class="invalid-feedback" v-if="fieldError('username')">
@@ -51,7 +68,7 @@
                 v-model.trim="email"
                 type="email"
                 class="form-control"
-                :class="{'is-invalid': fieldError('email')}"
+                :class="{ 'is-invalid': fieldError('email') }"
                 placeholder="이메일 입력"
               />
               <div class="invalid-feedback" v-if="fieldError('email')">
@@ -66,7 +83,7 @@
                 v-model="password"
                 type="password"
                 class="form-control"
-                :class="{'is-invalid': fieldError('password')}"
+                :class="{ 'is-invalid': fieldError('password') }"
                 placeholder="비밀번호 입력"
               />
               <div class="invalid-feedback" v-if="fieldError('password')">
@@ -81,7 +98,10 @@
                 v-model="confirmPassword"
                 type="password"
                 class="form-control"
-                :class="{'is-invalid': (!passwordsMatch && confirmPassword) || fieldError('conformPassword')}"
+                :class="{
+                  'is-invalid':
+                    (!passwordsMatch && confirmPassword) || fieldError('conformPassword'),
+                }"
                 placeholder="비밀번호 확인 입력"
               />
               <div class="invalid-feedback" v-if="!passwordsMatch && confirmPassword">
@@ -105,7 +125,12 @@
             </div>
 
             <button type="submit" class="btn btn-signup w-100" :disabled="!canSubmit || loading">
-              <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span
+                v-if="loading"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
               SIGN UP
             </button>
           </form>
@@ -125,6 +150,7 @@
 import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -165,36 +191,21 @@ const resetErrors = () => {
   nonFieldError.value = ''
 }
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-};
-
-// CSRF 쿠키가 없으면 먼저 발급
-const ensureCsrf = async () => {
-  if (!getCookie('csrftoken')) {
-    await axios.get(`${API_BASE}/accounts/csrf/`, { withCredentials: true });
-  }
-};
-
-
-
 const onSubmit = async () => {
-  if (!canSubmit.value) return;
-  resetErrors();
-  loading.value = true;
+  if (!canSubmit.value) return
+  resetErrors()
+  loading.value = true
 
   try {
-    await ensureCsrf();
-    const csrftoken = getCookie('csrftoken');
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
 
-    const params = new URLSearchParams();
+    const params = new URLSearchParams()
     // Django UserCreationForm 기본 필드
-    params.append('username', username.value);
-    params.append('email', email.value);
-    params.append('password1', password.value);
-    params.append('password2', confirmPassword.value);
+    params.append('username', username.value)
+    params.append('email', email.value)
+    params.append('password1', password.value)
+    params.append('password2', confirmPassword.value)
 
     await axios.post(`${API_BASE}/accounts/signup/`, params, {
       withCredentials: true,
@@ -202,21 +213,17 @@ const onSubmit = async () => {
         'X-CSRFToken': csrftoken,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-    });
+    })
 
     // ✅ 회원가입 성공 시 로그인 페이지로 이동
     router.push('/login')
-    
   } catch (err) {
     console.error(err)
     // 필요하면 에러 처리 로직 추가
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
-
-
-
+}
 </script>
 
 <style scoped>
@@ -228,13 +235,13 @@ const onSubmit = async () => {
 /* 폼 폭: 모바일에서 넉넉하게, 데스크탑에서는 가운데  */
 .signup-form-wrapper {
   width: 100%;
-  max-width: 560px;       /* 모바일/태블릿에서 읽기 좋은 폭 */
+  max-width: 560px; /* 모바일/태블릿에서 읽기 좋은 폭 */
   margin-left: auto;
   margin-right: auto;
 }
 @media (min-width: 992px) {
   .signup-form-wrapper {
-    max-width: 640px;     /* 데스크탑에서 살짝 더 넓게 */
+    max-width: 640px; /* 데스크탑에서 살짝 더 넓게 */
     /* ✅ 이미지와 폼 사이 추가 여백 */
     margin-left: 2rem;
   }
@@ -242,7 +249,9 @@ const onSubmit = async () => {
 
 /* lg 이하에서 좌측 이미지 제거 → 폼 높이 확보 */
 @media (max-width: 992px) {
-  .signup-image { display: none !important; }
+  .signup-image {
+    display: none !important;
+  }
 }
 
 /* ===== Signup 버튼 ===== */
@@ -250,7 +259,9 @@ const onSubmit = async () => {
   background-color: #ffffff;
   color: #0d6efd;
   border: 1px solid #0d6efd;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 .btn-signup:hover {
   background-color: #e6f0ff;
@@ -263,22 +274,31 @@ const onSubmit = async () => {
   background-color: #ffffff;
   color: #444444;
   border: 1px solid #dddddd;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
-.btn-google:hover { background-color: #f5f5f5; }
+.btn-google:hover {
+  background-color: #f5f5f5;
+}
 
 /* ===== Kakao 버튼 ===== */
 .btn-kakao {
   background-color: #ffffff;
   color: #000000;
-  border: 1px solid #FEE500;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  border: 1px solid #fee500;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 .btn-kakao img {
   filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
   transition: filter 0.3s ease;
 }
-.btn-kakao:hover { background-color: #FEE500; color: #000000; }
+.btn-kakao:hover {
+  background-color: #fee500;
+  color: #000000;
+}
 .btn-kakao:hover img {
   filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
 }
