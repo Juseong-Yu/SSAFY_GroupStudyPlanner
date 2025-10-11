@@ -5,6 +5,7 @@ from django.db import models
 class User(AbstractUser):
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
+    profile_img = models.ImageField(upload_to='profile_img/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateField(auto_now_add=True)
 

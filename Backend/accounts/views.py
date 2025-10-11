@@ -25,8 +25,6 @@ def login(request):
     if form.is_valid():
         auth_login(request, form.get_user())
         return JsonResponse({"detail": "logged in"}, status=200)
-    else:
-        print(form.errors)
     return JsonResponse(form.errors, status=400)
 
 # 로그아웃 (POST 권장)
@@ -60,7 +58,7 @@ def delete(request):
 @require_POST
 @login_required
 def update(request):
-    form = CustomUserChangeForm(request.POST or None, instance=request.user)
+    form = CustomUserChangeForm(request.POST or None, request.FILES or None, instance=request.user)
     if form.is_valid():
         user = form.save()
         return JsonResponse({"detail": "updated"}, status=200)
