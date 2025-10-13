@@ -58,10 +58,14 @@ def delete(request):
 @require_POST
 @login_required
 def update(request):
+    
     form = CustomUserChangeForm(request.POST or None, request.FILES or None, instance=request.user)
     if form.is_valid():
+        
         user = form.save()
+        print(form.errors)
         return JsonResponse({"detail": "updated"}, status=200)
+    
     return JsonResponse(form.errors, status=400)
 
 # 비밀번호 변경

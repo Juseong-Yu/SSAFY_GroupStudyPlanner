@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex min-vh-100">
-    <!-- ✅ 왼쪽: 고정 Navbar -->
-    <Navbar />
+    <!-- ✅ 왼쪽: SettingNavBar (크기/색 기존 사이드바와 동일) -->
+    <SettingNavBar />
 
     <!-- ✅ 오른쪽: 회원정보 수정 폼 -->
     <div class="flex-grow-1 bg-white p-5">
@@ -148,7 +148,11 @@
 </template>
 
 <script setup>
-import Navbar from '@/components/layout/Navbar.vue'  // ✅ 왼쪽 사이드바
+/**
+ * ✅ 왼쪽 사이드바를 SettingNavBar로 교체
+ * axios를 쓰는 페이지이므로 CSRF 유틸을 반드시 import
+ */
+import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
@@ -175,7 +179,7 @@ const fileInputRef = ref(null)
 const avatarFile = ref(null)
 const avatarPreview = ref('')
 
-// 프로필 로드
+// ✅ 프로필 로드
 const loadProfile = async () => {
   try {
     await ensureCsrf()
@@ -185,7 +189,7 @@ const loadProfile = async () => {
       headers: { 'X-CSRFToken': csrftoken },
     })
     form.value.email = res.data.email || ''
-    form.value.username = res.data.nickname || ''
+    form.value.nickname = res.data.nickname || ''  // 🔧 버그 수정: nickname → nickname 에 매핑
     form.value.avatar_url = res.data.avatar || ''
   } catch (err) {
     console.error(err)
@@ -243,16 +247,17 @@ const onSubmit = async () => {
 
     const fd = new FormData()
     fd.append('email', form.value.email)
+    // 🔧 백엔드가 기대하는 필드명에 맞추기 (예: nickname 사용)
     fd.append('nickname', form.value.nickname)
     if (password1.value && password2.value) {
       fd.append('password1', password1.value)
       fd.append('password2', password2.value)
     }
-    if (avatarFile.value) fd.append('avatar', avatarFile.value)
+    if (avatarFile.value) fd.append('profile_img', avatarFile.value)
 
-    await axios.patch(`${API_BASE}/accounts/update/`, fd, {
+    await axios.post(`${API_BASE}/accounts/update/`, fd, {
       withCredentials: true,
-      headers: { 'X-CSRFToken': csrftoken },
+      headers: { 'X-CSRFToken': csrftoken }, // FormData는 Content-Type 자동설정
     })
 
     saved.value = true

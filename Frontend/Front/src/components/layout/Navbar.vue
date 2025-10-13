@@ -34,7 +34,7 @@
               to="/accounts/password-check"
               class="dropdown-item"
             >
-              회원정보 수정
+              설정
             </RouterLink>
           </li>
           <li><hr class="dropdown-divider" /></li>
@@ -59,7 +59,7 @@
             @click="toggleMenu('manage')"
             style="cursor: pointer;"
           >
-            <div><i class="bi bi-graph-up-arrow me-2"></i>관리</div>
+            <div><i class="bi bi-clipboard-data me-2"></i>관리</div>
             <i :class="isOpen.manage ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
           </div>
           <ul v-if="isOpen.manage" class="list-unstyled ps-4 mt-2">
@@ -77,7 +77,7 @@
             @click="toggleMenu('participate')"
             style="cursor: pointer;"
           >
-            <div><i class="bi bi-people me-2"></i>참여</div>
+            <div><i class="bi bi-people-fill me-2"></i>참여</div>
             <i :class="isOpen.participate ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
           </div>
           <ul v-if="isOpen.participate" class="list-unstyled ps-4 mt-2">
