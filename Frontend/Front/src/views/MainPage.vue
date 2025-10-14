@@ -10,6 +10,7 @@
       <p>여기에 메인 콘텐츠가 들어갑니다.</p>
     </div>
   </div>
+  
 </template>
 
 <script setup>

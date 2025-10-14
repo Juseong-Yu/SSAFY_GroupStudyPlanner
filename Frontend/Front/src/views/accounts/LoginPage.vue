@@ -186,7 +186,7 @@ const onSubmit = async () => {
       },
     })
 
-    router.push({ path: 'main/', query: { loggedin: '1' } })
+    router.push({ path: '/main' })
   } catch (err) {
     // 에러 매핑 (username/password/non_field_errors/detail 우선순위)
     if (err && err.response && err.response.data) {
