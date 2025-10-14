@@ -80,7 +80,7 @@ def password(request):
     return JsonResponse(form.errors, status=400)
 
 # 회원정보 조회
-def get_user_info(request):
+def search(request):
     """
     로그인된 사용자의 회원 정보를 반환
     반환 데이터: username, email, profile_img
