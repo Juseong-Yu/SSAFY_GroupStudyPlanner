@@ -138,7 +138,11 @@
         >
           <div class="d-flex">
             <div class="toast-body">프로필이 저장되었습니다.</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="saved=false"></button>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              @click="saved = false"
+            ></button>
           </div>
         </div>
 
@@ -149,8 +153,7 @@
 
 <script setup>
 /**
- * ✅ 왼쪽 사이드바를 SettingNavBar로 교체
- * axios를 쓰는 페이지이므로 CSRF 유틸을 반드시 import
+ * ✅ axios를 사용하는 페이지에서는 반드시 CSRF 유틸 import 필요
  */
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, computed, onMounted } from 'vue'
@@ -174,6 +177,7 @@ const passwordError = ref('')
 const submitError = ref('')
 const submitting = ref(false)
 const saved = ref(false)
+const loading = ref(false) // ✅ 추가됨
 
 const fileInputRef = ref(null)
 const avatarFile = ref(null)
@@ -182,20 +186,32 @@ const avatarPreview = ref('')
 // ✅ 프로필 로드
 const loadProfile = async () => {
   try {
+    submitError.value = ''
+    loading.value = true
+
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    const res = await axios.get(`${API_BASE}/accounts/update/`, {
+    const { data } = await axios.get(`${API_BASE}/accounts/search/`, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken },
     })
-    form.value.email = res.data.email || ''
-    form.value.nickname = res.data.nickname || ''  // 🔧 버그 수정: nickname → nickname 에 매핑
-    form.value.avatar_url = res.data.avatar || ''
+
+    form.value.email = data.email || ''
+    form.value.nickname = data.username || ''
+    if (data.profile_img && !data.profile_img.startsWith('http')) {
+      form.value.avatar_url = `${API_BASE}${data.profile_img}`
+    } else {
+      form.value.avatar_url = data.profile_img || ''
+    }
   } catch (err) {
     console.error(err)
     submitError.value = '사용자 정보를 불러오지 못했습니다.'
+    if (err?.response?.status === 401) router.push('/login')
+  } finally {
+    loading.value = false
   }
 }
+
 onMounted(loadProfile)
 
 const canSubmitBasics = computed(() =>
@@ -219,11 +235,19 @@ const validatePasswords = () => {
 const onFileChange = (e) => {
   const file = e.target.files?.[0]
   if (!file) return
+
+  // ✅ 이미지 형식/용량 체크
+  if (!file.type.startsWith('image/')) {
+    submitError.value = '이미지 파일만 업로드할 수 있습니다.'
+    e.target.value = ''
+    return
+  }
   if (file.size > 5 * 1024 * 1024) {
     submitError.value = '이미지 용량은 5MB 이하여야 합니다.'
     e.target.value = ''
     return
   }
+
   avatarFile.value = file
   const reader = new FileReader()
   reader.onload = () => (avatarPreview.value = reader.result)
@@ -247,8 +271,7 @@ const onSubmit = async () => {
 
     const fd = new FormData()
     fd.append('email', form.value.email)
-    // 🔧 백엔드가 기대하는 필드명에 맞추기 (예: nickname 사용)
-    fd.append('nickname', form.value.nickname)
+    fd.append('username', form.value.nickname) // ✅ 백엔드 username=nickname 일치
     if (password1.value && password2.value) {
       fd.append('password1', password1.value)
       fd.append('password2', password2.value)
@@ -257,13 +280,14 @@ const onSubmit = async () => {
 
     await axios.post(`${API_BASE}/accounts/update/`, fd, {
       withCredentials: true,
-      headers: { 'X-CSRFToken': csrftoken }, // FormData는 Content-Type 자동설정
+      headers: { 'X-CSRFToken': csrftoken }, // FormData는 자동 Content-Type
     })
 
     saved.value = true
     password1.value = ''
     password2.value = ''
     await loadProfile()
+    router.push('/settings/profile')
   } catch (err) {
     console.error(err)
     const data = err?.response?.data
@@ -285,7 +309,6 @@ const onCancel = () => {
 </script>
 
 <style scoped>
-/* 오른쪽 영역 스크롤을 위한 기본 배경/패딩 */
 .flex-grow-1 {
   overflow-y: auto;
 }

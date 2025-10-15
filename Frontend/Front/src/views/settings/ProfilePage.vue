@@ -218,8 +218,12 @@ const loadProfile = async () => {
     })
 
     profile.value.email = data.email || ''
-    profile.value.nickname = data.nickname || ''
-    profile.value.avatar_url = data.avatar || ''
+    profile.value.nickname = data.username || ''
+    if (data.profile_img && !data.profile_img.startsWith('http')) {
+      profile.value.avatar_url = `${API_BASE}${data.profile_img}`
+    } else {
+      profile.value.avatar_url = data.profile_img || ''
+    }
   } catch (e) {
     console.error(e)
     error.value = '사용자 정보를 불러오지 못했습니다.'
