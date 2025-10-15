@@ -96,3 +96,23 @@ def search(request):
     }
 
     return JsonResponse(user_data, status=200)
+
+@login_required
+def check_password(request):
+    """
+    사용자가 입력한 비밀번호를 확인하고
+    맞으면 200 OK, 틀리면 400 반환
+    POST 방식으로 request.POST['password'] 에 담겨서 온다고 가정
+    """
+    password = request.POST.get('password', '').strip()
+    user = request.user
+
+    if not password:
+        return JsonResponse({'error': '비밀번호를 입력해주세요.'}, status=400)
+    
+    # 비밀번호가 맞음
+    if user.check_password(password):
+        return JsonResponse({'message': 'ok'}, status=200)
+    
+    # 비밀번호가 틀림
+    return JsonResponse({'error': '비밀번호가 올바르지 않습니다.'}, status=400)
