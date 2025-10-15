@@ -4,7 +4,7 @@
     <SettingNavBar />
 
     <div class="flex-grow-1 bg-white p-5">
-      <div class="container" style="max-width: 800px;">
+      <div class="container" style="max-width: 800px">
         <h3 class="fw-bold mb-4">회원정보</h3>
 
         <div class="card shadow-sm">
@@ -13,11 +13,8 @@
             <div class="mb-4">
               <label class="form-label fw-semibold">프로필 이미지</label>
 
-              <div
-                v-if="loading"
-                class="placeholder-glow d-flex align-items-center gap-3"
-              >
-                <span class="placeholder rounded-circle" style="width:88px;height:88px;"></span>
+              <div v-if="loading" class="placeholder-glow d-flex align-items-center gap-3">
+                <span class="placeholder rounded-circle" style="width: 88px; height: 88px"></span>
                 <span class="placeholder col-3"></span>
               </div>
 
@@ -25,12 +22,9 @@
                 <!-- ✅ 이미지 or 기본 Bootstrap 아이콘 -->
                 <div
                   class="rounded-circle border d-flex justify-content-center align-items-center bg-light"
-                  style="width:88px;height:88px;"
+                  style="width: 88px; height: 88px"
                 >
-                  <i
-                    v-if="!profile.avatar_url"
-                    class="bi bi-person-fill text-secondary fs-1"
-                  ></i>
+                  <i v-if="!profile.avatar_url" class="bi bi-person-fill text-secondary fs-1"></i>
                   <img
                     v-else
                     :src="profile.avatar_url"
@@ -38,7 +32,7 @@
                     class="rounded-circle"
                     width="88"
                     height="88"
-                    style="object-fit: cover;"
+                    style="object-fit: cover"
                   />
                 </div>
               </div>
@@ -53,13 +47,7 @@
                 <div v-if="loading" class="placeholder-glow">
                   <span class="placeholder col-8"></span>
                 </div>
-                <input
-                  v-else
-                  type="text"
-                  class="form-control"
-                  :value="profile.nickname"
-                  disabled
-                />
+                <input v-else type="text" class="form-control" :value="profile.nickname" disabled />
               </div>
 
               <div class="col-md-6">
@@ -67,13 +55,7 @@
                 <div v-if="loading" class="placeholder-glow">
                   <span class="placeholder col-10"></span>
                 </div>
-                <input
-                  v-else
-                  type="email"
-                  class="form-control"
-                  :value="profile.email"
-                  disabled
-                />
+                <input v-else type="email" class="form-control" :value="profile.email" disabled />
               </div>
             </div>
 
@@ -83,11 +65,7 @@
 
             <!-- ✅ 프로필 편집 버튼 -->
             <div class="d-flex justify-content-end gap-2 mt-4">
-              <button
-                class="btn btn-primary"
-                :disabled="loading"
-                @click="openPasswordModal"
-              >
+              <button class="btn btn-primary" :disabled="loading" @click="openPasswordModal">
                 프로필 편집
               </button>
             </div>
@@ -108,9 +86,7 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
-            <h5 class="modal-title fw-bold" id="passwordModalLabel">
-              비밀번호 확인
-            </h5>
+            <h5 class="modal-title fw-bold" id="passwordModalLabel">비밀번호 확인</h5>
             <button
               type="button"
               class="btn-close"
@@ -120,9 +96,7 @@
           </div>
 
           <div class="modal-body">
-            <p class="mb-3 text-muted small">
-              회원정보를 수정하려면 비밀번호를 입력해주세요.
-            </p>
+            <p class="mb-3 text-muted small">회원정보를 수정하려면 비밀번호를 입력해주세요.</p>
 
             <input
               type="password"
@@ -139,13 +113,7 @@
           </div>
 
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              취소
-            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
             <button
               type="button"
               class="btn btn-primary"
@@ -210,26 +178,28 @@ const onConfirmPassword = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // 👉 실제 API 확인 로직
-    const res = await axios.post(
-      `${API_BASE}/accounts/check_password/`,
-      { password: password.value },
-      {
-        withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    const params = new URLSearchParams()
+    // 👇 반드시 value를 넣어야 함
+    params.append('password', String(password.value).trim())
+
+    const res = await axios.post(`${API_BASE}/accounts/check_password/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
 
     if (res.status === 200) {
+      errorMsg.value = ''
       modalInstance.hide()
-      router.push('/accounts/update')
+      router.push('/settings/update')
     }
   } catch (e) {
-    console.error(e)
-    errorMsg.value = '비밀번호가 올바르지 않습니다.'
+    // 서버 응답을 보고 메시지를 더 구체화
+    const msg = e?.response?.data?.error || '비밀번호가 올바르지 않습니다.'
+    errorMsg.value = msg
+    console.error('check_password error:', e?.response?.status, e?.response?.data)
   } finally {
     loadingCheck.value = false
   }
