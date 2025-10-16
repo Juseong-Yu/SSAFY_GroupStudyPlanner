@@ -37,6 +37,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 INSTALLED_APPS = [
     'main',
     'accounts',
+    'studies',
     'corsheaders',
     'rest_framework',
     'django.contrib.admin',

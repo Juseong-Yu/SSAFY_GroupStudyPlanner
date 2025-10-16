@@ -1,4 +1,3 @@
-# accounts/views_api.py
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth import update_session_auth_hash
@@ -6,11 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.middleware.csrf import CsrfViewMiddleware
 from django.utils.decorators import method_decorator
-
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
-
-# accounts/views_api.py
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 
@@ -102,7 +98,6 @@ def check_password(request):
     """
     사용자가 입력한 비밀번호를 확인하고
     맞으면 200 OK, 틀리면 400 반환
-    POST 방식으로 request.POST['password'] 에 담겨서 온다고 가정
     """
     password = request.POST.get('password', '').strip()
     user = request.user
