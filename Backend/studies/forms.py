@@ -12,7 +12,7 @@ class StudyCreateForm(forms.ModelForm):
     """
     class Meta:
         model = Study
-        fields = ('name')
+        fields = ('name',)
     
     def __init__(self, *args, **kwargs):
         # view에서 전달된 user 객체를 받기 위해 추가
