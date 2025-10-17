@@ -14,18 +14,13 @@ def create_study(request):
     """
     if request.method == 'POST':
         form = StudyCreateForm(request.POST or None, user=request.user)
-
         if form.is_valid():
             study = form.save()
             return JsonResponse({
-                'success': True,
-                'message': '스터디가 성공적으로 생성되었습니다.',
-                'study': {
-                    'id': study.id,
-                    'name': study.name,
-                    'leader': study.leader.username,
-                    'created_at': study.created_at,
-                }
+                'id': study.id,
+                'name': study.name,
+                'leader': study.leader.username,
+                'created_at': study.created_at,
             })
         else:
             return JsonResponse(form.errors, status=400)

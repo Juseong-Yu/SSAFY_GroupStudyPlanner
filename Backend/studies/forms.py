@@ -10,7 +10,6 @@ class StudyCreateForm(forms.ModelForm):
     - 이름(name)을 입력받고
     - 생성한 사용자를 Study.leader 및 StudyMembership(리더)로 등록
     """
-    
     class Meta:
         model = Study
         fields = ('name')
