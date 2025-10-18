@@ -20,6 +20,7 @@ class StudyMembership(models.Model):
         choices = [('leader', '리더'), ('admin', '관리자'), ('member', '그룹원')],
         default = 'member'
     )
+    is_active = models.BooleanField(default=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

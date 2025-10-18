@@ -5,5 +5,7 @@ app_name = 'studies'
 
 urlpatterns = [
     path('create_study/', views.create_study, name='create_study'),
+    path('join/', views.join, name='join'),
+    path('leave/', views.leave, name='leave'),
     
 ]
