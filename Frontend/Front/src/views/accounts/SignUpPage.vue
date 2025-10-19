@@ -6,9 +6,9 @@
       <div class="col-lg-6 signup-image d-flex justify-content-center align-items-center">
         <img
           src="@/assets/signup.png"
-          alt="스터디 이미지"
+          alt="회원 가입 이미지"
           class="img-fluid"
-          style="max-width: 100%"
+          style="max-width: 80%"
         />
       </div>
 

@@ -1,8 +1,13 @@
+<!-- src/views/MainPage.vue -->
 <template>
   <AppShell>
-    <div class="container py-4">
-      <h1 class="fw-bold">메인 페이지</h1>
-      <p>여기에 메인 콘텐츠가 들어갑니다.</p>
+    <!-- ✅ 전체 화면 중앙 정렬 -->
+    <div class="d-flex justify-content-center align-items-center min-vh-100">
+      <img
+        src="@/assets/wait.png"
+        alt="Group Study Planner Logo"
+        class="main-logo"
+      />
     </div>
   </AppShell>
 </template>
@@ -10,3 +15,10 @@
 <script setup lang="ts">
 import AppShell from '@/layouts/AppShell.vue'
 </script>
+
+<style scoped>
+.main-logo {
+  max-width: 300px; /* 로고 크기 */
+  height: auto;
+}
+</style>
