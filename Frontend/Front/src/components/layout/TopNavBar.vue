@@ -1,24 +1,32 @@
+<!-- src/components/layout/TopNavBar.vue -->
 <template>
   <nav class="navbar navbar-light bg-white border-bottom fixed-top shadow-sm topbar">
     <div class="container-fluid">
-      <!-- 햄버거: 사이드바 토글 -->
-      <button
-        class="btn btn-outline-secondary me-2"
-        type="button"
-        aria-label="사이드바 열고 닫기"
-        :aria-expanded="ui.sidebarOpen ? 'true' : 'false'"
-        aria-controls="leftSidebar"
-        @click="ui.toggleSidebar"
-      >
-        <i class="bi" :class="ui.sidebarOpen ? 'bi-x-lg' : 'bi-list'"></i>
-      </button>
-
-      <!-- 브랜드 / 페이지 타이틀 -->
-      <span class="navbar-brand mb-0 h1">Group Study Planner</span>
-
-      <!-- 우측 액션 영역(필요 시 채우기) -->
+      <!-- 왼쪽: 햄버거 버튼 + 로고 + 타이틀 -->
       <div class="d-flex align-items-center gap-2">
-        <!-- 예: 알림, 프로필 등 -->
+        <!-- 햄버거: 사이드바 토글 -->
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          aria-label="사이드바 열고 닫기"
+          :aria-expanded="ui.sidebarOpen ? 'true' : 'false'"
+          aria-controls="leftSidebar"
+          @click="ui.toggleSidebar"
+        >
+          <i class="bi" :class="ui.sidebarOpen ? 'bi-x-lg' : 'bi-list'"></i>
+        </button>
+
+        <!-- 로고 -->
+        <img
+          src="@/assets/logo.png "
+          alt="logo"
+          width="40"
+          height="40"
+          class="me-1"
+        />
+
+        <!-- 타이틀 -->
+        <span class="navbar-brand mb-0 h1 fs-5 fw-semibold">Group Study Planner</span>
       </div>
     </div>
   </nav>
@@ -45,5 +53,16 @@ onBeforeUnmount(() => {
 <style scoped>
 .topbar {
   height: var(--topbar-height, 56px);
+}
+
+/* 로고와 텍스트가 수평으로 잘 정렬되도록 */
+.navbar-brand {
+  font-weight: 600;
+  color: #212529;
+}
+
+/* 버튼 hover 효과 부드럽게 */
+button.btn {
+  transition: background-color 0.2s, color 0.2s;
 }
 </style>

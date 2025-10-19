@@ -1,9 +1,17 @@
-<!-- src/components/layout/SettingNavBar.vue -->
 <template>
   <div class="sidebar d-flex flex-column vh-100 bg-light shadow-sm position-relative">
     <!-- 헤더 -->
     <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
       <div class="fw-semibold">설정</div>
+
+      <!-- ✅ 메인 페이지로 이동 아이콘 버튼 -->
+      <RouterLink
+        to="/main"
+        class="btn btn-sm p-0 border-0 bg-transparent text-secondary home-btn"
+        title="메인으로"
+      >
+        <i class="bi bi-house-door fs-5"></i>
+      </RouterLink>
     </div>
 
     <!-- 메뉴 -->
@@ -19,7 +27,6 @@
           </RouterLink>
         </li>
         <li>
-          <!-- 비밀번호 확인을 거쳐 설정 페이지로 라우팅하는 기존 플로우 유지 -->
           <RouterLink
             to="/accounts/password-check"
             class="nav-item-link d-flex align-items-center px-3 py-2 text-decoration-none text-dark"
@@ -34,12 +41,12 @@
 </template>
 
 <script setup>
-// 이 컴포넌트는 라우팅만 하므로 별도 로직 없음
+// 라우팅 전용, 별도 로직 없음
 </script>
 
 <style scoped>
 .sidebar {
-  width: 250px; /* 기존 사이드바와 동일 크기 */
+  width: 250px;
 }
 
 /* hover 효과 및 활성 라우트 스타일 */
@@ -50,9 +57,18 @@
   background-color: #f8f9fa;
 }
 
-/* RouterLink 활성화 색상 (기존과 동일한 느낌) */
+/* RouterLink 활성화 색상 */
 .router-link-active {
   font-weight: 600;
   color: #0d6efd !important;
+}
+
+/* ✅ 오른쪽 상단 홈 버튼 */
+.home-btn {
+  color: #6c757d;
+  transition: color 0.2s;
+}
+.home-btn:hover {
+  color: #0d6efd;
 }
 </style>

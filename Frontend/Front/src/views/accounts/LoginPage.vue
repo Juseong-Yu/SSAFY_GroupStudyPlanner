@@ -5,10 +5,10 @@
       <!-- 왼쪽 이미지 영역 -->
       <div class="col-lg-6 login-image d-none d-lg-flex justify-content-center align-items-center">
         <img
-          src="@/assets/signup.png"
-          alt="스터디 이미지"
+          src="@/assets/login.png"
+          alt="로그인 이미지"
           class="img-fluid"
-          style="max-width: 100%"
+          style="max-width: 80%"
         />
       </div>
 

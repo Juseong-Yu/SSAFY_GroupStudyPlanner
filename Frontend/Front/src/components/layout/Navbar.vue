@@ -21,14 +21,27 @@
           <div class="placeholder col-4" style="height: 1rem"></div>
         </template>
         <template v-else>
-          <img
-            :src="avatarSrc"
-            alt="Profile"
-            class="rounded-circle me-2 border"
-            width="30"
-            height="30"
-            style="object-fit: cover"
-          />
+          <!-- ✅ 여기만 교체: 이미지 있으면 <img>, 없거나 깨지면 bi-person-fill -->
+          <div
+            class="rounded-circle border d-inline-flex justify-content-center align-items-center bg-light me-2"
+            style="width: 30px; height: 30px"
+          >
+            <template v-if="hasAvatar && !avatarBroken">
+              <img
+                :src="avatarSrc"
+                alt="Profile"
+                class="rounded-circle"
+                width="30"
+                height="30"
+                style="object-fit: cover"
+                @error="onAvatarError"
+              />
+            </template>
+            <template v-else>
+              <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
+            </template>
+          </div>
+
           <div class="fw-semibold">{{ usernameDisplay }}</div>
         </template>
       </div>
@@ -161,10 +174,13 @@ function maybeCloseOnMobile() {
   if (!ui.isLgUp) ui.closeSidebar()
 }
 
-/** ★ 프로필 표시용 계산 */
+/** ★ 프로필 표시용 계산 (닉네임 그대로) */
 const usernameDisplay = computed(() => user.profile?.nickname ?? '로그인 필요')
-const defaultAvatar = '/default-avatar.png' // public 폴더에 간단한 기본 이미지 하나 둬도 좋아요
-const avatarSrc = computed(() => user.profile?.avatar_url || defaultAvatar)
+
+/** ★ 여기부터 추가: 아바타 폴백 전용 최소 로직  */
+const avatarBroken = ref(false)                               // 이미지 깨짐 여부
+const hasAvatar = computed(() => !!user.profile?.avatar_url)  // 값 존재 여부
+const avatarSrc = computed(() => user.profile?.avatar_url || '') // 빈 문자열 허용
 
 /** ★ 로그아웃: 스토어 액션 호출 */
 const handleLogoutClick = async () => {
@@ -177,8 +193,13 @@ const handleLogoutClick = async () => {
   }
 }
 
+// 이미지 깨지면 즉시 아이콘으로 폴백
+const onAvatarError = () => {
+  avatarBroken.value = true
+}
+
 onMounted(() => {
-  // ★ 여기가 중요: 최초 진입 시 유저 정보 1회 로드(중복 호출 안전)
+  // ★ 최초 진입 시 유저 정보 1회 로드(중복 호출 안전)
   user.loadIfNeeded()
 
   document.addEventListener('click', onClickOutside, { capture: true })
@@ -226,6 +247,7 @@ onBeforeUnmount(() => {
   background-color: #f8f9fa;
   transition: background-color 0.2s;
 }
+
 .router-link-active {
   font-weight: 600;
   color: #0d6efd !important;
