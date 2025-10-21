@@ -77,4 +77,27 @@ def leave(request):
 # 소속 스터디 조회
 @login_required
 def get_my_study(request):
-    pass
+    """
+    로그인한 사용자가 속한 스터디 목록을 JSON으로 반환하는 함수.
+    중간 테이블(StudyMembership)을 이용해 사용자-스터디 관계를 조회함.
+    """
+    user = request.user
+
+    # 사용자가 속한 모든 스터디 멤버십 조회
+    memberships = StudyMembership.objects.select_related('study', 'study__leader').filter(user=user)
+
+    # JSON 데이터 구성
+    data = []
+    for membership in memberships:
+        study = membership.study
+        data.append({
+            "id": study.id,
+            "name": study.name,
+            "leader": study.leader.username,  # ForeignKey로 연결된 User의 username
+            "role": membership.role,          # 중간 테이블에서 가져옴
+            "is_active": membership.is_active,
+            "joined_at": membership.joined_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": study.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        })
+
+    return JsonResponse({"studies": data}, status=200, json_dumps_params={'ensure_ascii': False})
