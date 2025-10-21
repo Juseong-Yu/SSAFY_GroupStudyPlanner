@@ -15,13 +15,13 @@
       class="profile-section d-flex align-items-center justify-content-between p-3 border-bottom"
     >
       <div class="d-flex align-items-center">
-        <!-- ★ 프로필 이미지: 로딩/미설정 대비 -->
+        <!-- 프로필 이미지: 로딩/미설정 대비 -->
         <template v-if="user.loading">
           <span class="placeholder rounded-circle me-2" style="width: 30px; height: 30px"></span>
           <div class="placeholder col-4" style="height: 1rem"></div>
         </template>
         <template v-else>
-          <!-- ✅ 여기만 교체: 이미지 있으면 <img>, 없거나 깨지면 bi-person-fill -->
+          <!-- 이미지 있으면 <img>, 없거나 깨지면 bi-person-fill -->
           <div
             class="rounded-circle border d-inline-flex justify-content-center align-items-center bg-light me-2"
             style="width: 30px; height: 30px"
@@ -64,6 +64,32 @@
           aria-labelledby="profileDropdown"
           :class="{ show: menuOpen }"
         >
+          <!-- ★ 추가: 모달 오픈용 항목 (네가 수정한 형태 유지) -->
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#createStudyModal"
+              @click="(closeMenu(), maybeCloseOnMobile())"
+            >
+              스터디 생성
+            </button>
+          </li>
+          <li>
+            <button
+              class="dropdown-item"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#joinStudyModal"
+              @click="(closeMenu(), maybeCloseOnMobile())"
+            >
+              스터디 참여
+            </button>
+          </li>
+
+          <li><hr class="dropdown-divider" /></li>
+
           <li>
             <RouterLink to="/settings/profile" class="dropdown-item" @click="closeMenu">
               설정
@@ -71,7 +97,7 @@
           </li>
           <li><hr class="dropdown-divider" /></li>
           <li>
-            <!-- ★ 로그아웃: 스토어 액션 호출 -->
+            <!-- 로그아웃 -->
             <button
               class="dropdown-item text-danger"
               @click="handleLogoutClick"
@@ -133,19 +159,128 @@
       </ul>
     </div>
   </aside>
+
+  <!-- ★ 스터디 생성 모달 (이름만 입력) -->
+  <div
+    class="modal fade"
+    id="createStudyModal"
+    tabindex="-1"
+    aria-labelledby="createStudyLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" @submit.prevent="submitCreate">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createStudyLabel">스터디 생성</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="닫기"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="create.error" class="alert alert-danger py-2">{{ create.error }}</div>
+
+          <!-- ▼ 이름만 -->
+          <div class="mb-1">
+            <label class="form-label">스터디 이름</label>
+            <input
+              v-model.trim="create.form.title"
+              class="form-control"
+              placeholder="예) 알고리즘 스터디"
+            />
+          </div>
+          <small class="text-muted">필수: 스터디 이름만 설정합니다.</small>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+            :disabled="create.loading"
+          >
+            취소
+          </button>
+          <button type="submit" class="btn btn-primary" :disabled="create.loading">
+            <span
+              v-if="create.loading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            생성
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ★ 스터디 참여 모달 (그대로) -->
+  <div
+    class="modal fade"
+    id="joinStudyModal"
+    tabindex="-1"
+    aria-labelledby="joinStudyLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" @submit.prevent="submitJoin">
+        <div class="modal-header">
+          <h5 class="modal-title" id="joinStudyLabel">스터디 참여</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="닫기"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="join.error" class="alert alert-danger py-2">{{ join.error }}</div>
+
+          <div class="mb-3">
+            <label class="form-label">참여 코드</label>
+            <input v-model.trim="join.code" class="form-control" placeholder="예) ABCD-1234" />
+            <div class="form-text">리더가 공유한 참여 코드를 입력하세요.</div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+            :disabled="join.loading"
+          >
+            닫기
+          </button>
+          <button type="submit" class="btn btn-primary" :disabled="join.loading || !join.code">
+            <span
+              v-if="join.loading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            참여하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
-import { useUserStore } from '@/stores/user' // ★ 사용자 스토어
-
-// axios를 직접 쓰지 않더라도, 이 컴포넌트에선 X. (logout은 store가 처리)
-// 규칙상 axios 쓰는 파일에서만 ensureCsrf/getCookie import 필요
+import { useUserStore } from '@/stores/user'
+import axios from 'axios'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
 const ui = useUiStore()
 const user = useUserStore()
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 // 아코디언 상태
 const isOpen = ref({ manage: true, participate: true })
@@ -170,36 +305,167 @@ const onEscape = (e: KeyboardEvent) => {
 }
 
 function maybeCloseOnMobile() {
-  // 모바일에서는 메뉴 클릭 시 사이드바 닫기
   if (!ui.isLgUp) ui.closeSidebar()
 }
 
-/** ★ 프로필 표시용 계산 (닉네임 그대로) */
+/** 프로필 표시용 계산 (닉네임 그대로) */
 const usernameDisplay = computed(() => user.profile?.nickname ?? '로그인 필요')
 
-/** ★ 여기부터 추가: 아바타 폴백 전용 최소 로직  */
-const avatarBroken = ref(false)                               // 이미지 깨짐 여부
-const hasAvatar = computed(() => !!user.profile?.avatar_url)  // 값 존재 여부
-const avatarSrc = computed(() => user.profile?.avatar_url || '') // 빈 문자열 허용
+/** 아바타 폴백 최소 로직 */
+const avatarBroken = ref(false)
+const hasAvatar = computed(() => !!user.profile?.avatar_url)
+const avatarSrc = computed(() => user.profile?.avatar_url || '')
+const onAvatarError = () => {
+  avatarBroken.value = true
+}
 
-/** ★ 로그아웃: 스토어 액션 호출 */
+/** 로그아웃: 스토어 액션 호출 */
 const handleLogoutClick = async () => {
   closeMenu()
   try {
     await user.logout()
   } catch (e) {
-    // 실패해도 logout()에서 클라이언트 정리를 보장함
     console.error(e)
   }
 }
 
-// 이미지 깨지면 즉시 아이콘으로 폴백
-const onAvatarError = () => {
-  avatarBroken.value = true
+/* ============================
+   모달 관련 상태/액션 (Bootstrap)
+   ============================ */
+
+/** 생성 상태: 이름만 */
+const create = ref({
+  loading: false,
+  error: '',
+  form: { title: '' }, // ← 이름만
+})
+function resetCreate() {
+  create.value.loading = false
+  create.value.error = ''
+  create.value.form = { title: '' }
+}
+
+/** 참여 상태 */
+const join = ref({ loading: false, error: '', code: '' })
+function resetJoin() {
+  join.value.loading = false
+  join.value.error = ''
+  join.value.code = ''
+}
+
+/** Bootstrap 모달 닫기 유틸(번들이 없으면 강제 폴백) */
+function hideBsModalById(id: string) {
+  const el = document.getElementById(id)
+  if (!el) return
+
+  // 1) bootstrap.bundle 이 있는 경우: 정석으로 닫기
+  // @ts-ignore
+  const bs = (window as any)?.bootstrap
+  if (bs?.Modal) {
+    try {
+      const inst = bs.Modal.getInstance(el) || new bs.Modal(el)
+      inst.hide()
+      return
+    } catch {}
+  }
+
+  // 2) 폴백: 강제로 DOM 상태 정리 (bundle 없어도 동작)
+  // - 모달 자체
+  el.classList.remove('show')
+  el.setAttribute('aria-hidden', 'true')
+  el.removeAttribute('aria-modal')
+  el.style.display = 'none'
+
+  // - body 상태 복원
+  document.body.classList.remove('modal-open')
+  document.body.style.removeProperty('padding-right')
+  document.body.style.removeProperty('overflow')
+
+  // - 남아있는 백드롭 제거
+  const backdrops = document.querySelectorAll('.modal-backdrop')
+  backdrops.forEach((b) => b.parentElement?.removeChild(b))
+}
+
+/** 스터디 생성 제출 (이름만 보냄) */
+const submitCreate = async () => {
+  if (!create.value.form.title.trim()) {
+    create.value.error = '스터디 이름을 입력하세요.'
+    return
+  }
+
+  try {
+    create.value.loading = true
+    create.value.error = ''
+
+    // ★ CSRF 세팅
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    // ★ URLSearchParams로 인코딩
+    const params = new URLSearchParams()
+    params.set('name', create.value.form.title.trim())
+
+    // ★ Django가 바로 request.POST['title']로 읽는 포맷
+    await axios.post(`${API_BASE}/studies/create_study/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    hideBsModalById('createStudyModal')
+    resetCreate()
+    // TODO: 성공 토스트 / Pinia 리스트 갱신
+  } catch (e: any) {
+    console.error(e)
+    create.value.error =
+      e?.response?.data?.detail ||
+      e?.response?.data?.message ||
+      '스터디 생성 중 오류가 발생했습니다.'
+  } finally {
+    create.value.loading = false
+  }
+}
+
+/** 스터디 참여 제출 */
+const submitJoin = async () => {
+  if (!join.value.code.trim() || join.value.loading) return
+
+  try {
+    join.value.loading = true
+    join.value.error = ''
+
+    // CSRF 준비
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    // x-www-form-urlencoded 포맷
+    const params = new URLSearchParams()
+    params.set('id', join.value.code.trim())
+
+    await axios.post(`${API_BASE}/studies/join/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    hideBsModalById('joinStudyModal')
+    resetJoin()
+    // TODO: 성공 토스트/리스트 리프레시(Pinia 연동 등)
+  } catch (e: any) {
+    console.error(e)
+    join.value.error =
+      e?.response?.data?.detail || e?.response?.data?.message || '참여 코드가 올바르지 않습니다.'
+  } finally {
+    join.value.loading = false
+  }
 }
 
 onMounted(() => {
-  // ★ 최초 진입 시 유저 정보 1회 로드(중복 호출 안전)
+  // 최초 진입 시 유저 정보 1회 로드(중복 호출 안전)
   user.loadIfNeeded()
 
   document.addEventListener('click', onClickOutside, { capture: true })
@@ -251,5 +517,14 @@ onBeforeUnmount(() => {
 .router-link-active {
   font-weight: 600;
   color: #0d6efd !important;
+}
+
+/* ★ 모달 백드롭/모달 z-index를 올려 네비게이션 바까지 어둡게 덮기
+   (scoped이므로 :deep 사용) */
+:deep(.modal-backdrop) {
+  z-index: 5000 !important; /* 네비게이션 바 z-index보다 충분히 크게 */
+}
+:deep(.modal) {
+  z-index: 5005 !important;
 }
 </style>

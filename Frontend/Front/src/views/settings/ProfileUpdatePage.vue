@@ -5,7 +5,7 @@
 
     <!-- ✅ 오른쪽: 회원정보 수정 폼 -->
     <div class="flex-grow-1 bg-white p-5">
-      <div class="container" style="max-width: 800px;">
+      <div class="container" style="max-width: 800px">
         <h3 class="fw-bold mb-4">회원정보 수정</h3>
 
         <div class="card shadow-sm">
@@ -20,7 +20,7 @@
                   class="rounded-circle border"
                   width="88"
                   height="88"
-                  style="object-fit: cover;"
+                  style="object-fit: cover"
                 />
                 <div class="d-flex flex-column gap-2">
                   <input
@@ -145,7 +145,6 @@
             ></button>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -160,6 +159,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { useUserStore } from '@/stores/user'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 const router = useRouter()
@@ -182,6 +182,7 @@ const loading = ref(false) // ✅ 추가됨
 const fileInputRef = ref(null)
 const avatarFile = ref(null)
 const avatarPreview = ref('')
+const user = useUserStore()
 
 // ✅ 프로필 로드
 const loadProfile = async () => {
@@ -214,8 +215,8 @@ const loadProfile = async () => {
 
 onMounted(loadProfile)
 
-const canSubmitBasics = computed(() =>
-  form.value.email.trim().length > 0 && form.value.nickname.trim().length > 0
+const canSubmitBasics = computed(
+  () => form.value.email.trim().length > 0 && form.value.nickname.trim().length > 0,
 )
 
 const validatePasswords = () => {
@@ -287,6 +288,7 @@ const onSubmit = async () => {
     password1.value = ''
     password2.value = ''
     await loadProfile()
+    await user.reset()
     router.push('/settings/profile')
   } catch (err) {
     console.error(err)
