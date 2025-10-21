@@ -38,3 +38,15 @@ const ui = useUiStore()
   }
 }
 </style>
+
+<style>
+/* Bootstrap 모달 백드롭이 네비게이션 바까지 덮이게 */
+.modal-backdrop {
+  z-index: 9998 !important;
+  background-color: rgba(33, 37, 41, 0.55) !important; /* 어둡게 */
+}
+
+.modal {
+  z-index: 9999 !important;
+}
+</style>
