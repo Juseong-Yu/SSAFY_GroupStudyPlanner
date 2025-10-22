@@ -10,12 +10,16 @@ const TTL_MS = 5 * 60 * 1000 // 5분 캐시
 
 export interface Study {
   id: number | string
-  title: string
+  name: string
+  leader?: string
   role?: 'leader' | 'member' | string
+  is_active?: boolean
+  joined_at?: string
+  created_at?: string
 }
 
 export const useStudiesStore = defineStore('studies', () => {
-  // ✅ 상태
+  // state
   const leader = ref<Study[]>([])
   const member = ref<Study[]>([])
   const loading = ref(false)
@@ -23,43 +27,52 @@ export const useStudiesStore = defineStore('studies', () => {
   const lastFetched = ref<number | null>(null)
   let inFlight: Promise<void> | null = null
 
-  // ✅ 파생값
+  // derived
   const leaderCount = computed(() => leader.value.length)
   const memberCount = computed(() => member.value.length)
 
-  // ✅ 신선도
+  // freshness
   const isFresh = () => lastFetched.value && Date.now() - lastFetched.value < TTL_MS
 
-  // ✅ 응답 파서 (두 가지 형태 지원)
+  // ---- parser ----
   function parseAndSet(payload: any) {
-    let _leader: Study[] = []
-    let _member: Study[] = []
+    // 디버그용(원하면 주석처리)
+    // console.log('[studies] raw payload:', payload)
+
+    let arr: any[] = []
 
     if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-      // 형태 A: { leader:[], member:[] }
-      _leader = Array.isArray(payload.leader) ? payload.leader : []
-      _member = Array.isArray(payload.member) ? payload.member : []
+      // 케이스 C: { studies: [...] }  ✅ 지금 네 응답
+      if (Array.isArray(payload.studies)) {
+        arr = payload.studies
+      }
+      // 케이스 A: { leader: [], member: [] } (이전 호환)
+      else if (Array.isArray(payload.leader) || Array.isArray(payload.member)) {
+        const L = (payload.leader || []).map((s: any) => ({ ...s, role: 'leader' }))
+        const M = (payload.member || []).map((s: any) => ({ ...s, role: s.role ?? 'member' }))
+        arr = [...L, ...M]
+      }
     } else if (Array.isArray(payload)) {
-      // 형태 B: [{ id, title|name, role }]
-      const arr = payload as Study[]
-      _leader = arr.filter((s) => s.role === 'leader')
-      _member = arr.filter((s) => s.role !== 'leader')
+      // 케이스 B: [ ... ] (flat 배열)
+      arr = payload
     }
 
-    // title/name 폴백 정리
-    leader.value = (_leader || []).map((s: any) => ({
+    const all: Study[] = (arr || []).map((s: any) => ({
       id: s.id,
-      title: s.title ?? s.name ?? '제목 없음',
-      role: 'leader',
+      name: s.name ?? s.title ?? '제목 없음',
+      leader: s.leader ?? '',
+      role: s.role ?? '',
+      // 파이썬 True/False는 실제 JSON에선 true/false로 직렬화됨 (DRF/JsonResponse)
+      is_active: s.is_active ?? true,
+      joined_at: s.joined_at ?? '',
+      created_at: s.created_at ?? '',
     }))
-    member.value = (_member || []).map((s: any) => ({
-      id: s.id,
-      title: s.title ?? s.name ?? '제목 없음',
-      role: 'member',
-    }))
+
+    leader.value = all.filter((s) => s.role === 'leader')
+    member.value = all.filter((s) => s.role !== 'leader')
   }
 
-  // ✅ 실제 호출
+  // ---- fetcher ----
   async function _fetchStudies() {
     loading.value = true
     error.value = ''
@@ -70,6 +83,7 @@ export const useStudiesStore = defineStore('studies', () => {
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken },
       })
+      // console.log('[studies] GET /get_my_study data:', data)
       parseAndSet(data)
       lastFetched.value = Date.now()
     } catch (e: any) {
@@ -77,7 +91,6 @@ export const useStudiesStore = defineStore('studies', () => {
       leader.value = []
       member.value = []
       if (e?.response?.status === 401) {
-        // 세션 만료 → 로그인으로
         router.push('/login')
       } else {
         error.value = '스터디 목록을 불러오지 못했습니다.'
@@ -88,7 +101,7 @@ export const useStudiesStore = defineStore('studies', () => {
     }
   }
 
-  // ✅ 필요할 때만 요청 (TTL + 중복 호출 방지)
+  // public actions
   async function loadIfNeeded(opts?: { force?: boolean }) {
     const force = !!opts?.force
     if (!force && isFresh() && (leader.value.length || member.value.length)) return
@@ -97,12 +110,10 @@ export const useStudiesStore = defineStore('studies', () => {
     return inFlight
   }
 
-  // ✅ 강제 새로고침(생성/참여 직후에 사용)
   async function refresh() {
     return loadIfNeeded({ force: true })
   }
 
-  // ✅ 리셋
   function reset() {
     leader.value = []
     member.value = []

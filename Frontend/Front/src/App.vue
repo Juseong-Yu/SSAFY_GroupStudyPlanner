@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
@@ -68,5 +67,20 @@ nav a:first-of-type {
     padding: 1rem 0;
     margin-top: 1rem;
   }
+}
+</style>
+<style>
+/* ✅ 전역 스타일 (scoped 제거) */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background-color: white; /* ← 원하는 배경색으로 변경 */
+}
+
+/* ✅ #app도 포함시켜주는 게 안전 */
+#app {
+  min-height: 100vh;
+  background-color: #f7f9fc;
 }
 </style>

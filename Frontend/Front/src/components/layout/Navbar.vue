@@ -64,7 +64,7 @@
           aria-labelledby="profileDropdown"
           :class="{ show: menuOpen }"
         >
-          <!-- ★ 추가: 모달 오픈용 항목 (네가 수정한 형태 유지) -->
+          <!-- 모달 오픈용 항목 -->
           <li>
             <button
               class="dropdown-item"
@@ -113,6 +113,7 @@
     <!-- 메뉴 리스트 -->
     <div class="menu-section flex-grow-1 mt-3">
       <ul class="list-unstyled">
+        <!-- 관리(리더) -->
         <li class="mb-3">
           <div
             class="d-flex justify-content-between align-items-center px-3 fw-semibold text-secondary"
@@ -122,19 +123,44 @@
             <div><i class="bi bi-clipboard-data me-2"></i>관리</div>
             <i :class="isOpen.manage ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
           </div>
+
           <ul v-if="isOpen.manage" class="list-unstyled ps-4 mt-2">
-            <li>
+            <!-- 로딩 -->
+            <li v-if="studies.loading" class="mt-1">
+              <div class="placeholder-glow">
+                <span class="placeholder col-9"></span>
+              </div>
+              <div class="placeholder-glow mt-1">
+                <span class="placeholder col-7"></span>
+              </div>
+            </li>
+            <!-- 오류 -->
+            <li v-else-if="studies.error" class="text-danger mt-1">
+              {{ studies.error }}
+            </li>
+            <!-- 빈 상태 -->
+            <li v-else-if="studies.leaderCount === 0" class="text-muted mt-1">
+              생성한 스터디가 없습니다.
+            </li>
+            <!-- 목록 -->
+            <li v-else v-for="s in studies.leader" :key="`leader-${s.id}`" class="mt-1">
               <RouterLink
-                to="/manage/dashboard"
-                class="text-decoration-none text-dark"
+                :to="`/studies/${s.id}`"
+                class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
+                :class="{ 'text-muted': s.is_active === false }"
+                :title="`리더: ${s.leader ?? ''} · 생성일: ${s.created_at ?? ''}`"
                 @click="maybeCloseOnMobile"
               >
-                Dashboard
+                <span class="text-truncate">{{ s.name }}</span>
+                <span class="badge bg-primary-subtle text-primary border rounded-pill ms-2"
+                  >리더</span
+                >
               </RouterLink>
             </li>
           </ul>
         </li>
 
+        <!-- 참여(멤버) -->
         <li>
           <div
             class="d-flex justify-content-between align-items-center px-3 fw-semibold text-secondary"
@@ -144,14 +170,38 @@
             <div><i class="bi bi-people-fill me-2"></i>참여</div>
             <i :class="isOpen.participate ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
           </div>
+
           <ul v-if="isOpen.participate" class="list-unstyled ps-4 mt-2">
-            <li>
+            <!-- 로딩 -->
+            <li v-if="studies.loading" class="mt-1">
+              <div class="placeholder-glow">
+                <span class="placeholder col-8"></span>
+              </div>
+              <div class="placeholder-glow mt-1">
+                <span class="placeholder col-6"></span>
+              </div>
+            </li>
+            <!-- 오류 -->
+            <li v-else-if="studies.error" class="text-danger mt-1">
+              {{ studies.error }}
+            </li>
+            <!-- 빈 상태 -->
+            <li v-else-if="studies.memberCount === 0" class="text-muted mt-1">
+              참여 중인 스터디가 없습니다.
+            </li>
+            <!-- 목록 -->
+            <li v-else v-for="s in studies.member" :key="`member-${s.id}`" class="mt-1">
               <RouterLink
-                to="/participate/dashboard"
-                class="text-decoration-none text-dark"
+                :to="`/studies/${s.id}`"
+                class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
+                :class="{ 'text-muted': s.is_active === false }"
+                :title="`리더: ${s.leader ?? ''} · 참여일: ${s.joined_at ?? ''}`"
                 @click="maybeCloseOnMobile"
               >
-                Dashboard
+                <span class="text-truncate">{{ s.name }}</span>
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill ms-2"
+                  >멤버</span
+                >
               </RouterLink>
             </li>
           </ul>
@@ -160,7 +210,7 @@
     </div>
   </aside>
 
-  <!-- ★ 스터디 생성 모달 (이름만 입력) -->
+  <!-- 스터디 생성 모달 (이름만 입력) -->
   <div
     class="modal fade"
     id="createStudyModal"
@@ -183,7 +233,6 @@
         <div class="modal-body">
           <div v-if="create.error" class="alert alert-danger py-2">{{ create.error }}</div>
 
-          <!-- ▼ 이름만 -->
           <div class="mb-1">
             <label class="form-label">스터디 이름</label>
             <input
@@ -217,7 +266,7 @@
     </div>
   </div>
 
-  <!-- ★ 스터디 참여 모달 (그대로) -->
+  <!-- 스터디 참여 모달 -->
   <div
     class="modal fade"
     id="joinStudyModal"
@@ -273,13 +322,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
+import axios from 'axios'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
-import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { useStudiesStore } from '@/stores/studies'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors' // ✅ axios 페이지 규칙
 
 const ui = useUiStore()
 const user = useUserStore()
+const studies = useStudiesStore()
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 // 아코디언 상태
@@ -337,7 +389,7 @@ const handleLogoutClick = async () => {
 const create = ref({
   loading: false,
   error: '',
-  form: { title: '' }, // ← 이름만
+  form: { title: '' }, // 프론트 입력명만 title, 실제 전송은 name
 })
 function resetCreate() {
   create.value.loading = false
@@ -358,7 +410,7 @@ function hideBsModalById(id: string) {
   const el = document.getElementById(id)
   if (!el) return
 
-  // 1) bootstrap.bundle 이 있는 경우: 정석으로 닫기
+  // 1) bootstrap.bundle 이 있는 경우
   // @ts-ignore
   const bs = (window as any)?.bootstrap
   if (bs?.Modal) {
@@ -369,19 +421,14 @@ function hideBsModalById(id: string) {
     } catch {}
   }
 
-  // 2) 폴백: 강제로 DOM 상태 정리 (bundle 없어도 동작)
-  // - 모달 자체
+  // 2) 폴백
   el.classList.remove('show')
   el.setAttribute('aria-hidden', 'true')
   el.removeAttribute('aria-modal')
   el.style.display = 'none'
-
-  // - body 상태 복원
   document.body.classList.remove('modal-open')
   document.body.style.removeProperty('padding-right')
   document.body.style.removeProperty('overflow')
-
-  // - 남아있는 백드롭 제거
   const backdrops = document.querySelectorAll('.modal-backdrop')
   backdrops.forEach((b) => b.parentElement?.removeChild(b))
 }
@@ -397,15 +444,14 @@ const submitCreate = async () => {
     create.value.loading = true
     create.value.error = ''
 
-    // ★ CSRF 세팅
+    // CSRF 세팅
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // ★ URLSearchParams로 인코딩
+    // x-www-form-urlencoded 포맷
     const params = new URLSearchParams()
-    params.set('name', create.value.form.title.trim())
+    params.set('name', create.value.form.title.trim()) // ✅ 백엔드 name로 받음
 
-    // ★ Django가 바로 request.POST['title']로 읽는 포맷
     await axios.post(`${API_BASE}/studies/create_study/`, params, {
       withCredentials: true,
       headers: {
@@ -414,9 +460,11 @@ const submitCreate = async () => {
       },
     })
 
+    // ✅ 리스트 최신화 (생성 후 즉시 반영)
+    await studies.refresh()
+
     hideBsModalById('createStudyModal')
     resetCreate()
-    // TODO: 성공 토스트 / Pinia 리스트 갱신
   } catch (e: any) {
     console.error(e)
     create.value.error =
@@ -452,9 +500,11 @@ const submitJoin = async () => {
       },
     })
 
+    // ✅ 리스트 최신화 (참여 후 즉시 반영)
+    await studies.refresh()
+
     hideBsModalById('joinStudyModal')
     resetJoin()
-    // TODO: 성공 토스트/리스트 리프레시(Pinia 연동 등)
   } catch (e: any) {
     console.error(e)
     join.value.error =
@@ -465,11 +515,13 @@ const submitJoin = async () => {
 }
 
 onMounted(() => {
-  // 최초 진입 시 유저 정보 1회 로드(중복 호출 안전)
+  // 최초 진입 시 유저/스터디 정보 1회 로드(신선도 내 중복 호출 방지)
   user.loadIfNeeded()
+  studies.loadIfNeeded()
 
   document.addEventListener('click', onClickOutside, { capture: true })
   document.addEventListener('keydown', onEscape)
+
   // 레이아웃 변수
   document.documentElement.style.setProperty('--sidebar-width', '250px')
   document.documentElement.style.setProperty('--gap', '20px')
@@ -519,12 +571,21 @@ onBeforeUnmount(() => {
   color: #0d6efd !important;
 }
 
-/* ★ 모달 백드롭/모달 z-index를 올려 네비게이션 바까지 어둡게 덮기
-   (scoped이므로 :deep 사용) */
+/* 긴 목록 대비 내부 스크롤 */
+.menu-section {
+  overflow: auto;
+}
+
+/* 모달 백드롭/모달 z-index를 올려 네비게이션 바까지 어둡게 덮기 (scoped → :deep) */
 :deep(.modal-backdrop) {
   z-index: 5000 !important; /* 네비게이션 바 z-index보다 충분히 크게 */
 }
 :deep(.modal) {
   z-index: 5005 !important;
+}
+
+/* 항목 hover */
+:deep(a.text-dark):hover {
+  text-decoration: underline;
 }
 </style>
