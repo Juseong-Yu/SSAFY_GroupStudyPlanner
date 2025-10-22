@@ -6,8 +6,8 @@ import MainPage from '@/views/MainPage.vue'
 import PasswordCheckPage from '@/views/accounts/PasswordCheckPage.vue'
 import ProfileUpdatePage from '@/views/settings/ProfileUpdatePage.vue'
 import ProfilePage from '@/views/settings/ProfilePage.vue'
-
-
+import ManageStudyPage from '@/views/studies/manage/ManageStudyPage.vue'
+import StudyJoinedPage from '@/views/studies/joined/StudyJoinedPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -29,23 +29,33 @@ const router = createRouter({
     {
       path: '/main',
       name: 'main',
-      component: MainPage
+      component: MainPage,
     },
     {
-    path: '/accounts/password-check',
-    name: 'PasswordCheck',
-    component: PasswordCheckPage,
-  },
-  {
-    path: '/settings/profile',
-    name: 'Profile',
-    component: ProfilePage,
-  },
-  {
-    path: '/settings/update',
-    name: 'ProfileUpdate',
-    component: ProfileUpdatePage,
-  },
+      path: '/accounts/password-check',
+      name: 'PasswordCheck',
+      component: PasswordCheckPage,
+    },
+    {
+      path: '/settings/profile',
+      name: 'Profile',
+      component: ProfilePage,
+    },
+    {
+      path: '/settings/update',
+      name: 'ProfileUpdate',
+      component: ProfileUpdatePage,
+    },
+    {
+      path: '/studies/manage/:id',
+      name: 'StudyManage',
+      component: ManageStudyPage,
+    },
+    {
+      path: '/studies/joined/:id',
+      name: 'StudyJoined',
+      component: StudyJoinedPage,
+    },
   ],
 })
 

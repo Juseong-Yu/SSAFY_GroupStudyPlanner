@@ -145,16 +145,13 @@
             <!-- 목록 -->
             <li v-else v-for="s in studies.leader" :key="`leader-${s.id}`" class="mt-1">
               <RouterLink
-                :to="`/studies/${s.id}`"
+                :to="`/studies/manage/${s.id}`"
                 class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
                 :class="{ 'text-muted': s.is_active === false }"
                 :title="`리더: ${s.leader ?? ''} · 생성일: ${s.created_at ?? ''}`"
                 @click="maybeCloseOnMobile"
               >
                 <span class="text-truncate">{{ s.name }}</span>
-                <span class="badge bg-primary-subtle text-primary border rounded-pill ms-2"
-                  >리더</span
-                >
               </RouterLink>
             </li>
           </ul>
@@ -192,16 +189,13 @@
             <!-- 목록 -->
             <li v-else v-for="s in studies.member" :key="`member-${s.id}`" class="mt-1">
               <RouterLink
-                :to="`/studies/${s.id}`"
+                :to="`/studies/joined/${s.id}`"
                 class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
                 :class="{ 'text-muted': s.is_active === false }"
                 :title="`리더: ${s.leader ?? ''} · 참여일: ${s.joined_at ?? ''}`"
                 @click="maybeCloseOnMobile"
               >
                 <span class="text-truncate">{{ s.name }}</span>
-                <span class="badge bg-secondary-subtle text-secondary border rounded-pill ms-2"
-                  >멤버</span
-                >
               </RouterLink>
             </li>
           </ul>
