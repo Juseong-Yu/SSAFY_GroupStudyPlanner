@@ -14,7 +14,7 @@
               <label class="form-label fw-semibold">프로필 이미지</label>
 
               <div v-if="loading" class="placeholder-glow d-flex align-items-center gap-3">
-                <span class="placeholder rounded-circle" style="width: 88px; height: 88px"></span>
+                <span class="placeholder rounded-circle" style="width: 112px; height: 112px"></span>
                 <span class="placeholder col-3"></span>
               </div>
 
@@ -22,16 +22,20 @@
                 <!-- ✅ 이미지 or 기본 Bootstrap 아이콘 -->
                 <div
                   class="rounded-circle border d-flex justify-content-center align-items-center bg-light"
-                  style="width: 88px; height: 88px"
+                  style="width: 112px; height: 112px"
                 >
-                  <i v-if="!profile.avatar_url" class="bi bi-person-fill text-secondary fs-1"></i>
+                  <i
+                    v-if="!profile.avatar_url"
+                    class="bi bi-person-fill text-secondary"
+                    style="font-size: 64px"
+                  ></i>
                   <img
                     v-else
                     :src="profile.avatar_url"
                     alt="avatar"
                     class="rounded-circle"
-                    width="88"
-                    height="88"
+                    width="112"
+                    height="112"
                     style="object-fit: cover"
                   />
                 </div>
@@ -40,32 +44,40 @@
 
             <hr />
 
-            <!-- 닉네임 / 이메일 -->
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">닉네임</label>
+            <!-- 닉네임 / 이메일 (읽기 전용 텍스트) -->
+            <dl class="row g-3 mb-3 align-items-center">
+              <dt class="col-md-3">
+                <span class="form-label fw-semibold mb-0 d-block">닉네임</span>
+              </dt>
+              <dd class="col-md-9 mb-0">
+                <div v-if="loading" class="placeholder-glow">
+                  <span class="placeholder col-6"></span>
+                </div>
+                <div v-else class="read-text">
+                  {{ profile.nickname || '닉네임 없음' }}
+                </div>
+              </dd>
+
+              <dt class="col-md-3">
+                <span class="form-label fw-semibold mb-0 d-block">이메일</span>
+              </dt>
+              <dd class="col-md-9 mb-0">
                 <div v-if="loading" class="placeholder-glow">
                   <span class="placeholder col-8"></span>
                 </div>
-                <input v-else type="text" class="form-control" :value="profile.nickname" disabled />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">이메일</label>
-                <div v-if="loading" class="placeholder-glow">
-                  <span class="placeholder col-10"></span>
+                <div v-else class="read-text">
+                  {{ profile.email || '이메일 없음' }}
                 </div>
-                <input v-else type="email" class="form-control" :value="profile.email" disabled />
-              </div>
-            </div>
-
-            <div v-if="error" class="alert alert-danger mt-3 py-2">
-              {{ error }}
-            </div>
+              </dd>
+            </dl>
 
             <!-- ✅ 프로필 편집 버튼 -->
             <div class="d-flex justify-content-end gap-2 mt-4">
-              <button class="btn btn-primary" :disabled="loading" @click="openPasswordModal">
+              <button
+                class="btn btn-outline-primary"
+                :disabled="loading"
+                @click="openPasswordModal"
+              >
                 프로필 편집
               </button>
             </div>
@@ -252,5 +264,9 @@ const loadProfile = async () => {
 }
 .modal-footer {
   border-top: none;
+}
+.read-text {
+  line-height: 1.9;
+  /* 필요하면 미세 톤업: color: #212529; */
 }
 </style>
