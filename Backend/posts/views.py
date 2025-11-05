@@ -15,9 +15,9 @@ def create_notice(request):
     user = request.user
     study_id = request.POST.get("study_id")
     study = get_object_or_404(Study, id=study_id)
-    membership = get_object_or_404(
-        StudyMembership, user=user, study=study, is_active=True,
-    )
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+        ).first()
     if not membership:
         return JsonResponse(
             {"error": "스터디 멤버가 아닙니다."},
@@ -67,9 +67,9 @@ def update_notice(request):
     user = request.user
     study = get_object_or_404(Study, id=study_id)
     notice = get_object_or_404(Notice, id=notice_id, study=study)
-    membership = get_object_or_404(
-        StudyMembership, user=user, study=study, is_active=True,
-    )
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+        ).first()
     if not membership:
         return JsonResponse(
             {"error": "스터디 멤버가 아닙니다."},
@@ -112,3 +112,31 @@ def update_notice(request):
             status=400,
             json_dumps_params={"ensure_ascii": False}
         )
+
+@login_required
+def read_notice(request):
+    study_id = request.GET.get("study_id")
+    notice_id = request.GET.get("notice_id")
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    notice = get_object_or_404(Notice, id=notice_id, study=study)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+        ).first()
+    if not membership:
+        return JsonResponse({
+            "error": "스터디 멤버가 아닙니다.",
+        }, status=403, json_dumps_params={"ensure_ascii": False})
+
+    return JsonResponse({
+        "message": "조회 완료",
+        "notice": {
+            "id": notice.id,
+            "title": notice.title,
+            "content": notice.content,
+            "study": study.name,
+            "author": notice.author.username,
+            "created_at": notice.created_at.strftime("%Y-%m-%d %H:%M"),
+            "updated_at": notice.updated_at.strftime("%Y-%m-%d %H:%M"),
+        }
+    }, status=200, json_dumps_params={"ensure_ascii": False})
