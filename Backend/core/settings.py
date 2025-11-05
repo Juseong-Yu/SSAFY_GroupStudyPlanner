@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'main',
     'accounts',
     'studies',
+    'posts',
     'corsheaders',
     'rest_framework',
     'django.contrib.admin',
