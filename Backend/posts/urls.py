@@ -3,4 +3,7 @@ from . import views
 
 app_name = 'posts'
 
-urlpatterns = []
+urlpatterns = [
+    path('create_notice/', views.create_notice, name='create_notice'),
+    
+]
