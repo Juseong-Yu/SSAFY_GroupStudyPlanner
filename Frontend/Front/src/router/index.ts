@@ -6,8 +6,10 @@ import MainPage from '@/views/MainPage.vue'
 import PasswordCheckPage from '@/views/accounts/PasswordCheckPage.vue'
 import ProfileUpdatePage from '@/views/settings/ProfileUpdatePage.vue'
 import ProfilePage from '@/views/settings/ProfilePage.vue'
-import ManageStudyPage from '@/views/studies/manage/ManageStudyPage.vue'
-import StudyJoinedPage from '@/views/studies/joined/StudyJoinedPage.vue'
+import StudyPage from '@/views/studies/StudyPage.vue'
+import StudyNoticePage from '@/views/studies/notice/StudyNoticePage.vue'
+import NoticeCreatePage from '@/views/studies/notice/NoticeCreatePage.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -47,14 +49,19 @@ const router = createRouter({
       component: ProfileUpdatePage,
     },
     {
-      path: '/studies/manage/:id',
-      name: 'StudyManage',
-      component: ManageStudyPage,
+      path: '/studies/:id',
+      name: 'Study',
+      component: StudyPage,
     },
     {
-      path: '/studies/joined/:id',
-      name: 'StudyJoined',
-      component: StudyJoinedPage,
+      path: '/studies/:id/notice',
+      name: 'NoticeMain',
+      component: StudyNoticePage,
+    },
+    {
+      path: '/studies/:id/create',
+      name: 'NoticeCreate',
+      component: NoticeCreatePage,
     },
   ],
 })
