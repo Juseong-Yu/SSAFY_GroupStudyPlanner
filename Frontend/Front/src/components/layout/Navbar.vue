@@ -145,7 +145,7 @@
             <!-- 목록 -->
             <li v-else v-for="s in studies.leader" :key="`leader-${s.id}`" class="mt-1">
               <RouterLink
-                :to="`/studies/manage/${s.id}`"
+                :to="`/studies/${s.id}`"
                 class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
                 :class="{ 'text-muted': s.is_active === false }"
                 :title="`리더: ${s.leader ?? ''} · 생성일: ${s.created_at ?? ''}`"
