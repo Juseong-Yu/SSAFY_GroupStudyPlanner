@@ -8,7 +8,9 @@
         style="max-width: 950px"
       >
         <h2 class="fw-bold mb-0">내가 만든 스터디 &gt; 공지사항</h2>
-        <button class="btn btn-sm btn-primary" type="button" @click="onAdd">+ add</button>
+        <RouterLink :to="`/studies/${studyId}/create`" class="btn btn-outline-primary">
+          +add
+        </RouterLink>
       </div>
 
       <!-- ✅ 카드 폭 줄이기 (배경 보이게) -->
@@ -111,6 +113,7 @@
 <script setup lang="ts">
 import AppShell from '@/layouts/AppShell.vue'
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 type Row = {
   id: number
@@ -121,6 +124,9 @@ type Row = {
 const total = 92
 const pageSize = ref(10)
 const currentPage = ref(1)
+
+const route = useRoute()
+const studyId = route.params.id
 
 const allRows = computed<Row[]>(() =>
   Array.from({ length: total }, (_, i) => ({
@@ -180,10 +186,6 @@ function formatDate(iso: string) {
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   return `${yyyy}.${mm}.${dd}`
-}
-
-function onAdd() {
-  alert('공지 작성 페이지는 준비 중입니다.')
 }
 </script>
 
