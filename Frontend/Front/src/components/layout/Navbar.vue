@@ -442,15 +442,16 @@ const submitCreate = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // x-www-form-urlencoded 포맷
-    const params = new URLSearchParams()
-    params.set('name', create.value.form.title.trim()) // ✅ 백엔드 name로 받음
+    // JSON payload
+    const payload = {
+      name: create.value.form.title.trim(), // 백엔드에서 name으로 받는다고 했으니 그대로 사용
+    }
 
-    await axios.post(`${API_BASE}/studies/create_study/`, params, {
+    await axios.post(`${API_BASE}/studies/create_study/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
     })
 
@@ -483,14 +484,15 @@ const submitJoin = async () => {
     const csrftoken = getCookie('csrftoken')
 
     // x-www-form-urlencoded 포맷
-    const params = new URLSearchParams()
-    params.set('id', join.value.code.trim())
+    const payload = {
+      id: join.value.code.trim(),
+    }
 
-    await axios.post(`${API_BASE}/studies/join/`, params, {
+    await axios.post(`${API_BASE}/studies/join/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
     })
 

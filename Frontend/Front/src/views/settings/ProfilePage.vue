@@ -190,15 +190,15 @@ const onConfirmPassword = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const params = new URLSearchParams()
-    // 👇 반드시 value를 넣어야 함
-    params.append('password', String(password.value).trim())
+    const payload = {
+      password: String(password.value).trim(),
+    }
 
-    const res = await axios.post(`${API_BASE}/accounts/check_password/`, params, {
+    const res = await axios.post(`${API_BASE}/accounts/check_password/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
     })
 
