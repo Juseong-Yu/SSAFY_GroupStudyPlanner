@@ -8,5 +8,6 @@ urlpatterns = [
     path('join/', views.join, name='join'),
     path('leave/', views.leave, name='leave'),
     path('get_my_study/', views.get_my_study, name='get_my_study'),
-    
+    path('<int:study_id>/', views.this_study, name='this_study'),
+
 ]
