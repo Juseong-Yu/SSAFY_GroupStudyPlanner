@@ -5,32 +5,32 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from .forms import StudyCreateForm
 from .models import Study, StudyMembership
+from .serializers import StudySerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 # Create your views here.
 
 # 스터디 생성
 @csrf_exempt
+@api_view(['POST', 'GET'])
 @login_required
 def create_study(request):
     """
     FormData로 보낸 데이터를 받아 스터디 생성
     """
     if request.method == 'POST':
-        form = StudyCreateForm(request.POST or None, user=request.user)
-        if form.is_valid():
-            study = form.save()
-            return JsonResponse({
-                'id': study.id,
-                'name': study.name,
-                'leader': study.leader.username,
-                'created_at': study.created_at,
-            })
+        # form = StudyCreateForm(request.POST or None, user=request.user)
+        serializer = StudySerializer(data=request.data)
+        if serializer.is_valid():
+            study = serializer.save(leader=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return JsonResponse(form.errors, status=400)
-    return JsonResponse({}, status=405)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 스터디 가입
-@require_POST
+@api_view(['POST'])
 @login_required
 def join(request):
     study_id = request.POST.get('id')
@@ -101,3 +101,12 @@ def get_my_study(request):
         })
 
     return JsonResponse({"studies": data}, status=200, json_dumps_params={'ensure_ascii': False})
+
+# 특정 스터디 조회
+@api_view(['GET'])
+@login_required
+def this_study(request):
+    study_id = request.GET.get('id')
+    study = get_object_or_404(Study, pk=study_id)
+    serializer = StudySerializer(study)
+    return Response(serializer.data, status=status.HTTP_200_OK)
