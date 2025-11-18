@@ -49,7 +49,7 @@ def study(request):
 @api_view(['POST'])
 @login_required
 def join(request):
-    study_id = request.POST.get('id')
+    study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
     user = request.user
 
@@ -57,18 +57,18 @@ def join(request):
     try:
         component = StudyMembership.objects.get(user=user, study=study)
         if component.is_active:
-            return JsonResponse({'error': '이미 가입된 스터디입니다.'}, status=400)
+            return Response({'error': '이미 가입된 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             component.is_active = True
             component.save()
-            return JsonResponse({'message': '재가입되었습니다.'}, status=201) 
+            return Response({'message': '재가입되었습니다.'}, status=status.HTTP_202_ACCEPTED) 
     except StudyMembership.DoesNotExist:
         StudyMembership.objects.create(
             user = request.user,
             study = study,
             role = 'member'
         )
-        return JsonResponse({'message': '스터디에 가입되었습니다.'}, status=201)
+        return Response({'message': '스터디에 가입되었습니다.'}, status=status.HTTP_201_CREATED)
 
 # 스터디 탈퇴
 @require_POST
@@ -104,14 +104,13 @@ def study_list(request):
     memberships = StudyMembership.objects.filter(user=user, is_active=True).select_related('study')
     # 직렬화하여 응답
     serializer = StudyMembershipSerializer(memberships, many=True)
-    print(serializer.data)
     return Response({"studies": serializer.data}, status=status.HTTP_200_OK)
 
-# 특정 스터디 조회
-@api_view(['GET'])
-@login_required
-def this_study(request):
-    study_id = request.GET.get('id')
-    study = get_object_or_404(Study, pk=study_id)
-    serializer = StudySerializer(study)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+# # 특정 스터디 조회
+# @api_view(['GET'])
+# @login_required
+# def this_study(request):
+#     study_id = request.GET.get('id')
+#     study = get_object_or_404(Study, pk=study_id)
+#     serializer = StudySerializer(study)
+#     return Response(serializer.data, status=status.HTTP_200_OK)

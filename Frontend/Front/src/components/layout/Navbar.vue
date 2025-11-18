@@ -189,7 +189,7 @@
             <!-- 목록 -->
             <li v-else v-for="s in studies.member" :key="`member-${s.id}`" class="mt-1">
               <RouterLink
-                :to="`/studies/joined/${s.id}`"
+                :to="`/studies/${s.id}`"
                 class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
                 :class="{ 'text-muted': s.is_active === false }"
                 :title="`리더: ${s.leader ?? ''} · 참여일: ${s.joined_at ?? ''}`"
