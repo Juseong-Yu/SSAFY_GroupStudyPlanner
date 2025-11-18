@@ -189,7 +189,7 @@
             <!-- 목록 -->
             <li v-else v-for="s in studies.member" :key="`member-${s.id}`" class="mt-1">
               <RouterLink
-                :to="`/studies/joined/${s.id}`"
+                :to="`/studies/${s.id}`"
                 class="d-flex align-items-center justify-content-between text-decoration-none text-dark"
                 :class="{ 'text-muted': s.is_active === false }"
                 :title="`리더: ${s.leader ?? ''} · 참여일: ${s.joined_at ?? ''}`"
@@ -447,7 +447,7 @@ const submitCreate = async () => {
       name: create.value.form.title.trim(), // 백엔드에서 name으로 받는다고 했으니 그대로 사용
     }
 
-    await axios.post(`${API_BASE}/studies/create_study/`, payload, {
+    await axios.post(`${API_BASE}/studies/study/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,

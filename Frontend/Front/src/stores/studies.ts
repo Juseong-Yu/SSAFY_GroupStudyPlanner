@@ -79,11 +79,11 @@ export const useStudiesStore = defineStore('studies', () => {
     try {
       await ensureCsrf()
       const csrftoken = getCookie('csrftoken')
-      const { data } = await axios.get(`${API_BASE}/studies/get_my_study/`, {
+      const { data } = await axios.get(`${API_BASE}/studies/study_list/`, {
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken },
       })
-      // console.log('[studies] GET /get_my_study data:', data)
+      // console.log('[studies] GET /get_my_study data:', datastudy_liststudy_list)
       parseAndSet(data)
       lastFetched.value = Date.now()
     } catch (e: any) {
