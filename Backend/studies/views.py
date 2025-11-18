@@ -17,12 +17,10 @@ from .models import Study, StudyMembership
 @csrf_exempt
 @api_view(['POST', 'GET'])
 @login_required
-def create_study(request):
-    """
-    serializer를 통해스터디 생성
-    """
+def study(request):
+    
+    # 스터디 생성
     if request.method == 'POST':
-        # form = StudyCreateForm(request.POST or None, user=request.user)
         serializer = StudySerializer(data=request.data)
         if serializer.is_valid():
             # 스터디 객체를 저장
@@ -38,6 +36,16 @@ def create_study(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    # 단일 스터디 조회
+    elif request.method == 'GET':
+        study_id = request.GET.get('id')
+        try:
+            study = Study.objects.get(pk=study_id)
+        except:
+            return Response({"detail": "스터디가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = StudySerializer(study)
+        return Response(serializer.data)
 
 # 스터디 가입
 @api_view(['POST'])
