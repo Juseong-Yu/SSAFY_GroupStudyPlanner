@@ -37,7 +37,7 @@ def study(request):
     
     # 단일 스터디 조회
     elif request.method == 'GET':
-        study_id = request.GET.get('id')
+        study_id = request.data.get('id')
         try:
             study = Study.objects.get(pk=study_id)
         except:
@@ -74,21 +74,21 @@ def join(request):
 @require_POST
 @login_required
 def leave(request):
-    study_id = request.POST.get('id')
+    study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
     user = request.user
 
     try:
         component = StudyMembership.objects.get(user=user, study=study)
     except StudyMembership.DoesNotExist:
-        return JsonResponse({'error': '가입된 스터디가 아닙니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': '가입된 스터디가 아닙니다.'}, status=status.HTTP_400_BAD_REQUEST)
     
     if component.is_active:
         component.is_active = False
         component.save()
-        return JsonResponse({'message': '탈퇴가 완료되었습니다.'}, status=status.HTTP_200_OK)
+        return Response({'message': '탈퇴가 완료되었습니다.'}, status=status.HTTP_200_OK)
     else:
-        return JsonResponse({'error': '이미 탈퇴한 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': '이미 탈퇴한 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
 # 소속 스터디 조회
 @api_view(['GET'])
