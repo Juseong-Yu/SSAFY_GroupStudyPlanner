@@ -447,7 +447,7 @@ const submitCreate = async () => {
       name: create.value.form.title.trim(), // 백엔드에서 name으로 받는다고 했으니 그대로 사용
     }
 
-    await axios.post(`${API_BASE}/studies/create_study/`, payload, {
+    await axios.post(`${API_BASE}/studies/study/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
