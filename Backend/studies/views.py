@@ -9,6 +9,7 @@ from .serializers import StudySerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from .models import Study, StudyMembership
 
 # Create your views here.
 
@@ -18,13 +19,22 @@ from rest_framework import status
 @login_required
 def create_study(request):
     """
-    FormData로 보낸 데이터를 받아 스터디 생성
+    serializer를 통해스터디 생성
     """
     if request.method == 'POST':
         # form = StudyCreateForm(request.POST or None, user=request.user)
         serializer = StudySerializer(data=request.data)
         if serializer.is_valid():
-            study = serializer.save(leader=request.user)
+            # 스터디 객체를 저장
+            study = serializer.save(leader = request.user)
+
+            # StudyMembership 객체 생성
+            StudyMembership.objects.create(
+                user=request.user, 
+                study=study,       
+                role='leader',     
+                is_active=True     
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -88,6 +98,7 @@ def get_my_study(request):
 
     # JSON 데이터 구성
     data = []
+    print(memberships)
     for membership in memberships:
         study = membership.study
         data.append({
