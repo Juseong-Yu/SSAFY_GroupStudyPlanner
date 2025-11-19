@@ -1,23 +1,35 @@
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-from .models import Study, StudyMembership
-from .serializers import StudySerializer, StudyMembershipSerializer
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+
 from .models import Study, StudyMembership
+from .serializers import StudySerializer, StudyMembershipSerializer
 
 # Create your views here.
 
+NOT_MEMBER = "NOT_MEMBER"
+NOT_AUTHORIZED = "NOT_AUTHORIZED"
+
+def error_list(code):
+    if code == "NOT_MEMBER":
+        return Response({"error": "스터디 멤버가 아닙니다."},
+                        status=status.HTTP_403_FORBIDDEN,
+                        json_dumps_params={"ensure_ascii": False})
+    elif code == 'NOT_AUTHORIZED':
+        return Response({"error": "권한이 없습니다."},
+                        status=status.HTTP_403_FORBIDDEN,
+                        json_dumps_params={"ensure_ascii": False})
+
 # 스터디 생성
 @csrf_exempt
-@api_view(['POST', 'GET'])
 @login_required
+@api_view(['POST'])
 def study(request):
-    # 스터디 생성
     if request.method == 'POST':
         serializer = StudySerializer(data=request.data)
         if serializer.is_valid():
@@ -29,25 +41,29 @@ def study(request):
                 user=request.user, 
                 study=study,       
                 role='leader',     
-                is_active=True     
+                is_active=True
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    # 단일 스터디 조회
-    elif request.method == 'GET':
-        study_id = request.data.get('id')
-        try:
-            study = Study.objects.get(pk=study_id)
-        except:
-            return Response({"detail": "스터디가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = StudySerializer(study)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# 단일 스터디 조회
+@login_required
+@api_view(['GET'])
+def study_detail(request, study_id):
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+    if not membership:
+        return error_list(NOT_MEMBER)
+    serializer = StudySerializer(study)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 # 스터디 가입
-@api_view(['POST'])
 @login_required
+@api_view(['POST'])
 def join(request):
     study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
@@ -71,8 +87,8 @@ def join(request):
         return Response({'message': '스터디에 가입되었습니다.'}, status=status.HTTP_201_CREATED)
 
 # 스터디 탈퇴
-@require_POST
 @login_required
+@api_view(['POST'])
 def leave(request):
     study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
@@ -91,8 +107,8 @@ def leave(request):
         return Response({'error': '이미 탈퇴한 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
 # 소속 스터디 조회
-@api_view(['GET'])
 @login_required
+@api_view(['GET'])
 def study_list(request):
     """
     로그인한 사용자가 속한 스터디 목록을 JSON으로 반환하는 함수
