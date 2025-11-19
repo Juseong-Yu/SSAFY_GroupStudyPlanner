@@ -65,7 +65,7 @@ def notice_detail(request, study_id, notice_id):
     if not membership:
         return error_list(NOT_MEMBER)
 
-    notice = get_object_or_404(Notice, id=notice_id)
+    notice = get_object_or_404(Notice, id=notice_id, study=study)
     
     # 공지사항 조회
     if request.method == 'GET':
