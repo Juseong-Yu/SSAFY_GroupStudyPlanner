@@ -139,16 +139,16 @@ const submitNotice = async () => {
     const csrfToken = getCookie('csrftoken')
 
     // ✅ URLSearchParams 사용
-    const params = new URLSearchParams()
-    params.set('study_id', String(studyId))
-    params.set('title', title.value.trim())
-    params.set('content', markdown.value.trim())
+    const payload = {
+      title: title.value.trim(),
+      content: markdown.value.trim(),
+    }
 
-    const response = await axios.post(`${API_BASE}/posts/create_notice/`, params, {
+    const response = await axios.post(`${API_BASE}/studies/${studyId}/posts/notice_create/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrfToken,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
     })
 

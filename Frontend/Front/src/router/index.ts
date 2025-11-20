@@ -9,6 +9,7 @@ import ProfilePage from '@/views/settings/ProfilePage.vue'
 import StudyPage from '@/views/studies/StudyPage.vue'
 import StudyNoticePage from '@/views/studies/notice/StudyNoticePage.vue'
 import NoticeCreatePage from '@/views/studies/notice/NoticeCreatePage.vue'
+import NoticeDetailPage from '@/views/studies/notice/NoticeDetailPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +63,11 @@ const router = createRouter({
       path: '/studies/:id/create',
       name: 'NoticeCreate',
       component: NoticeCreatePage,
+    },
+    {
+      path: '/studies/:id/detail/:noticeId',
+      name: 'NoticeDetail',
+      component: NoticeDetailPage,
     },
   ],
 })

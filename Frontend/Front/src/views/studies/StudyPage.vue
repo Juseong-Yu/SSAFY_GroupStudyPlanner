@@ -1,9 +1,11 @@
-<!-- src/views/MainPage.vue -->
+<!-- src/views/StudyPage.vue -->
 <template>
   <AppShell>
     <div class="container-fluid py-4">
       <h2 class="fw-bold mb-1">{{ studyTitle }}</h2>
-      <p class="text-muted mb-4 small">code : {{ studyId }}</p>
+      <p class="text-muted mb-4 small">
+        code : {{ studyId }}
+      </p>
 
       <div class="row g-4">
         <!-- 왼쪽: 달력 -->
@@ -16,7 +18,7 @@
         <!-- 오른쪽: 공지사항 + 일정 -->
         <div class="col-12 col-xl-4">
           <div class="right-stack sticky-xl-top" style="top: 88px">
-            <!-- ✅ 공지사항 (체크박스/버튼 제거 + 작성자 아바타/이름/날짜) -->
+            <!-- ✅ 공지사항 -->
             <div class="card mb-3 shadow-sm">
               <div class="card-header d-flex align-items-center justify-content-between">
                 <span class="fw-semibold">공지사항</span>
@@ -29,7 +31,12 @@
               </div>
 
               <div class="list-group list-group-flush">
-                <div v-for="n in notices" :key="n.id" class="list-group-item py-3" role="button">
+                <div
+                  v-for="n in notices"
+                  :key="n.id"
+                  class="list-group-item py-3"
+                  role="button"
+                >
                   <div class="fw-semibold text-truncate mb-1">{{ n.title }}</div>
 
                   <div class="d-flex align-items-center text-muted small">
@@ -51,10 +58,18 @@
                     <time :datetime="n.createdAt">{{ formatDate(n.createdAt) }}</time>
                   </div>
                 </div>
+
+                <!-- 공지 없을 때 -->
+                <div
+                  v-if="!notices.length && isLoaded"
+                  class="list-group-item py-4 text-center text-muted small"
+                >
+                  아직 등록된 공지사항이 없어요.
+                </div>
               </div>
             </div>
 
-            <!-- 일정 (그대로 목업, 다음 단계에서 작업) -->
+            <!-- 일정 (그대로 목업) -->
             <div class="card shadow-sm">
               <div class="card-header d-flex align-items-center justify-content-between">
                 <span class="fw-semibold">일정</span>
@@ -77,30 +92,54 @@
 
 <script setup lang="ts">
 import AppShell from '@/layouts/AppShell.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import axios from 'axios'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
 /** FullCalendar */
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
+// 백엔드 베이스 URL (프로젝트에 맞게 사용 중인 값)
+const API_BASE = import.meta.env.VITE_API_BASE_URL as string
+
 const route = useRoute()
+
+
+// 🔗 스터디 기본 정보
 const studyId = computed(() => Number(route.params.id))
-const studyTitle = computed(() => '내가 만든 스터디') // 백엔드 붙으면 교체
+const studyTitle = ref('스터디 불러오는 중...')
+const studyLeader = ref<string | null>(null)
+const joinedAt = ref<string | null>(null)
+const createdAt = ref<string | null>(null)
 
 const isMounted = ref(false)
-onMounted(() => {
+const isLoaded = ref(false) // 공지 / 스터디 정보 로딩 여부
+
+onMounted(async () => {
   isMounted.value = true
 })
 
-// ---- 공지사항 목업 데이터 (API 붙이면 여기만 교체) ----
+watch(
+  studyId,
+  async (newId, oldId) => {
+    if (!newId || newId === oldId) return
+    isLoaded.value = false
+    await fetchStudy()
+  },
+  { immediate: true }  // 처음 들어올 때도 한 번 실행
+)
+
+// ---- 공지사항 타입 + 목업 ----
 type Notice = {
   id: number
   title: string
   createdAt: string // ISO
   author: { name: string; avatarUrl?: string }
 }
+
 const notices = ref<Notice[]>([
   {
     id: 1,
@@ -122,6 +161,42 @@ const notices = ref<Notice[]>([
   },
 ])
 
+// 🔗 스터디 조회 API 호출
+async function fetchStudy() {
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+    console.log('hi')
+    const { data } = await axios.get(`${API_BASE}/studies/${studyId.value}/`, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+      },
+    })
+    console.log('hi')
+    // 응답 예시:
+    // {
+    //   "id": 1,
+    //   "name": "studyname",
+    //   "leader": "studyleaderusername",
+    //   "member": "member",
+    //   "joined_at": "YYYY-MM-DD",
+    //   "created_at": "YYYY-MM-DD"
+    // }
+
+    studyTitle.value = data.name ?? '이름 없는 스터디'
+    studyLeader.value = data.leader ?? null
+    joinedAt.value = data.joined_at ?? null
+    createdAt.value = data.created_at ?? null
+
+    isLoaded.value = true
+  } catch (error) {
+    console.error('스터디 조회 실패:', error)
+    studyTitle.value = '스터디 정보를 불러오지 못했어요'
+    isLoaded.value = true
+  }
+}
+
 // 이니셜 생성
 function initials(name: string) {
   const parts = name.trim().split(/\s+/)
@@ -139,7 +214,7 @@ function formatDate(iso: string) {
   return `${yyyy}.${mm}.${dd}`
 }
 
-// ---- 캘린더 옵션(변경 없음) ----
+// ---- 캘린더 옵션 ----
 const calendarOptions = ref({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',

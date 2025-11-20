@@ -13,69 +13,55 @@
         </RouterLink>
       </div>
 
-      <!-- ✅ 카드 폭 줄이기 (배경 보이게) -->
-      <div class="card shadow-sm w-100" style="max-width: 950px">
-        <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 44px">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    v-model="selectAll"
-                    @change="toggleAll"
-                  />
-                </th>
-                <th>Title</th>
-                <th class="text-end" style="width: 320px">작성자</th>
-              </tr>
-            </thead>
+      <!-- 카드 -->
+      <div class="card shadow-sm w-100 notice-card" style="max-width: 950px">
+        <div class="card-body p-0">
+          <div class="table-responsive mb-0">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Title</th>
+                  <th class="text-end" style="width: 320px">작성자</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              <tr v-for="row in pagedNotices" :key="row.id">
-                <td>
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    v-model="selectedIds"
-                    :value="row.id"
-                  />
-                </td>
+              <tbody>
+                <tr v-for="row in pagedNotices" :key="row.id">
+                  <!-- 제목 셀 (왼쪽 마진 추가) -->
+                  <td class="py-3 title-cell">
+                    <div class="fw-semibold text-truncate">Text line</div>
+                  </td>
 
-                <td class="py-3">
-                  <div class="fw-semibold text-truncate">Text line</div>
-                </td>
-
-                <td class="py-3 text-end">
-                  <div class="d-inline-flex align-items-center gap-2 justify-content-end">
-                    <img
-                      v-if="row.author.avatarUrl"
-                      :src="row.author.avatarUrl"
-                      alt="avatar"
-                      class="avatar"
-                      referrerpolicy="no-referrer"
-                    />
-                    <div v-else class="avatar avatar-fallback">
-                      {{ initials(row.author.name) }}
+                  <td class="py-3 text-end">
+                    <div class="d-inline-flex align-items-center gap-2 justify-content-end">
+                      <img
+                        v-if="row.author.avatarUrl"
+                        :src="row.author.avatarUrl"
+                        alt="avatar"
+                        class="avatar"
+                        referrerpolicy="no-referrer"
+                      />
+                      <div v-else class="avatar avatar-fallback">
+                        {{ initials(row.author.name) }}
+                      </div>
+                      <div class="text-end">
+                        <div class="small fw-semibold">{{ row.author.name }}</div>
+                        <div class="small text-muted">{{ formatDate(row.createdAt) }}</div>
+                      </div>
                     </div>
-                    <div class="text-end">
-                      <div class="small fw-semibold">{{ row.author.name }}</div>
-                      <div class="small text-muted">{{ formatDate(row.createdAt) }}</div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
 
-              <tr v-if="!pagedNotices.length">
-                <td colspan="3" class="text-center text-muted py-5">공지사항이 없습니다.</td>
-              </tr>
-            </tbody>
-          </table>
+                <tr v-if="!pagedNotices.length">
+                  <td colspan="2" class="text-center text-muted py-5">공지사항이 없습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ✅ 페이지네이션 (카드 아래, 같은 폭) -->
+      <!-- 페이지네이션 -->
       <div
         class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 mt-3 w-100"
         style="max-width: 950px"
@@ -83,6 +69,7 @@
         <div class="text-muted small">
           Page {{ currentPage }} / {{ totalPages }} · Total {{ total }} items
         </div>
+
         <nav aria-label="pagination">
           <ul class="pagination pagination-sm mb-0">
             <li class="page-item" :class="{ disabled: currentPage === 1 }">
@@ -121,6 +108,7 @@ type Row = {
   author: { name: string; avatarUrl?: string }
 }
 
+// 임시 데이터
 const total = 92
 const pageSize = ref(10)
 const currentPage = ref(1)
@@ -142,6 +130,7 @@ const allRows = computed<Row[]>(() =>
 )
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total / pageSize.value)))
+
 const pagedNotices = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return allRows.value.slice(start, start + pageSize.value)
@@ -169,17 +158,11 @@ function goPage(p: number) {
   if (p >= 1 && p <= totalPages.value) currentPage.value = p
 }
 
-const selectedIds = ref<number[]>([])
-const selectAll = ref(false)
-function toggleAll() {
-  if (selectAll.value) selectedIds.value = pagedNotices.value.map((r) => r.id)
-  else selectedIds.value = []
-}
-
 function initials(name: string) {
   const [a = '', b = ''] = name.trim().split(/\s+/, 2)
   return ((a[0] || '') + (b[0] || '')).toUpperCase()
 }
+
 function formatDate(iso: string) {
   const d = new Date(iso)
   const yyyy = d.getFullYear()
@@ -190,12 +173,30 @@ function formatDate(iso: string) {
 </script>
 
 <style scoped>
+/* 카드 테두리 문제 해결 */
+.notice-card {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #dee2e6;
+}
+
+.notice-card .table {
+  margin-bottom: 0;
+}
+
+/* 제목 왼쪽 마진 */
+.title-cell {
+  padding-left: 12px;
+}
+
+/* avatar styles */
 .avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
 }
+
 .avatar-fallback {
   width: 28px;
   height: 28px;
