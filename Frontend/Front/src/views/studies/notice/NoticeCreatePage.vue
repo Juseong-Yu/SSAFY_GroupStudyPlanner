@@ -140,12 +140,11 @@ const submitNotice = async () => {
 
     // ✅ URLSearchParams 사용
     const payload = {
-      study_id: String(studyId),
       title: title.value.trim(),
       content: markdown.value.trim(),
     }
 
-    const response = await axios.post(`${API_BASE}/posts/create_notice/`, payload, {
+    const response = await axios.post(`${API_BASE}/studies/${studyId}/posts/notice_create/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrfToken,

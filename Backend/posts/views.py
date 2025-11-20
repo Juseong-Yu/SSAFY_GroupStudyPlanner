@@ -27,9 +27,8 @@ def error_list(code):
 
 @login_required
 @api_view(['POST'])
-def notice_create(request):
+def notice_create(request, study_id):
     user = request.user
-    study_id = request.data.get("study_id")
     study = get_object_or_404(Study, id=study_id)
     membership = StudyMembership.objects.filter(
         user=user, study=study, is_active=True

@@ -65,7 +65,7 @@ const router = createRouter({
       component: NoticeCreatePage,
     },
     {
-      path: '/studies/:id/detail/:id',
+      path: '/studies/:id/detail/:noticeId',
       name: 'NoticeDetail',
       component: NoticeDetailPage,
     },
