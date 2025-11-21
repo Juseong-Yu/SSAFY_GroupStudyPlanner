@@ -29,7 +29,11 @@
             <!-- 작성자 / 작성일 -->
             <div class="d-flex align-items-center gap-2 text-muted small">
               <div class="avatar-circle">
-                <span>{{ authorInitial }}</span>
+                <span><img
+                :src="`${profileImg}`"
+                class="rounded-circle"
+                style="width: 30px; height: 30px; object-fit: cover;"
+              /></span>
               </div>
               <span class="fw-semibold text-dark">
                 {{ displayAuthor || '작성자' }}
@@ -127,9 +131,14 @@ const displayAuthor = computed(() => {
   return raw.username || ''
 })
 
-const authorInitial = computed(() => {
-  const name = displayAuthor.value || ''
-  return name ? name[0].toUpperCase() : '?'
+const profileImg = computed(() => {
+  if (!notice.value?.author?.profile_img) return '/default-avatar.png'
+
+  const path = notice.value.author.profile_img
+
+  if (path.startsWith('http')) return path
+
+  return `${API_BASE.replace(/\/$/, '')}${path}`
 })
 
 const formatDate = (dt) => {
@@ -179,7 +188,6 @@ onMounted(async () => {
     const res = await axios.get(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
-        params: { study_id: studyId, notice_id: noticeId },
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken },
       }

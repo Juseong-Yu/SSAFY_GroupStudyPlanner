@@ -10,6 +10,7 @@ import StudyPage from '@/views/studies/StudyPage.vue'
 import StudyNoticePage from '@/views/studies/notice/StudyNoticePage.vue'
 import NoticeCreatePage from '@/views/studies/notice/NoticeCreatePage.vue'
 import NoticeDetailPage from '@/views/studies/notice/NoticeDetailPage.vue'
+import SchedulePage from '@/views/studies/schedule/SchedulePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,6 +69,11 @@ const router = createRouter({
       path: '/studies/:id/detail/:noticeId',
       name: 'NoticeDetail',
       component: NoticeDetailPage,
+    },
+    {
+      path: '/studies/:id/schedule/',
+      name: 'ScheduleMain',
+      component: SchedulePage,
     },
   ],
 })

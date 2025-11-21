@@ -190,17 +190,20 @@ const onConfirmPassword = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const payload = {
-      password: String(password.value).trim(),
-    }
+    const params = new URLSearchParams()
+    params.set('password', String(password.value).trim())
 
-    const res = await axios.post(`${API_BASE}/accounts/check_password/`, payload, {
-      withCredentials: true,
-      headers: {
-        'X-CSRFToken': csrftoken,
-        'Content-Type': 'application/json',
-      },
-    })
+    const res = await axios.post(
+      `${API_BASE}/accounts/check_password/`,
+      params,
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    )
 
     if (res.status === 200) {
       errorMsg.value = ''
