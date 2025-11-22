@@ -150,13 +150,14 @@ def personal_schedule_detail(request, schedule_id):
         serializer = PersonalScheduleSerializer(personal_schedule)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # 개인 일정 삭제
+    # 개인 일정 수정
     elif request.method == 'PUT':
         serializer = ScheduleSerializer(schedule, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # 개인 일정 삭제
     elif request.method == 'DELETE':
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
