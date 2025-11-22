@@ -39,7 +39,7 @@ class StudyScheduleSerializer(serializers.ModelSerializer):
         model = StudySchedule
         fields = '__all__'
 
-class PersonalSchedulesSerializer(serializers.ModelSerializer):
+class PersonalScheduleSerializer(serializers.ModelSerializer):
     """
     개인 일정 정보
     """
