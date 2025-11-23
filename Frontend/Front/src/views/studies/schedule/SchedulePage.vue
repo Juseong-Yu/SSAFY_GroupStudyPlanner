@@ -7,7 +7,7 @@
         class="d-flex align-items-center justify-content-between mb-4 w-100"
         style="max-width: 950px"
       >
-        <h2 class="fw-bold mb-0">내가 만든 스터디 &gt; 일정</h2>
+        <h2 class="fw-bold mb-0"> 일정</h2>
 
         <!-- 일정 추가 버튼 -->
         <button

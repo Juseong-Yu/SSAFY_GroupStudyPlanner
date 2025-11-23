@@ -130,7 +130,7 @@
 import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 

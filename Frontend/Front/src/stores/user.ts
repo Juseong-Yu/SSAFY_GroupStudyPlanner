@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.js'
 import router from '@/router'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'

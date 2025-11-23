@@ -185,7 +185,7 @@
 import axios from 'axios'
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 import termsMd from '@/legal/terms_ko.md?raw'
 import { marked } from 'marked'
 

@@ -39,7 +39,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 const router = useRouter()
