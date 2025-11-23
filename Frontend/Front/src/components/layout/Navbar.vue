@@ -320,7 +320,8 @@ import axios from 'axios'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
 import { useStudiesStore } from '@/stores/studies'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors' // ✅ axios 페이지 규칙
+import { resetAllStores } from '@/stores/resetAllStores' // 🔥 여기 추가
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts' // ✅ axios 페이지 규칙
 
 const ui = useUiStore()
 const user = useUserStore()
@@ -365,25 +366,28 @@ const onAvatarError = () => {
   avatarBroken.value = true
 }
 
-/** 로그아웃: 스토어 액션 호출 */
+/** 로그아웃: 스토어 액션 호출 + 모든 store reset */
 const handleLogoutClick = async () => {
   closeMenu()
+  maybeCloseOnMobile() // 모바일이면 사이드바도 닫기 (선택 사항이지만 UX 좋음)
+
   try {
-    await user.logout()
+    await user.logout()       // 🔐 백엔드 로그아웃 (axios는 store 안에서 처리한다고 가정)
+    resetAllStores()          // 🔥 모든 pinia store 초기화
+    // 필요하면 여기서 router.push('/login') 도 추가 가능
   } catch (e) {
     console.error(e)
   }
 }
 
 /* ============================
-   모달 관련 상태/액션 (Bootstrap)
+   아래 나머지 코드들은 그대로
    ============================ */
 
-/** 생성 상태: 이름만 */
 const create = ref({
   loading: false,
   error: '',
-  form: { title: '' }, // 프론트 입력명만 title, 실제 전송은 name
+  form: { title: '' },
 })
 function resetCreate() {
   create.value.loading = false
@@ -391,7 +395,6 @@ function resetCreate() {
   create.value.form = { title: '' }
 }
 
-/** 참여 상태 */
 const join = ref({ loading: false, error: '', code: '' })
 function resetJoin() {
   join.value.loading = false
@@ -399,7 +402,6 @@ function resetJoin() {
   join.value.code = ''
 }
 
-/** Bootstrap 모달 닫기 유틸(번들이 없으면 강제 폴백) */
 function hideBsModalById(id: string) {
   const el = document.getElementById(id)
   if (!el) return
@@ -427,7 +429,6 @@ function hideBsModalById(id: string) {
   backdrops.forEach((b) => b.parentElement?.removeChild(b))
 }
 
-/** 스터디 생성 제출 (이름만 보냄) */
 const submitCreate = async () => {
   if (!create.value.form.title.trim()) {
     create.value.error = '스터디 이름을 입력하세요.'
@@ -438,13 +439,11 @@ const submitCreate = async () => {
     create.value.loading = true
     create.value.error = ''
 
-    // CSRF 세팅
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // JSON payload
     const payload = {
-      name: create.value.form.title.trim(), // 백엔드에서 name으로 받는다고 했으니 그대로 사용
+      name: create.value.form.title.trim(),
     }
 
     await axios.post(`${API_BASE}/studies/study/`, payload, {
@@ -455,7 +454,6 @@ const submitCreate = async () => {
       },
     })
 
-    // ✅ 리스트 최신화 (생성 후 즉시 반영)
     await studies.refresh()
 
     hideBsModalById('createStudyModal')
@@ -471,7 +469,6 @@ const submitCreate = async () => {
   }
 }
 
-/** 스터디 참여 제출 */
 const submitJoin = async () => {
   if (!join.value.code.trim() || join.value.loading) return
 
@@ -479,11 +476,9 @@ const submitJoin = async () => {
     join.value.loading = true
     join.value.error = ''
 
-    // CSRF 준비
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // x-www-form-urlencoded 포맷
     const payload = {
       id: join.value.code.trim(),
     }
@@ -496,7 +491,6 @@ const submitJoin = async () => {
       },
     })
 
-    // ✅ 리스트 최신화 (참여 후 즉시 반영)
     await studies.refresh()
 
     hideBsModalById('joinStudyModal')
@@ -511,14 +505,12 @@ const submitJoin = async () => {
 }
 
 onMounted(() => {
-  // 최초 진입 시 유저/스터디 정보 1회 로드(신선도 내 중복 호출 방지)
   user.loadIfNeeded()
   studies.loadIfNeeded()
 
   document.addEventListener('click', onClickOutside, { capture: true })
   document.addEventListener('keydown', onEscape)
 
-  // 레이아웃 변수
   document.documentElement.style.setProperty('--sidebar-width', '250px')
   document.documentElement.style.setProperty('--gap', '20px')
 })
@@ -527,6 +519,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onEscape)
 })
 </script>
+
 
 <style scoped>
 /* 사이드바: 기본 닫힘 */

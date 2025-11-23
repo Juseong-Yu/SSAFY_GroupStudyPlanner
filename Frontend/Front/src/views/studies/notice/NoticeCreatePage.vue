@@ -65,7 +65,7 @@ import { useRouter } from 'vue-router'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'

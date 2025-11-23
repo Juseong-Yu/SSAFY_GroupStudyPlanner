@@ -145,7 +145,7 @@
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 import { useRouter } from 'vue-router'
 import * as bootstrap from 'bootstrap'
 

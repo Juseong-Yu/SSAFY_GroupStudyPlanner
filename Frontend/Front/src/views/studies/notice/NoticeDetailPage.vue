@@ -95,7 +95,7 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import MarkdownIt from 'markdown-it'
 import AppShell from '@/layouts/AppShell.vue'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const route = useRoute()
 const router = useRouter()

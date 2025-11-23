@@ -7,7 +7,7 @@
         class="d-flex align-items-center justify-content-between mb-4 w-100"
         style="max-width: 950px"
       >
-        <h2 class="fw-bold mb-0">내가 만든 스터디 &gt; 공지사항</h2>
+        <h2 class="fw-bold mb-0"> 공지사항</h2>
         <RouterLink :to="`/studies/${studyId}/create`" class="btn btn-outline-primary">
           +add
         </RouterLink>
@@ -114,7 +114,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 

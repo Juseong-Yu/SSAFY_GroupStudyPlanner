@@ -73,7 +73,13 @@
             <div class="card shadow-sm">
               <div class="card-header d-flex align-items-center justify-content-between">
                 <span class="fw-semibold">일정</span>
-                <a href="#" class="btn btn-sm btn-outline-primary">전체보기</a>
+                <RouterLink
+                  :to="{ name: 'ScheduleMain', params: { id: studyId } }"
+                  class="btn btn-sm btn-outline-primary"
+                  >
+                  전체보기
+                </RouterLink>
+
               </div>
               <div class="list-group list-group-flush">
                 <div class="list-group-item py-3" v-for="n in 3" :key="'sch-' + n">
@@ -95,7 +101,7 @@ import AppShell from '@/layouts/AppShell.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 /** FullCalendar */
 import FullCalendar from '@fullcalendar/vue3'
@@ -173,7 +179,7 @@ async function fetchStudy() {
         'X-CSRFToken': csrftoken,
       },
     })
-    console.log('hi')
+    console.log(data)
     // 응답 예시:
     // {
     //   "id": 1,
