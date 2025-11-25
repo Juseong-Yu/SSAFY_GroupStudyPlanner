@@ -10,6 +10,7 @@ import StudyPage from '@/views/studies/StudyPage.vue'
 import StudyNoticePage from '@/views/studies/notice/StudyNoticePage.vue'
 import NoticeCreatePage from '@/views/studies/notice/NoticeCreatePage.vue'
 import NoticeDetailPage from '@/views/studies/notice/NoticeDetailPage.vue'
+import NoticeEditPage from '@/views/studies/notice/NoticeEditPage.vue'
 import SchedulePage from '@/views/studies/schedule/SchedulePage.vue'
 
 const router = createRouter({
@@ -61,14 +62,19 @@ const router = createRouter({
       component: StudyNoticePage,
     },
     {
-      path: '/studies/:id/create',
+      path: '/studies/:id/notice/create',
       name: 'NoticeCreate',
       component: NoticeCreatePage,
     },
     {
-      path: '/studies/:id/detail/:noticeId',
+      path: '/studies/:id/notice/:noticeId',
       name: 'NoticeDetail',
       component: NoticeDetailPage,
+    },
+    {
+      path: '/studies/:id/notice/:noticeId/edit',
+      name: 'NoticeEdit',
+      component: NoticeEditPage,
     },
     {
       path: '/studies/:id/schedule/',
