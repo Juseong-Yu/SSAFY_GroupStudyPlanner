@@ -1,6 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 
 from rest_framework.decorators import api_view
@@ -8,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Study, StudyMembership
-from .serializers import StudySerializer, StudyMembershipSerializer
+from .serializers import StudySerializer, StudyMembershipSerializer, StudyRoleSerializer
 
 # Create your views here.
 
@@ -122,11 +121,18 @@ def study_list(request):
     serializer = StudyMembershipSerializer(memberships, many=True)
     return Response({"studies": serializer.data}, status=status.HTTP_200_OK)
 
-# # 특정 스터디 조회
-# @api_view(['GET'])
-# @login_required
-# def this_study(request):
-#     study_id = request.GET.get('id')
-#     study = get_object_or_404(Study, pk=study_id)
-#     serializer = StudySerializer(study)
-#     return Response(serializer.data, status=status.HTTP_200_OK)
+@login_required
+@api_view(['GET'])
+def get_my_role(request, study_id):
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+
+    # 외부인 거부
+    if not membership:
+        return error_list(NOT_MEMBER)
+
+    serializer = StudyRoleSerializer(membership)
+    return Response(serializer.data, status=status.HTTP_200_OK)
