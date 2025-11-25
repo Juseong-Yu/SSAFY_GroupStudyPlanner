@@ -13,7 +13,7 @@ class Study(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StudyMembership(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='study_membership', on_delete=models.CASCADE)
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     role = models.CharField(
         max_length=20,

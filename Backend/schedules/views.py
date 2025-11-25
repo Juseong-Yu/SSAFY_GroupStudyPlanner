@@ -161,3 +161,30 @@ def personal_schedule_detail(request, schedule_id):
     elif request.method == 'DELETE':
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@login_required
+@api_view(['GET'])
+def schedule_list(request):
+    user = request.user
+
+    study_ids = user.study_membership.filter(is_active=True).values_list('study_id', flat=True)
+    study_schedules = StudySchedule.objects.filter(study_id__in=study_ids)
+    personal_schedules = PersonalSchedule.objects.filter(user=user)
+
+    result = []
+
+    for ss in study_schedules:
+        result.append({
+            "type": "study",
+            "data": StudyScheduleSerializer(ss).data
+        })
+    
+    for ps in personal_schedules:
+        result.append({
+            "type": "personal",
+            "data": PersonalSchedule(ps).data
+        })
+    
+    result.sort(key=lambda x: x["data"]["schedule"]["start_at"])
+
+    return Response(result, status=status.HTTP_200_OK)
