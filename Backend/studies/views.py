@@ -121,11 +121,10 @@ def study_list(request):
     serializer = StudyMembershipSerializer(memberships, many=True)
     return Response({"studies": serializer.data}, status=status.HTTP_200_OK)
 
+@login_required
 @api_view(['GET'])
 def get_my_role(request, study_id):
-    # user = request.user
-    from accounts.models import User
-    user = get_object_or_404(User, id=2)
+    user = request.user
     study = get_object_or_404(Study, id=study_id)
     membership = StudyMembership.objects.filter(
         user=user, study=study, is_active=True

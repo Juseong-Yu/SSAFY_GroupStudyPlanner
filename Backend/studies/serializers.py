@@ -27,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'profile_img')
+        fields = ('id', 'username', 'email')
 
 class StudyRoleSerializer(serializers.ModelSerializer):
 
