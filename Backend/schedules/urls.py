@@ -10,4 +10,6 @@ urlpatterns = [
     path('personal_schedule_create/', views.personal_schedule_create, name='personal_schedule_create'),
     path('personal_schedule_list/', views.personal_schedule_list, name='personal_schedule_list'),
     path('<int:schedule_id/personal_schedule_detail/', views.personal_schedule_detail, name='personal_schedule_detail'),
+    path('schedule_list/', views.schedule_list, name='schedule_list'),
+    
 ]
