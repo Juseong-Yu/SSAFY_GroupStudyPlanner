@@ -4,7 +4,7 @@
     <div class="container-fluid">
       <!-- 왼쪽: 햄버거 버튼 + 로고 + 타이틀 -->
       <div class="d-flex align-items-center gap-2">
-        <!-- 햄버거: 사이드바 토글 -->
+        <!-- 햄버거 버튼 -->
         <button
           class="btn btn-outline-secondary"
           type="button"
@@ -16,17 +16,25 @@
           <i class="bi" :class="ui.sidebarOpen ? 'bi-x-lg' : 'bi-list'"></i>
         </button>
 
-        <!-- 로고 -->
-        <img
-          src="@/assets/logo.png "
-          alt="logo"
-          width="40"
-          height="40"
-          class="me-1"
-        />
+        <!-- 🔥 로고 + 텍스트를 RouterLink로 감싸기 -->
+        <RouterLink
+          to="/main"
+          class="d-flex align-items-center gap-2 text-decoration-none"
+        >
+          <!-- 로고 -->
+          <img
+            src="@/assets/logo.png"
+            alt="logo"
+            width="40"
+            height="40"
+            class="me-1"
+          />
 
-        <!-- 타이틀 -->
-        <span class="navbar-brand mb-0 h1 fs-5 fw-semibold">Group Study Planner</span>
+          <!-- 타이틀 -->
+          <span class="navbar-brand mb-0 h1 fs-5 fw-semibold text-dark">
+            Group Study Planner
+          </span>
+        </RouterLink>
       </div>
     </div>
   </nav>
@@ -35,11 +43,11 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { RouterLink } from 'vue-router'
 
 const ui = useUiStore()
 
 onMounted(() => {
-  // 상단바 높이를 CSS 변수로 노출 (사이드/메인 여백 계산에 사용)
   const topbarHeight = 56
   document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`)
   window.addEventListener('resize', ui.handleResize)
@@ -55,13 +63,16 @@ onBeforeUnmount(() => {
   height: var(--topbar-height, 56px);
 }
 
-/* 로고와 텍스트가 수평으로 잘 정렬되도록 */
-.navbar-brand {
-  font-weight: 600;
-  color: #212529;
+/* 링크 스타일이 기본 bootstrap에 잡히지 않도록 */
+a {
+  color: inherit;
+}
+a:hover {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* 버튼 hover 효과 부드럽게 */
+/* 버튼 hover 효과 */
 button.btn {
   transition: background-color 0.2s, color 0.2s;
 }
