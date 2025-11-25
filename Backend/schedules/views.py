@@ -8,7 +8,7 @@ from rest_framework import status
 
 from .models import Schedule, StudySchedule, PersonalSchedule
 from studies.models import Study, StudyMembership
-from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalSchedulesSerializer
+from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer
 # Create your views here.
 
 NOT_MEMBER = "NOT_MEMBER"
@@ -24,7 +24,7 @@ def error_list(code):
                         status=status.HTTP_403_FORBIDDEN,
                         json_dumps_params={"ensure_ascii": False})
 
-# @login_required
+@login_required
 @api_view(['POST'])
 def study_schedule_create(request, study_id):
     user = request.user
@@ -54,8 +54,24 @@ def study_schedule_create(request, study_id):
     )
     return Response(StudyScheduleSerializer(study_schedule).data, status=status.HTTP_201_CREATED)
 
+@login_required
+@api_view(['GET'])
+def study_schedule_list(request, study_id):
+    user = request.user
+    study = get_object_or_404(Study, id = study_id)
 
-# @login_required
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+
+    # 외부인 거부
+    if not membership:
+        return error_list(NOT_MEMBER)
+    
+    schedules = StudySchedule.objects.filter(study_id=study_id)
+    return Response(StudyScheduleSerializer(schedules, many=True).data, status=status.HTTP_200_OK)
+
+@login_required
 @api_view(['GET', 'PUT', 'DELETE'])
 def study_schedule_detail(request, study_id, schedule_id):
 
@@ -94,19 +110,81 @@ def study_schedule_detail(request, study_id, schedule_id):
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# @login_required
-@api_view(['GET'])
-def study_schedule_list(request, study_id):
+@login_required
+@api_view(['POST'])
+def personal_schedule_create(request):
     user = request.user
-    study = get_object_or_404(Study, id = study_id)
 
-    membership = StudyMembership.objects.filter(
-        user=user, study=study, is_active=True
-    ).first()
+    schedule_serializer = ScheduleSerializer(data = request.data)
+    schedule_serializer.is_valid(raise_exception = True)
+    schedule = schedule_serializer.save()
 
-    # 외부인 거부
-    if not membership:
-        return error_list(NOT_MEMBER)
+    personal_schedule = PersonalSchedule.objects.create(
+        schedule = schedule,
+        user = user,
+    )
+    return Response(PersonalScheduleSerializer(personal_schedule).data, status=status.HTTP_201_CREATED)
+
+@login_required
+@api_view(['GET'])
+def personal_schedule_list(request):
+    user = request.user
+
+    schedules = PersonalSchedule.objects.filter(user = user)
+    return Response(PersonalScheduleSerializer(schedules, many=True).data, status=status.HTTP_200_OK)
+
+@login_required
+@api_view(['GET', 'PUT', 'DELETE'])
+def personal_schedule_detail(request, schedule_id):
+    user = request.user
+
+    personal_schedule = get_object_or_404(PersonalSchedule, id=schedule_id)
+    schedule = personal_schedule.schedule
+
+    # 본인 확인
+    if personal_schedule.user != user:
+        return error_list(NOT_AUTHORIZED)
+
+    # 개인 일정 확인
+    if request.method == 'GET':
+        serializer = PersonalScheduleSerializer(personal_schedule)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # 개인 일정 수정
+    elif request.method == 'PUT':
+        serializer = ScheduleSerializer(schedule, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # 개인 일정 삭제
+    elif request.method == 'DELETE':
+        schedule.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@login_required
+@api_view(['GET'])
+def schedule_list(request):
+    user = request.user
+
+    study_ids = user.study_membership.filter(is_active=True).values_list('study_id', flat=True)
+    study_schedules = StudySchedule.objects.filter(study_id__in=study_ids)
+    personal_schedules = PersonalSchedule.objects.filter(user=user)
+
+    result = []
+
+    for ss in study_schedules:
+        result.append({
+            "type": "study",
+            "data": StudyScheduleSerializer(ss).data
+        })
     
-    schedules = StudySchedule.objects.filter(study_id=study_id)
-    return Response(StudyScheduleSerializer(schedules, many=True).data, status=status.HTTP_200_OK)
+    for ps in personal_schedules:
+        result.append({
+            "type": "personal",
+            "data": PersonalSchedule(ps).data
+        })
+    
+    result.sort(key=lambda x: x["data"]["schedule"]["start_at"])
+
+    return Response(result, status=status.HTTP_200_OK)
