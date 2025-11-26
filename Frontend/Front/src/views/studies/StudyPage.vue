@@ -3,7 +3,8 @@
   <AppShell>
     <!-- ✅ 양쪽 여백 맞추기: 전체를 한 번 더 감싸서 max-width + 중앙 정렬 -->
     <div class="container-fluid py-4 d-flex justify-content-center">
-      <div class="w-100" style="max-width: 1000px">
+      <!-- ⬇⬇ 여기만 수정: inline style 제거 + study-page-wrapper 클래스 추가 -->
+      <div class="w-100 study-page-wrapper">
         <h2 class="fw-bold mb-1">{{ studyTitle }}</h2>
         <p class="text-muted mb-4 small">
           참여 코드 : {{ studyId }}
@@ -128,7 +129,7 @@
             <div>
               <h5 class="mb-1 fw-bold">
                 {{ detail?.schedule.title || '일정 상세' }}
-            </h5>
+              </h5>
             </div>
             <button
               type="button"
@@ -646,6 +647,29 @@ watch(
 </script>
 
 <style scoped>
+/* ✅ 반응형 메인 래퍼: 화면 넓어질수록 조금씩 더 넓게 */
+.study-page-wrapper {
+  max-width: 1000px; /* 기본값: 기존과 비슷 */
+}
+
+@media (min-width: 992px) {
+  .study-page-wrapper {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .study-page-wrapper {
+    max-width: 1320px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .study-page-wrapper {
+    max-width: 1440px;
+  }
+}
+
 /* 캘린더 카드 느낌 */
 .calendar-wrapper :deep(.fc) {
   background-color: #fff;

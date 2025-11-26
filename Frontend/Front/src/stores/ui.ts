@@ -31,8 +31,6 @@ export const useUiStore = defineStore('ui', () => {
 
   function handleResize() {
     isLgUp.value = window.innerWidth >= 992
-    if (isLgUp.value) openSidebar()
-    else closeSidebar()
   }
 
   // reset 함수 추가
