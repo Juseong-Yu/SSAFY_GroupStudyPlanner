@@ -41,3 +41,10 @@ class Notice(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+class UploadedImage(models.Model):
+    """
+    공지사항/게시글에서 업로드된 이미지
+    """
+    image = models.ImageField(upload_to="post/images/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
