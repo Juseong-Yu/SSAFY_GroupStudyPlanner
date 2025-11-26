@@ -56,6 +56,9 @@ async def study(ctx, study_id: int):
     else:
         await ctx.send("스터디 정보를 불러오지 못했습니다.")
 
+@bot.command(name="id")
+async def id(ctx):
+    print(ctx.guild.id)
 
 if __name__ == "__main__":
     bot.run(TOKEN)
