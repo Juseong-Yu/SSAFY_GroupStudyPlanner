@@ -124,6 +124,6 @@ def uploaded_image(request, study_id):
 
     # 에디터가 필요한 응답 형태에 맞춰 URL 리턴
     return Response({
-        "url": request.build_absolute_url(serializer.data["image"])},
+        "url": request.build_absolute_uri(serializer.data["image"])},
         status=status.HTTP_201_CREATED
     )
