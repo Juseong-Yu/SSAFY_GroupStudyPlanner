@@ -112,7 +112,7 @@ const handleUploadImg = async (files: File[], callback: (urls: string[]) => void
       const form = new FormData()
       form.append('image', file)
       // TODO: 실제 업로드 URL로 교체
-      const res = await axios.post('/api/uploads/images/', form, {
+      const res = await axios.post(`${API_BASE}/studies/${studyId}/posts/upload_img/`, form, {
         headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'multipart/form-data' },
         withCredentials: true,
       })
