@@ -1,6 +1,10 @@
 <template>
   <!-- 오버레이 (모바일 전용) -->
-  <div v-if="ui.sidebarOpen" class="sidebar-backdrop d-lg-none" @click="ui.closeSidebar"></div>
+  <div
+    v-if="ui.sidebarOpen"
+    class="sidebar-backdrop d-lg-none"
+    @click="ui.closeSidebar"
+  ></div>
 
   <!-- 왼쪽 슬라이딩 사이드바 -->
   <aside
@@ -320,8 +324,8 @@ import axios from 'axios'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
 import { useStudiesStore } from '@/stores/studies'
-import { resetAllStores } from '@/stores/resetAllStores' // 🔥 여기 추가
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts' // ✅ axios 페이지 규칙
+import { resetAllStores } from '@/stores/resetAllStores'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const ui = useUiStore()
 const user = useUserStore()
@@ -369,19 +373,18 @@ const onAvatarError = () => {
 /** 로그아웃: 스토어 액션 호출 + 모든 store reset */
 const handleLogoutClick = async () => {
   closeMenu()
-  maybeCloseOnMobile() // 모바일이면 사이드바도 닫기 (선택 사항이지만 UX 좋음)
+  maybeCloseOnMobile()
 
   try {
-    await user.logout()       // 🔐 백엔드 로그아웃 (axios는 store 안에서 처리한다고 가정)
-    resetAllStores()          // 🔥 모든 pinia store 초기화
-    // 필요하면 여기서 router.push('/login') 도 추가 가능
+    await user.logout()
+    resetAllStores()
   } catch (e) {
     console.error(e)
   }
 }
 
 /* ============================
-   아래 나머지 코드들은 그대로
+   스터디 생성/참여 로직
    ============================ */
 
 const create = ref({
@@ -520,9 +523,8 @@ onBeforeUnmount(() => {
 })
 </script>
 
-
 <style scoped>
-/* 사이드바: 기본 닫힘 */
+/* 사이드바: 기본 닫힘 (슬라이드) */
 .sidebar {
   width: var(--sidebar-width, 250px);
   top: var(--topbar-height, 56px); /* 탑바 아래부터 시작 */
@@ -537,7 +539,7 @@ onBeforeUnmount(() => {
   transform: translateX(0);
 }
 
-/* 오버레이 (모바일 전용) */
+/* 오버레이 (모바일 전용: d-lg-none로 제어) */
 .sidebar-backdrop {
   position: fixed;
   inset: var(--topbar-height, 56px) 0 0 0; /* 탑바를 가리지 않게 */

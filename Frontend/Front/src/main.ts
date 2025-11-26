@@ -18,5 +18,5 @@ app.use(pinia)
 // ✅ Router 등록
 app.use(router)
 
-// ✅ 단 한 번만 mount
+//  mount
 app.mount('#app')

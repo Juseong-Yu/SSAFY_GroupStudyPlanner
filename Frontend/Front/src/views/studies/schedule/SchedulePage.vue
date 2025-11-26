@@ -1,49 +1,72 @@
 <!-- src/views/studies/SchedulePage.vue -->
 <template>
   <AppShell>
-    <div class="container-fluid py-4 d-flex flex-column align-items-center">
-      <!-- 상단 헤더 -->
-      <div
-        class="d-flex align-items-center justify-content-between mb-2 w-100"
-        style="max-width: 1000px"
-      >
-        <div>
-          <h2 class="fw-bold mb-0">스터디 일정</h2>
+    <!-- StudyPage와 동일한 너비 전략: 가운데 정렬 + 반응형 max-width -->
+    <div class="container-fluid py-4 d-flex justify-content-center">
+      <div class="w-100 study-page-wrapper d-flex flex-column">
+        <!-- 상단 헤더 -->
+        <div class="d-flex align-items-center justify-content-between mb-2 w-100">
+          <div>
+            <h2 class="fw-bold mb-0">스터디 일정</h2>
+          </div>
+
+          <!-- 일정 추가 버튼 -->
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            @click="openCreateModal"
+          >
+            + 일정 추가
+          </button>
         </div>
 
-        <!-- 일정 추가 버튼 -->
-        <button
-          type="button"
-          class="btn btn-outline-primary btn-sm"
-          @click="openCreateModal"
-        >
-          + 일정 추가
-        </button>
-      </div>
-
-      <!-- 상태 요약 배지 -->
-      <div class="w-100 mb-4" style="max-width: 1000px">
-        <div class="d-flex flex-wrap gap-2 small">
-          <span class="badge rounded-pill bg-primary-subtle text-primary">
-            진행중 {{ ongoingSchedules.length }}개
-          </span>
-          <span class="badge rounded-pill bg-success-subtle text-success">
-            다가오는 {{ upcomingSchedules.length }}개
-          </span>
-          <span class="badge rounded-pill bg-secondary-subtle text-secondary">
-            지난 일정 {{ pastSchedules.length }}개
-          </span>
+        <!-- 상태 요약 배지 -->
+        <div class="w-100 mb-4">
+          <div class="d-flex flex-wrap gap-2 small">
+            <span class="badge rounded-pill bg-primary-subtle text-primary">
+              진행중 {{ ongoingSchedules.length }}개
+            </span>
+            <span class="badge rounded-pill bg-success-subtle text-success">
+              다가오는 {{ upcomingSchedules.length }}개
+            </span>
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary">
+              지난 일정 {{ pastSchedules.length }}개
+            </span>
+          </div>
         </div>
-      </div>
 
-      <!-- 본문: 왼쪽 캘린더, 오른쪽 일정 카드들 -->
-      <div class="w-100" style="max-width: 1000px">
-        <div class="row g-4">
-          <!-- 왼쪽: FullCalendar -->
-          <div class="col-12 col-lg-7">
-            <div class="card shadow-sm">
+        <!-- 뷰 전환 토글 (캘린더 / 목록) - 노션 스타일, 왼쪽 정렬 -->
+        <div class="d-flex justify-content-start mb-3">
+          <div class="schedule-view-toggle d-inline-flex align-items-center">
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'is-active': viewMode === 'calendar' }"
+              @click="viewMode = 'calendar'"
+            >
+              캘린더
+            </button>
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'is-active': viewMode === 'list' }"
+              @click="viewMode = 'list'"
+            >
+              목록
+            </button>
+          </div>
+        </div>
+
+        <!-- 본문: 선택한 뷰만 보여주기 -->
+        <div class="w-100 schedule-main">
+          <!-- 캘린더 뷰 (화면 꽉 차게) -->
+          <div v-if="viewMode === 'calendar'" class="schedule-main-calendar">
+            <div class="card shadow-sm schedule-calendar-card">
               <div class="card-body p-3">
-                <div v-if="isLoading && !isMounted" class="py-5 text-center text-muted small">
+                <div
+                  v-if="isLoading && !isMounted"
+                  class="py-5 text-center text-muted small"
+                >
                   불러오는 중...
                 </div>
                 <div v-else-if="isMounted" class="calendar-wrapper">
@@ -53,8 +76,8 @@
             </div>
           </div>
 
-          <!-- 오른쪽: 진행중 / 다가오는 / 지난 일정 -->
-          <div class="col-12 col-lg-5">
+          <!-- 목록(카드) 뷰 -->
+          <div v-else>
             <!-- 진행중 일정 -->
             <div class="card shadow-sm mb-3" v-if="ongoingSchedules.length || isLoading">
               <div
@@ -219,329 +242,326 @@
               </div>
             </div>
           </div>
+          <!-- /viewMode === 'list' -->
         </div>
       </div>
+    </div>
 
-      <!-- ====================== -->
-      <!-- 일정 상세 모달 (왼쪽 정보 / 오른쪽 시간 요약) -->
-      <!-- ====================== -->
-      <div v-if="showDetailModal" class="schedule-modal-backdrop">
-        <div class="schedule-modal">
-          <div class="card shadow-sm">
-            <div
-              class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2"
-            >
-              <div>
-                <h5 class="mb-1 fw-bold">
-                  {{ detail?.schedule.title || "일정 상세" }}
-                </h5>
-                <!-- 🔥 제목 밑 시간 요약(중복) 제거 -->
-                <!-- <p v-if="detail" class="mb-0 small text-muted">
-                  {{ formatRangeUtc(detail.schedule.start_at, detail.schedule.end_at) }}
-                </p> -->
-              </div>
-              <div class="d-flex align-items-center gap-2 ms-auto">
-                <button
-                  v-if="detail"
-                  type="button"
-                  class="btn btn-outline-danger btn-sm"
-                  @click="onClickDeleteFromDetail"
-                >
-                  삭제
-                </button>
-                <button
-                  v-if="detail"
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  @click="toggleEditMode"
-                >
-                  {{ isEditMode ? "수정 취소" : "수정" }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-light btn-sm"
-                  @click="closeDetailModal"
-                >
-                  닫기
-                </button>
-              </div>
+    <!-- ====================== -->
+    <!-- 일정 상세 모달 (왼쪽 정보 / 오른쪽 시간 요약) -->
+    <!-- ====================== -->
+    <div v-if="showDetailModal" class="schedule-modal-backdrop">
+      <div class="schedule-modal">
+        <div class="card shadow-sm">
+          <div
+            class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2"
+          >
+            <div>
+              <h5 class="mb-1 fw-bold">
+                {{ detail?.schedule.title || "일정 상세" }}
+              </h5>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+              <button
+                v-if="detail"
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                @click="onClickDeleteFromDetail"
+              >
+                삭제
+              </button>
+              <button
+                v-if="detail"
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                @click="toggleEditMode"
+              >
+                {{ isEditMode ? "수정 취소" : "수정" }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-light btn-sm"
+                @click="closeDetailModal"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div v-if="detailError" class="alert alert-danger py-2 small mb-3">
+              {{ detailError }}
+            </div>
+            <div v-if="isDetailLoading" class="py-4 text-center text-muted small">
+              불러오는 중...
             </div>
 
-            <div class="card-body">
-              <div v-if="detailError" class="alert alert-danger py-2 small mb-3">
-                {{ detailError }}
-              </div>
-              <div v-if="isDetailLoading" class="py-4 text-center text-muted small">
-                불러오는 중...
+            <template v-else-if="detail">
+              <!-- 보기 모드: 왼쪽 정보 / 오른쪽 시간 요약 -->
+              <div v-if="!isEditMode" class="row g-4 align-items-start">
+                <!-- 왼쪽: 정보 영역 -->
+                <div class="col-12 col-md-7">
+                  <div class="d-flex align-items-center mb-3">
+                    <div
+                      v-if="detailAuthorAvatar"
+                      class="rounded-circle border bg-light me-3 overflow-hidden"
+                      style="width: 44px; height: 44px"
+                    >
+                      <img
+                        :src="detailAuthorAvatar"
+                        alt="author"
+                        class="w-100 h-100"
+                        style="object-fit: cover"
+                      />
+                    </div>
+                    <div
+                      v-else
+                      class="rounded-circle border bg-light me-3 d-flex align-items-center justify-content-center"
+                      style="width: 44px; height: 44px; font-size: 0.8rem"
+                    >
+                      {{ detail.author.username.charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="small">
+                      <div class="fw-semibold">{{ detail.author.username }}</div>
+                      <div class="text-muted">{{ detail.author.email }}</div>
+                    </div>
+                  </div>
+
+                  <hr class="my-3" />
+
+                  <div class="mb-4">
+                    <div class="fw-semibold small text-muted mb-1">일정 제목</div>
+                    <div class="fs-6">{{ detail.schedule.title }}</div>
+                  </div>
+
+                  <div class="mb-0">
+                    <div class="fw-semibold small text-muted mb-1">일정 상세</div>
+                    <p class="mb-0 small text-body" style="white-space: pre-wrap">
+                      {{ detail.schedule.description || "내용 없음" }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 오른쪽: 시간 요약 박스 -->
+                <div class="col-12 col-md-5">
+                  <div class="time-summary p-3 rounded-3 border small">
+                    <div class="fw-semibold mb-3 d-flex align-items-center gap-2">
+                      <span>시간 요약</span>
+                    </div>
+
+                    <div class="mb-3">
+                      <div class="text-muted fw-semibold mb-1">시작</div>
+                      <div>{{ formatShortDateUtc(detail.schedule.start_at) }}</div>
+                      <div>{{ formatTimeUtc(detail.schedule.start_at) }}</div>
+                    </div>
+
+                    <div>
+                      <div class="text-muted fw-semibold mb-1">종료</div>
+                      <div>
+                        {{
+                          formatShortDateUtc(
+                            detail.schedule.end_at || detail.schedule.start_at
+                          )
+                        }}
+                      </div>
+                      <div>
+                        {{
+                          formatTimeUtc(
+                            detail.schedule.end_at || detail.schedule.start_at
+                          )
+                        }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <template v-else-if="detail">
-                <!-- 보기 모드: 왼쪽 정보 / 오른쪽 시간 요약 -->
-                <div v-if="!isEditMode" class="row g-4 align-items-start">
-                  <!-- 왼쪽: 정보 영역 -->
-                  <div class="col-12 col-md-7">
-                    <div class="d-flex align-items-center mb-3">
-                      <div
-                        v-if="detailAuthorAvatar"
-                        class="rounded-circle border bg-light me-3 overflow-hidden"
-                        style="width: 44px; height: 44px"
-                      >
-                        <img
-                          :src="detailAuthorAvatar"
-                          alt="author"
-                          class="w-100 h-100"
-                          style="object-fit: cover"
+              <!-- 수정 모드: 전체 폭 사용 -->
+              <div v-else>
+                <div
+                  v-if="editErrorMessage"
+                  class="alert alert-danger py-2 small mb-3"
+                >
+                  {{ editErrorMessage }}
+                </div>
+
+                <form @submit.prevent="onSubmitUpdate">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold small">일정 제목</label>
+                    <input
+                      v-model="editForm.title"
+                      type="text"
+                      class="form-control"
+                      required
+                    />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold small">일정 상세</label>
+                    <textarea
+                      v-model="editForm.description"
+                      class="form-control"
+                      rows="3"
+                    ></textarea>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold small">시작 일시</label>
+                      <div class="d-flex gap-2">
+                        <input
+                          v-model="editForm.startDate"
+                          type="date"
+                          class="form-control"
+                          required
+                        />
+                        <input
+                          v-model="editForm.startTime"
+                          type="time"
+                          class="form-control"
                         />
                       </div>
-                      <div
-                        v-else
-                        class="rounded-circle border bg-light me-3 d-flex align-items-center justify-content-center"
-                        style="width: 44px; height: 44px; font-size: 0.8rem"
-                      >
-                        {{ detail.author.username.charAt(0).toUpperCase() }}
-                      </div>
-                      <div class="small">
-                        <div class="fw-semibold">{{ detail.author.username }}</div>
-                        <div class="text-muted">{{ detail.author.email }}</div>
-                      </div>
                     </div>
-
-                    <hr class="my-3" />
-
-                    <div class="mb-4">
-                      <div class="fw-semibold small text-muted mb-1">일정 제목</div>
-                      <div class="fs-6">{{ detail.schedule.title }}</div>
-                    </div>
-
-                    <div class="mb-0">
-                      <div class="fw-semibold small text-muted mb-1">일정 상세</div>
-                      <p class="mb-0 small text-body" style="white-space: pre-wrap">
-                        {{ detail.schedule.description || "내용 없음" }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- 오른쪽: 시간 요약 박스 -->
-                  <div class="col-12 col-md-5">
-                    <div class="time-summary p-3 rounded-3 border small">
-                      <div class="fw-semibold mb-3 d-flex align-items-center gap-2">
-                        <span>시간 요약</span>
-                      </div>
-
-                      <div class="mb-3">
-                        <div class="text-muted fw-semibold mb-1">시작</div>
-                        <div>{{ formatShortDateUtc(detail.schedule.start_at) }}</div>
-                        <div>{{ formatTimeUtc(detail.schedule.start_at) }}</div>
-                      </div>
-
-                      <div>
-                        <div class="text-muted fw-semibold mb-1">종료</div>
-                        <div>
-                          {{
-                            formatShortDateUtc(
-                              detail.schedule.end_at || detail.schedule.start_at
-                            )
-                          }}
-                        </div>
-                        <div>
-                          {{
-                            formatTimeUtc(
-                              detail.schedule.end_at || detail.schedule.start_at
-                            )
-                          }}
-                        </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold small">종료 일시</label>
+                      <div class="d-flex gap-2">
+                        <input
+                          v-model="editForm.endDate"
+                          type="date"
+                          class="form-control"
+                          required
+                        />
+                        <input
+                          v-model="editForm.endTime"
+                          type="time"
+                          class="form-control"
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- 수정 모드: 전체 폭 사용 -->
-                <div v-else>
-                  <div
-                    v-if="editErrorMessage"
-                    class="alert alert-danger py-2 small mb-3"
-                  >
-                    {{ editErrorMessage }}
+                  <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      @click="toggleEditMode"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary btn-sm"
+                      :disabled="isUpdating"
+                    >
+                      {{ isUpdating ? "수정 중..." : "수정 저장" }}
+                    </button>
                   </div>
-
-                  <form @submit.prevent="onSubmitUpdate">
-                    <div class="mb-3">
-                      <label class="form-label fw-semibold small">일정 제목</label>
-                      <input
-                        v-model="editForm.title"
-                        type="text"
-                        class="form-control"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label fw-semibold small">일정 상세</label>
-                      <textarea
-                        v-model="editForm.description"
-                        class="form-control"
-                        rows="3"
-                      ></textarea>
-                    </div>
-
-                    <div class="row g-3">
-                      <div class="col-md-6">
-                        <label class="form-label fw-semibold small">시작 일시</label>
-                        <div class="d-flex gap-2">
-                          <input
-                            v-model="editForm.startDate"
-                            type="date"
-                            class="form-control"
-                            required
-                          />
-                          <input
-                            v-model="editForm.startTime"
-                            type="time"
-                            class="form-control"
-                          />
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <label class="form-label fw-semibold small">종료 일시</label>
-                        <div class="d-flex gap-2">
-                          <input
-                            v-model="editForm.endDate"
-                            type="date"
-                            class="form-control"
-                            required
-                          />
-                          <input
-                            v-model="editForm.endTime"
-                            type="time"
-                            class="form-control"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm"
-                        @click="toggleEditMode"
-                      >
-                        취소
-                      </button>
-                      <button
-                        type="submit"
-                        class="btn btn-primary btn-sm"
-                        :disabled="isUpdating"
-                      >
-                        {{ isUpdating ? "수정 중..." : "수정 저장" }}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </template>
-            </div>
+                </form>
+              </div>
+            </template>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ====================== -->
-      <!-- 일정 추가 모달 -->
-      <!-- ====================== -->
-      <div v-if="showCreateModal" class="schedule-modal-backdrop">
-        <div class="schedule-modal">
-          <div class="card shadow-sm">
-            <div class="card-header">
-              <h5 class="mb-0 fw-bold">일정 추가</h5>
+    <!-- ====================== -->
+    <!-- 일정 추가 모달 -->
+    <!-- ====================== -->
+    <div v-if="showCreateModal" class="schedule-modal-backdrop">
+      <div class="schedule-modal">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h5 class="mb-0 fw-bold">일정 추가</h5>
+          </div>
+
+          <div class="card-body">
+            <!-- 에러 메시지 -->
+            <div v-if="errorMessage" class="alert alert-danger py-2 small">
+              {{ errorMessage }}
             </div>
 
-            <div class="card-body">
-              <!-- 에러 메시지 -->
-              <div v-if="errorMessage" class="alert alert-danger py-2 small">
-                {{ errorMessage }}
+            <form @submit.prevent="onSubmitCreate">
+              <!-- 제목 -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">일정 제목</label>
+                <input
+                  v-model="form.title"
+                  type="text"
+                  class="form-control"
+                  required
+                />
               </div>
 
-              <form @submit.prevent="onSubmitCreate">
-                <!-- 제목 -->
-                <div class="mb-3">
-                  <label class="form-label fw-semibold">일정 제목</label>
-                  <input
-                    v-model="form.title"
-                    type="text"
-                    class="form-control"
-                    required
-                  />
-                </div>
+              <!-- 상세 -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">일정 상세</label>
+                <textarea
+                  v-model="form.description"
+                  class="form-control"
+                  rows="3"
+                ></textarea>
+              </div>
 
-                <!-- 상세 -->
-                <div class="mb-4">
-                  <label class="form-label fw-semibold">일정 상세</label>
-                  <textarea
-                    v-model="form.description"
-                    class="form-control"
-                    rows="3"
-                  ></textarea>
-                </div>
-
-                <!-- 시작 / 종료 -->
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold">시작 일시</label>
-                    <div class="d-flex gap-2">
-                      <input
-                        v-model="form.startDate"
-                        type="date"
-                        class="form-control"
-                        required
-                      />
-                      <input
-                        v-model="form.startTime"
-                        type="time"
-                        class="form-control"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold">종료 일시</label>
-                    <div class="d-flex gap-2">
-                      <input
-                        v-model="form.endDate"
-                        type="date"
-                        class="form-control"
-                        required
-                      />
-                      <input
-                        v-model="form.endTime"
-                        type="time"
-                        class="form-control"
-                      />
-                    </div>
+              <!-- 시작 / 종료 -->
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">시작 일시</label>
+                  <div class="d-flex gap-2">
+                    <input
+                      v-model="form.startDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
+                    <input
+                      v-model="form.startTime"
+                      type="time"
+                      class="form-control"
+                    />
                   </div>
                 </div>
 
-                <!-- 버튼 -->
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm"
-                    @click="closeCreateModal"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    class="btn btn-primary btn-sm"
-                    :disabled="isSubmitting"
-                  >
-                    {{ isSubmitting ? "저장 중..." : "저장" }}
-                  </button>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">종료 일시</label>
+                  <div class="d-flex gap-2">
+                    <input
+                      v-model="form.endDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
+                    <input
+                      v-model="form.endTime"
+                      type="time"
+                      class="form-control"
+                    />
+                  </div>
                 </div>
-              </form>
-            </div>
+              </div>
+
+              <!-- 버튼 -->
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="closeCreateModal"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-sm"
+                  :disabled="isSubmitting"
+                >
+                  {{ isSubmitting ? "저장 중..." : "저장" }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
-      <!-- 모달 끝 -->
     </div>
+    <!-- 모달 끝 -->
   </AppShell>
 </template>
 
@@ -562,6 +582,11 @@ const studyId = route.params.id as string
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
 
 /* ==============================
+   뷰 전환 상태
+================================= */
+const viewMode = ref<"calendar" | "list">("calendar")
+
+/* ==============================
    타입 정의
 ================================= */
 
@@ -569,7 +594,7 @@ interface ScheduleCore {
   id?: number
   title: string
   description: string
-  start_at: string   // ISO UTC
+  start_at: string // ISO UTC
   end_at?: string | null
 }
 
@@ -645,7 +670,8 @@ const editForm = ref({
 const calendarOptions = ref<CalendarOptions>({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: "dayGridMonth",
-  height: "auto",
+  height: "100%", // ✅ 부모 높이를 꽉 채우기
+  expandRows: true,
   locale: "ko",
   selectable: true,
   timeZone: "UTC",
@@ -821,9 +847,9 @@ const fetchSchedules = async () => {
         title: item.schedule.title,
         start,
         end,
-        backgroundColor: '#e7f1ff', // 아주 연한 파랑
-        borderColor: '#b6d4fe',     // 보통 파랑
-        textColor: '#084298',
+        backgroundColor: "#e7f1ff", // 아주 연한 파랑
+        borderColor: "#b6d4fe", // 보통 파랑
+        textColor: "#084298",
       }
     })
 
@@ -844,7 +870,7 @@ const onClickDelete = async (id: number) => {
       `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
-        headers: { "X-CSRFToken": csrftoken },
+        headers: { "X-CSRFToken": csrftoken || "" },
       }
     )
 
@@ -914,6 +940,13 @@ const toggleEditMode = () => {
   editErrorMessage.value = ""
 }
 
+const buildDateTime = (date: string, time: string, fallback: string): string => {
+  const d = (date || "").trim()
+  if (!d) return ""
+  const t = (time || "").trim() || fallback
+  return `${d} ${t}`
+}
+
 const validateEditForm = (): boolean => {
   const startStr = buildDateTime(
     editForm.value.startDate,
@@ -980,7 +1013,7 @@ const onSubmitUpdate = async () => {
       {
         withCredentials: true,
         headers: {
-          "X-CSRFToken": csrftoken,
+          "X-CSRFToken": csrftoken || "",
           "Content-Type": "application/json",
         },
       }
@@ -1033,13 +1066,6 @@ const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-const buildDateTime = (date: string, time: string, fallback: string): string => {
-  const d = (date || "").trim()
-  if (!d) return ""
-  const t = (time || "").trim() || fallback
-  return `${d} ${t}`
-}
-
 const validateForm = (): boolean => {
   const startStr = buildDateTime(form.value.startDate, form.value.startTime, "00:00")
   const endStr = buildDateTime(form.value.endDate, form.value.endTime, "23:59")
@@ -1074,8 +1100,16 @@ const onSubmitCreate = async () => {
     await ensureCsrf()
     const csrftoken = getCookie("csrftoken")
 
-    const start_at = buildDateTime(form.value.startDate, form.value.startTime, "00:00")
-    const end_at = buildDateTime(form.value.endDate, form.value.endTime, "23:59")
+    const start_at = buildDateTime(
+      form.value.startDate,
+      form.value.startTime,
+      "00:00"
+    )
+    const end_at = buildDateTime(
+      form.value.endDate,
+      form.value.endTime,
+      "23:59"
+    )
 
     await axios.post(
       `${API_BASE}/studies/${studyId}/schedules/study_schedule_create/`,
@@ -1088,7 +1122,7 @@ const onSubmitCreate = async () => {
       {
         withCredentials: true,
         headers: {
-          "X-CSRFToken": csrftoken,
+          "X-CSRFToken": csrftoken || "",
           "Content-Type": "application/json",
         },
       }
@@ -1129,7 +1163,64 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* StudyPage와 동일한 반응형 너비 */
+.study-page-wrapper {
+  max-width: 1000px;
+}
+
+@media (min-width: 992px) {
+  .study-page-wrapper {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .study-page-wrapper {
+    max-width: 1320px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .study-page-wrapper {
+    max-width: 1440px;
+  }
+}
+
+/* 본문 영역을 화면 기준으로 거의 꽉 채우기
+   (AppShell 헤더/상단 여백 정도만 빼고) */
+.schedule-main {
+  height: calc(100vh - 220px);
+  max-height: calc(100vh - 220px);
+}
+
+/* 캘린더 뷰에서 카드가 세로 공간을 전부 차지하게 */
+.schedule-main-calendar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-calendar-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 카드 바디도 남은 공간을 채우게 */
+.schedule-calendar-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 캘린더 래퍼와 FullCalendar도 100% */
+.calendar-wrapper {
+  flex: 1;
+  height: 100%;
+}
+
 .calendar-wrapper :deep(.fc) {
+  height: 100%;
   background-color: #fff;
   border-radius: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -1171,7 +1262,7 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-/* 요일 헤더(월화수목금토일) 색상 원래대로 */
+/* 요일 헤더(월화수목금토일) 색상 */
 :deep(.fc .fc-col-header-cell-cushion) {
   color: #3b4b70;
   text-decoration: none;
@@ -1237,10 +1328,6 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
-.schedule-modal p.small.text-muted {
-  margin-top: 0.15rem;
-}
-
 /* 시간 요약 박스 */
 .time-summary {
   background: #f7f9fc;
@@ -1253,5 +1340,44 @@ onMounted(async () => {
 
 .list-item-clickable:hover {
   background-color: #f8fafc;
+}
+
+/* 노션 느낌 뷰 전환 토글 */
+.schedule-view-toggle {
+  background: #f3f4f6; /* 연한 회색 배경 */
+  border-radius: 999px; /* 완전한 캡슐 모양 */
+  padding: 3px;
+  border: 1px solid #e5e7eb; /* 아주 연한 테두리 */
+  gap: 2px;
+}
+
+.schedule-view-toggle .toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280; /* 비활성 텍스트 (회색) */
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+.schedule-view-toggle .toggle-btn:hover {
+  background: #e5e7eb;
+}
+
+.schedule-view-toggle .toggle-btn.is-active {
+  background: #ffffff;
+  color: #111827; /* 활성 텍스트 (진한 회색) */
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+.schedule-view-toggle .toggle-btn.is-active:active {
+  transform: translateY(1px);
 }
 </style>
