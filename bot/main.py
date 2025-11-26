@@ -2,9 +2,12 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import aiohttp
+import asyncio
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+DJANGO_API_URL = os.getenv("DJANGO_API_URL")
 
 intents = discord.Intents.default()
 intents.message_content = True  # 메시지 내용이 필요하면 True
@@ -27,6 +30,32 @@ async def ping(ctx):
 @bot.tree.command(name="hello", description="인사합니다")
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f"안녕하세요, {interaction.user.display_name}님!")
+
+async def get_study_info(study_id):
+    url = f"{DJANGO_API_URL}studies/{study_id}/"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.json()  # JSON 응답 반환
+            else:
+                return None
+
+@bot.command(name="study")
+async def study(ctx, study_id: int):
+    """
+    !study <id> 명령어 실행 시 해당 스터디 정보 조회
+    """
+    await ctx.send("스터디 정보를 불러오는 중...")
+    data = await get_study_info(study_id)
+
+    if data:
+        msg = (f"**스터디 이름:** {data.get('name')}\n"
+               f"**리더:** {data.get('leader')}\n"
+               )
+        await ctx.send(msg)
+    else:
+        await ctx.send("스터디 정보를 불러오지 못했습니다.")
+
 
 if __name__ == "__main__":
     bot.run(TOKEN)
