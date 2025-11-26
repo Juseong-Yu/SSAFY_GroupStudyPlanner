@@ -18,10 +18,17 @@
     <div
       class="profile-section d-flex align-items-center justify-content-between p-3 border-bottom"
     >
-      <div class="d-flex align-items-center">
+      <!-- ✅ 프로필 전체 클릭 시 메인으로 이동 -->
+      <div
+        class="d-flex align-items-center profile-click-target"
+        @click="handleProfileClick"
+      >
         <!-- 프로필 이미지: 로딩/미설정 대비 -->
         <template v-if="user.loading">
-          <span class="placeholder rounded-circle me-2" style="width: 30px; height: 30px"></span>
+          <span
+            class="placeholder rounded-circle me-2"
+            style="width: 30px; height: 30px"
+          ></span>
           <div class="placeholder col-4" style="height: 1rem"></div>
         </template>
         <template v-else>
@@ -229,7 +236,9 @@
         </div>
 
         <div class="modal-body">
-          <div v-if="create.error" class="alert alert-danger py-2">{{ create.error }}</div>
+          <div v-if="create.error" class="alert alert-danger py-2">
+            {{ create.error }}
+          </div>
 
           <div class="mb-1">
             <label class="form-label">스터디 이름</label>
@@ -285,11 +294,17 @@
         </div>
 
         <div class="modal-body">
-          <div v-if="join.error" class="alert alert-danger py-2">{{ join.error }}</div>
+          <div v-if="join.error" class="alert alert-danger py-2">
+            {{ join.error }}
+          </div>
 
           <div class="mb-3">
             <label class="form-label">참여 코드</label>
-            <input v-model.trim="join.code" class="form-control" placeholder="예) ABCD-1234" />
+            <input
+              v-model.trim="join.code"
+              class="form-control"
+              placeholder="예) ABCD-1234"
+            />
             <div class="form-text">리더가 공유한 참여 코드를 입력하세요.</div>
           </div>
         </div>
@@ -319,7 +334,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
@@ -330,6 +345,7 @@ import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 const ui = useUiStore()
 const user = useUserStore()
 const studies = useStudiesStore()
+const router = useRouter()
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -357,6 +373,13 @@ const onEscape = (e: KeyboardEvent) => {
 
 function maybeCloseOnMobile() {
   if (!ui.isLgUp) ui.closeSidebar()
+}
+
+/** ✅ 프로필 클릭 시 메인 페이지로 이동 */
+const handleProfileClick = () => {
+  closeMenu()
+  maybeCloseOnMobile()
+  router.push('/main') // 메인 라우트 경로에 맞게 필요하면 수정
 }
 
 /** 프로필 표시용 계산 (닉네임 그대로) */
@@ -557,9 +580,16 @@ onBeforeUnmount(() => {
   transition: background-color 0.2s;
 }
 
-.router-link-active {
-  font-weight: 600;
-  color: #0d6efd !important;
+/* ✅ 프로필 클릭 가능 표시 */
+.profile-click-target {
+  cursor: pointer;
+}
+
+/* router-link-active 시에도 스타일 변화 없음 */
+:deep(a.text-dark.router-link-active),
+:deep(a.router-link-active) {
+  font-weight: inherit;
+  color: inherit !important;
 }
 
 /* 긴 목록 대비 내부 스크롤 */
