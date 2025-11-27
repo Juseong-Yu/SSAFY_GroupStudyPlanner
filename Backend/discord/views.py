@@ -17,10 +17,11 @@ from studies.models import Study
 def connect_study(request, study_id):
     study = get_object_or_404(Study, id=study_id)
     data = request.data
-    guild_id = data["guild_id"]
+    print(data)
+    guild_id = data.get("guild_id")
 
     guild, _ = DiscordGuild.objects.update_or_create(
-        guild_id = guild_id,
+        id = guild_id,
         defaults = {
             "id": guild_id,
             "name": data.get("guild_name"),

@@ -60,5 +60,24 @@ async def study(ctx, study_id: int):
 async def id(ctx):
     print(ctx.guild.id)
 
+@bot.command(name="connect")
+async def connect(ctx, study_id: int):
+    guild = ctx.guild
+    icon_url = guild.icon.url if guild.icon else None
+    url = f"{DJANGO_API_URL}studies/{study_id}/discord/connect_study/"
+    payload = {
+        "guild_id": guild.id,
+        "guild_name": guild.name,
+        "icon_url": icon_url,
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as resp:
+            if resp.status == 200:
+                data = resp.json()
+            else:
+                data = None
+    if data:
+        print(data)
+
 if __name__ == "__main__":
     bot.run(TOKEN)
