@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'schedules',
     'corsheaders',
     'discord',
+    'exams',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
