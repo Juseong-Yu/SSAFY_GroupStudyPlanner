@@ -22,6 +22,11 @@ class StudyMembership(models.Model):
     )
     is_active = models.BooleanField(default=True)
     joined_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
-        unique_together = ('user', 'study')
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "study"],
+                name = "unique_user_study"
+            )
+        ]
