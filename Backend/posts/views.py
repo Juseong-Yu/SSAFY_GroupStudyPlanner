@@ -2,13 +2,14 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Notice, Post
+from .models import Notice, Post, UploadedImage
 from studies.models import Study, StudyMembership
-from .serializers import NoticeSerializer, NoticeListSerializer
+from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSerializer
 
 # Create your views here.
 
@@ -105,3 +106,24 @@ def notice_list(request, study_id):
     posts = Notice.objects.filter(study=study).order_by('-created_at')
     serializer = NoticeListSerializer(posts, many=True)
     return Response(serializer.data)
+
+@login_required
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+def uploaded_image(request, study_id):
+    """
+    이미지 업로드 할 때 호출되는 API
+    """
+
+    if "image" not in request.FILES:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    file_obj = request.FILES["image"]
+
+    instance = UploadedImage.objects.create(image=file_obj)
+    serializer = UploadedImageSerializer(instance)
+
+    # 에디터가 필요한 응답 형태에 맞춰 URL 리턴
+    return Response({
+        "url": request.build_absolute_uri(serializer.data["image"])},
+        status=status.HTTP_201_CREATED
+    )

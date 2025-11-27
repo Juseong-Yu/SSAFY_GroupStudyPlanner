@@ -182,7 +182,7 @@ def schedule_list(request):
     for ps in personal_schedules:
         result.append({
             "type": "personal",
-            "data": PersonalSchedule(ps).data
+            "data": PersonalScheduleSerializer(ps).data
         })
     
     result.sort(key=lambda x: x["data"]["schedule"]["start_at"])

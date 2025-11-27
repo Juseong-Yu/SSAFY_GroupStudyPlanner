@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Notice
+from .models import Post, Notice, UploadedImage
 from accounts.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,3 +23,8 @@ class NoticeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notice
         fields = ('id', 'title', 'created_at', 'updated_at', 'study_id', 'author')
+
+class UploadedImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadedImage
+        fields = "__all__"

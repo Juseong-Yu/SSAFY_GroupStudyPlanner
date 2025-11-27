@@ -1,109 +1,128 @@
 <!-- src/views/StudyNoticePage.vue -->
 <template>
   <AppShell>
-    <div class="container-fluid py-4 d-flex flex-column align-items-center">
-      <!-- 제목 -->
-      <div
-        class="d-flex align-items-center justify-content-between mb-4 w-100"
-        style="max-width: 950px"
-      >
-        <h2 class="fw-bold mb-0"> 공지사항</h2>
-        <RouterLink :to="`/studies/${studyId}/create`" class="btn btn-outline-primary">
-          +add
-        </RouterLink>
-      </div>
+    <!-- 스터디/일정 페이지와 동일한 레이아웃 패턴 -->
+    <div class="container-fluid py-4 d-flex justify-content-center">
+      <div class="w-100 study-page-wrapper d-flex flex-column">
+        <!-- 제목 영역 -->
+        <div class="d-flex align-items-center justify-content-between mb-4 w-100">
+          <h2 class="fw-bold mb-0">공지사항</h2>
+          <RouterLink
+            :to="`/studies/${studyId}/notice/create`"
+            class="btn btn-outline-primary"
+          >
+            +add
+          </RouterLink>
+        </div>
 
-      <!-- 카드 -->
-      <div class="card shadow-sm w-100 notice-card" style="max-width: 950px">
-        <div class="card-body p-0">
-          <div class="table-responsive mb-0">
-            <table class="table align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Title</th>
-                  <th class="text-end" style="width: 320px">작성자</th>
-                </tr>
-              </thead>
+        <!-- 공지 목록 카드 -->
+        <div class="card shadow-sm w-100 notice-card">
+          <div class="card-body p-0">
+            <div class="table-responsive mb-0">
+              <table class="table align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Title</th>
+                    <th class="text-end" style="width: 260px">작성자</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                <tr v-for="row in pagedNotices" :key="row.id">
-                  <!-- 제목 셀 (왼쪽 마진 + 디테일 페이지 링크) -->
-                  <td class="py-3 title-cell">
-                    <RouterLink
-                      :to="{
-                        name: 'NoticeDetail',
-                        params: { id: studyId, noticeId: row.id },
-                      }"
-                      class="fw-semibold text-truncate title-link"
-                    >
-                      {{ row.title }}
-                    </RouterLink>
-                  </td>
+                <tbody>
+                  <tr v-for="row in pagedNotices" :key="row.id">
+                    <!-- 제목 셀 (왼쪽 마진 + 디테일 페이지 링크) -->
+                    <td class="py-3 title-cell">
+                      <RouterLink
+                        :to="{
+                          name: 'NoticeDetail',
+                          params: { id: studyId, noticeId: row.id },
+                        }"
+                        class="fw-semibold text-truncate title-link"
+                      >
+                        {{ row.title }}
+                      </RouterLink>
+                    </td>
 
-                  <td class="py-3 text-end">
-                    <div class="d-inline-flex align-items-center gap-2 justify-content-end">
-                      <img
-                        v-if="row.author.avatarUrl"
-                        :src="row.author.avatarUrl"
-                        alt="avatar"
-                        class="avatar"
-                        referrerpolicy="no-referrer"
-                      />
-                      <div v-else class="avatar avatar-fallback">
-                        {{ initials(row.author.name) }}
+                    <td class="py-3 text-end">
+                      <div
+                        class="d-inline-flex align-items-center gap-2 justify-content-end"
+                      >
+                        <img
+                          v-if="row.author.avatarUrl"
+                          :src="row.author.avatarUrl"
+                          alt="avatar"
+                          class="avatar"
+                          referrerpolicy="no-referrer"
+                        />
+                        <div v-else class="avatar avatar-fallback">
+                          {{ initials(row.author.name) }}
+                        </div>
+                        <div class="text-end">
+                          <div class="small fw-semibold">
+                            {{ row.author.name }}
+                          </div>
+                          <div class="small text-muted">
+                            {{ formatDate(row.createdAt) }}
+                          </div>
+                        </div>
                       </div>
-                      <div class="text-end">
-                        <div class="small fw-semibold">{{ row.author.name }}</div>
-                        <div class="small text-muted">{{ formatDate(row.createdAt) }}</div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
 
-                <tr v-if="!pagedNotices.length">
-                  <td colspan="2" class="text-center text-muted py-5">
-                    공지사항이 없습니다.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  <tr v-if="!pagedNotices.length">
+                    <td colspan="2" class="text-center text-muted py-5">
+                      공지사항이 없습니다.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 페이지네이션 -->
-      <div
-        class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 mt-3 w-100"
-        style="max-width: 950px"
-      >
-        <div class="text-muted small">
-          Page {{ currentPage }} / {{ totalPages }} · Total {{ total }} items
+        <!-- 페이지네이션 -->
+        <div
+          class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 mt-3 w-100"
+        >
+          <div class="text-muted small">
+            Page {{ currentPage }} / {{ totalPages }} · Total {{ total }} items
+          </div>
+
+          <nav aria-label="pagination">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button
+                  class="page-link"
+                  @click="goPrev"
+                  :disabled="currentPage === 1"
+                >
+                  Prev
+                </button>
+              </li>
+
+              <li
+                v-for="p in pageWindow"
+                :key="p"
+                class="page-item"
+                :class="{ active: p === currentPage }"
+              >
+                <button class="page-link" @click="goPage(p)">{{ p }}</button>
+              </li>
+
+              <li
+                class="page-item"
+                :class="{ disabled: currentPage === totalPages }"
+              >
+                <button
+                  class="page-link"
+                  @click="goNext"
+                  :disabled="currentPage === totalPages"
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
-
-        <nav aria-label="pagination">
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" :class="{ disabled: currentPage === 1 }">
-              <button class="page-link" @click="goPrev" :disabled="currentPage === 1">
-                Prev
-              </button>
-            </li>
-
-            <li
-              v-for="p in pageWindow"
-              :key="p"
-              class="page-item"
-              :class="{ active: p === currentPage }"
-            >
-              <button class="page-link" @click="goPage(p)">{{ p }}</button>
-            </li>
-
-            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-              <button class="page-link" @click="goNext" :disabled="currentPage === totalPages">
-                Next
-              </button>
-            </li>
-          </ul>
-        </nav>
       </div>
     </div>
   </AppShell>
@@ -225,7 +244,9 @@ onMounted(async () => {
       createdAt: n.created_at,
       author: {
         name: n.author.username,
-        avatarUrl: n.author.profile_img ? `${API_BASE}${n.author.profile_img}` : null,
+        avatarUrl: n.author.profile_img
+          ? `${API_BASE}${n.author.profile_img}`
+          : null,
       },
     }))
   } catch (error) {
@@ -235,6 +256,29 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* StudyPage / SchedulePage와 공통으로 쓰는 반응형 너비 */
+.study-page-wrapper {
+  max-width: 1000px;
+}
+
+@media (min-width: 992px) {
+  .study-page-wrapper {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .study-page-wrapper {
+    max-width: 1320px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .study-page-wrapper {
+    max-width: 1440px;
+  }
+}
+
 /* 카드 테두리 문제 해결 */
 .notice-card {
   overflow: hidden;
@@ -248,7 +292,7 @@ onMounted(async () => {
 
 /* 제목 왼쪽 마진 */
 .title-cell {
-  padding-left: 12px;
+  padding-left: 24px;
 }
 
 /* 제목 링크 스타일 */
@@ -286,8 +330,7 @@ onMounted(async () => {
 .table thead th {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
-  padding-left: 12px;   /* title-cell 과 동일한 left margin */
+  padding-left: 24px;
   padding-right: 12px;
 }
-
 </style>
