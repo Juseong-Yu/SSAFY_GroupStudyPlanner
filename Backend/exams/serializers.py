@@ -1,93 +1,54 @@
+# exams/serializers.py
 from rest_framework import serializers
-from .models import Exam, Question, ChoiceOption
-from studies.models import Study
+from .models import Exam, ExamQuestion, ExamAIDraft
 
 
-class QuestionSerializer(serializers.ModelSerializer):
-    # options: ["보기1", "보기2", "보기3", "보기4"]
-    options = serializers.ListField(
+class ExamQuestionCreateSerializer(serializers.Serializer):
+    text = serializers.CharField()
+    choices = serializers.ListField(
         child=serializers.CharField(),
         min_length=4,
         max_length=4,
     )
+    correct_index = serializers.IntegerField(min_value=0, max_value=3)
 
+
+class ExamCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    visibility = serializers.ChoiceField(choices=[c[0] for c in Exam.VISIBILITY_CHOICES])
+    due_at = serializers.DateTimeField(required=False, allow_null=True)
+    questions = ExamQuestionCreateSerializer(many=True)
+    ai_draft_id = serializers.IntegerField(required=False, allow_null=True)
+
+
+class ExamQuestionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Question
-        fields = ("text", "order", "answer_index", "options")
-
-
-class ExamCreateSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True)
-
-    class Meta:
-        model = Exam
-        fields = ("title", "description", "deadline", "questions")
-
-    def create(self, validated_data):
-        """
-        study는 URL에서, user는 request에서 context로 받아온다.
-        """
-        request = self.context.get("request")
-        study = self.context.get("study")
-
-        user = getattr(request, "user", None)
-        questions_data = validated_data.pop("questions")
-
-        exam = Exam.objects.create(
-            study=study,
-            created_by=user,
-            **validated_data,
-        )
-
-        for idx, q_data in enumerate(questions_data):
-            options_texts = q_data.pop("options")
-            order = q_data.get("order", idx + 1)
-
-            question = Question.objects.create(
-                exam=exam,
-                order=order,
-                **q_data,
-            )
-
-            for o_idx, text in enumerate(options_texts):
-                ChoiceOption.create(
-                    question=question,
-                    text=text,
-                    order=o_idx,
-                )
-
-        return exam
-
-class ChoiceOptionDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChoiceOption
-        fields = ("order", "text")
-
-
-class QuestionDetailSerializer(serializers.ModelSerializer):
-    options = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Question
-        fields = ("id", "order", "text", "answer_index", "options")
-
-    def get_options(self, obj):
-        return [
-            option.text
-            for option in obj.options.order_by("order")
-        ]
+        model = ExamQuestion
+        fields = ['id', 'order', 'text', 'choices', 'correct_index']
 
 
 class ExamDetailSerializer(serializers.ModelSerializer):
-    questions = QuestionDetailSerializer(many=True)
+    questions = ExamQuestionSerializer(many=True, read_only=True)
+    study_id = serializers.IntegerField(source='study.id')
 
     class Meta:
         model = Exam
-        fields = (
-            "id",
-            "study",
-            "title",
-            "description",
-            "deadline",
-            "questions",
-        )
+        fields = [
+            'id',
+            'study_id',
+            'title',
+            'visibility',
+            'due_at',
+            'questions',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class ExamAIDraftSerializer(serializers.Serializer):
+    """
+    프론트에서 기대하는 형태대로 변환
+    { "title": "...", "questions": [{ text, choices, correctIndex }] }
+    """
+    title = serializers.CharField()
+    questions = serializers.ListField()
