@@ -8,9 +8,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import DiscordGuild, DiscordStudyMapping
-from .serializers import DiscordStudyMappingSerializer, DiscordStudyScheduleSerializer
+from .serializers import DiscordStudyMappingSerializer
 from studies.models import Study
 from schedules.models import StudySchedule
+from schedules.serializers import StudyScheduleSerializer
 
 # Create your views here.
 
@@ -50,8 +51,31 @@ def study_schedule_list(request, study_id):
     for schedule in schedules:
         if schedule.schedule.end_at < timezone.now():
             continue
-        result.append(DiscordStudyScheduleSerializer(schedule).data)
+        result.append(StudyScheduleSerializer(schedule).data)
     
     result.sort(key=lambda x: x["schedule"]["start_at"])
 
+    return Response(result, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def guild_schedule_list(request, study_id):
+
+    guild_id = request.query_params.get("guild_id")
+    mappings = DiscordStudyMapping.objects.filter(guild=guild_id)
+
+    if not mappings:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    result = []
+    for mapping in mappings:
+        schedules = StudySchedule.objects.filter(study=mapping.study)
+        study = Study.objects.get(id=mapping.study.id)
+        res = {"id": study.id,
+               "name": study.name,
+               "schedule": []}
+        for schedule in schedules:
+            if schedule.schedule.end_at < timezone.now():
+                continue
+            res["schedule"].append(StudyScheduleSerializer(schedule).data)
+        result.append(res)
     return Response(result, status=status.HTTP_200_OK)
