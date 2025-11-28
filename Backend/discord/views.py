@@ -44,24 +44,27 @@ def connect_study(request, study_id):
 def study_schedule_list(request, study_id):
     
     guild_id = request.query_params.get("guild_id")
-    object = get_object_or_404(DiscordStudyMapping, guild_id=guild_id, study_id=study_id)
-    schedules = StudySchedule.objects.filter(study=object.study)
+    mapping = get_object_or_404(DiscordStudyMapping, guild_id=guild_id, study_id=study_id)
+    study = Study.objects.get(id=study_id)
+    schedules = StudySchedule.objects.filter(study=study)
 
-    result = []
+    result = {"id": study.id,
+               "name": study.name,
+               "schedule": []}
 
     for schedule in schedules:
         if schedule.schedule.end_at < timezone.now():
             continue
-        result.append(StudyScheduleSerializer(schedule).data)
+        result["schedule"].append(StudyScheduleSerializer(schedule).data)
     
-    result.sort(key=lambda x: x["schedule"]["start_at"])
+    result["schedule"].sort(key=lambda x: x["schedule"]["start_at"])
 
     return Response(result, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def guild_schedule_list(request, study_id):
+def guild_schedule_list(request):
 
-    guild_id = request.query_params.get("guild_id")
+    guild_id = request.GET.get("guild_id")
     mappings = DiscordStudyMapping.objects.filter(guild=guild_id)
 
     if not mappings:
@@ -79,4 +82,5 @@ def guild_schedule_list(request, study_id):
                 continue
             res["schedule"].append(StudyScheduleSerializer(schedule).data)
         result.append(res)
+    print(result)
     return Response(result, status=status.HTTP_200_OK)
