@@ -12,6 +12,8 @@ import NoticeCreatePage from '@/views/studies/notice/NoticeCreatePage.vue'
 import NoticeDetailPage from '@/views/studies/notice/NoticeDetailPage.vue'
 import NoticeEditPage from '@/views/studies/notice/NoticeEditPage.vue'
 import SchedulePage from '@/views/studies/schedule/SchedulePage.vue'
+import StudyExamsPage from '@/views/studies/exams/StudyExamsPage.vue'
+import ExamEditorPage from '@/views/studies/exams/ExamEditorPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,6 +83,25 @@ const router = createRouter({
       name: 'ScheduleMain',
       component: SchedulePage,
     },
+    {
+    path: '/studies/:studyId/exams',
+    name: 'StudyExams',
+    component: StudyExamsPage,
+    props: true,
+  },
+  {
+    path: '/studies/:studyId/exams/new',
+    name: 'ExamCreate',
+    component: ExamEditorPage,
+    props: route => ({
+      studyId: Number(route.params.studyId),
+      mode: (route.query.mode as 'manual' | 'ai') || 'manual',
+      questionCount: route.query.questionCount ? Number(route.query.questionCount) : 5,
+      visibility: (route.query.visibility as 'public' | 'score_only' | 'private') || 'public',
+      dueDate: (route.query.dueDate as string) || null,
+      draftId: route.query.draftId ? Number(route.query.draftId) : null,
+    }),
+  },
   ],
 })
 

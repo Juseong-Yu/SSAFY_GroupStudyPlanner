@@ -13,5 +13,5 @@ urlpatterns = [
     path('<int:study_id>/posts/', include('posts.urls')),
     path('<int:study_id>/schedules/', include('schedules.urls')),
     path('<int:study_id>/discord/', include('discord.urls')),
-    
+    path('<int:study_id>/exams/', include('exams.urls')),
 ]
