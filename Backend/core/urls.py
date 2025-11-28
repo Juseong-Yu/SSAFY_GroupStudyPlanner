@@ -27,6 +27,6 @@ urlpatterns = [
     path('posts/', include('posts.urls')),
     path('schedules/', include('schedules.urls')),
     path('discord/', include('discord.urls')),
-    
+    path('exams/', include('exams.urls')),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
