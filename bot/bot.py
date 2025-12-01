@@ -1,10 +1,10 @@
 import asyncio
+import aiohttp
 import logging
 from discord.ext import commands
 import discord
 from config import LOG_LEVEL, DJANGO_API_URL
 from worker import notice_worker
-from api import get_data
 
 # 로거 (모듈 단위 로깅)
 logging.basicConfig(level=LOG_LEVEL)
@@ -30,6 +30,15 @@ async def on_ready():
     # 봇 연결 완료 시 한 번 실행됨
     bot.loop.create_task(notice_worker(bot, notice_queue))
 
+# get 요청 보내기
+async def get_data(url, params=None):
+    params = params or {}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            else:
+                return None
 
 @bot.command(name="study_schedule_list")
 async def study_schedule_list(ctx, study_id: int):
