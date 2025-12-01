@@ -20,7 +20,6 @@ from schedules.serializers import StudyScheduleSerializer
 def connect_study(request, study_id):
     study = get_object_or_404(Study, id=study_id)
     data = request.data
-    print(data)
     guild_id = data.get("guild_id")
 
     guild, _ = DiscordGuild.objects.update_or_create(
@@ -42,7 +41,7 @@ def connect_study(request, study_id):
 
 @api_view(['GET'])
 def study_schedule_list(request, study_id):
-    
+    print("==================")
     guild_id = request.query_params.get("guild_id")
     mapping = get_object_or_404(DiscordStudyMapping, guild_id=guild_id, study_id=study_id)
     study = Study.objects.get(id=study_id)
