@@ -10,8 +10,8 @@ app = FastAPI(title="Discord Bot API")
 
 class NoticeIn(BaseModel):
     channel_id: int
-    title: str
     study_id: int
+    title: str
     content: str
     author: str
     url: str | None = None
@@ -20,7 +20,7 @@ class NoticeIn(BaseModel):
 async def healthz():
     return {"status": "ok"}
 
-@app.get("/notice/")
+@app.post("/notice/")
 async def receive_notice(payload: NoticeIn):
     item = payload.dict()
     
