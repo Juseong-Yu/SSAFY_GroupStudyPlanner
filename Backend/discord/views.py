@@ -20,7 +20,6 @@ from schedules.serializers import StudyScheduleSerializer
 def connect_study(request, study_id):
     study = get_object_or_404(Study, id=study_id)
     data = request.data
-    print(data)
     guild_id = data.get("guild_id")
 
     guild, _ = DiscordGuild.objects.update_or_create(

@@ -73,7 +73,7 @@ async def connect(ctx, study_id: int):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload) as resp:
             if resp.status == 200:
-                data = resp.json()
+                data = await resp.json()
             else:
                 data = None
     if data:
