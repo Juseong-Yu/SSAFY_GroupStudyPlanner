@@ -1,0 +1,30 @@
+from fastapi import FastAPI, Header
+from pydantic import BaseModel, Field
+from typing import Optional
+import logging
+from bot import notice_queue  # 전역 큐
+from utils import verify_api_key
+
+logger = logging.getLogger("api")
+app = FastAPI(title="Discord Bot API")
+
+class NoticeIn(BaseModel):
+    channel_id: int
+    study_id: int
+    title: str
+    content: str
+    author: str
+    url: str | None = None
+
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
+
+@app.post("/notice/")
+async def receive_notice(payload: NoticeIn):
+    item = payload.dict()
+    
+    await notice_queue.put(item)
+    logger.info(f"Received and queued notice: channel={item['channel_id']} title={item['title']}")
+
+    return {"status": "queued", "channel": item['channel_id']}
