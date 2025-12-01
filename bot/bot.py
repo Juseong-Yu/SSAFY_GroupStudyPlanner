@@ -40,6 +40,7 @@ async def get_data(url, params=None):
             else:
                 return None
 
+# 단일 스터디 일정 출력
 @bot.command(name="study_schedule_list")
 async def study_schedule_list(ctx, study_id: int):
     guild = ctx.guild
@@ -63,6 +64,7 @@ async def study_schedule_list(ctx, study_id: int):
     else:
         await ctx.send("스터디 일정이 존재하지 않습니다.")
 
+# 서버 전체 스터디 일정 출력
 @bot.command(name="guild_schedule_list")
 async def guild_schedule_list(ctx):
     guild = ctx.guild
