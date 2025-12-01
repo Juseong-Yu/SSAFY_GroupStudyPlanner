@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Header
 from pydantic import BaseModel, Field
 from typing import Optional
+import aiohttp
 import logging
 from bot import notice_queue  # 전역 큐
 from utils import verify_api_key
@@ -18,7 +19,17 @@ class NoticeIn(BaseModel):
 
 @app.get("/healthz")
 async def healthz():
-    return {"status": "ok"}    
+    return {"status": "ok"}
+
+
+async def get_data(url, params=None):
+    params = params or {}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            else:
+                return None
 
 @app.get("/notice/")
 async def receive_notice(payload: NoticeIn):

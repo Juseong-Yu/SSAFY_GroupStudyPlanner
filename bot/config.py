@@ -21,3 +21,5 @@ MAX_SEND_RETRIES: int = int(os.getenv("MAX_SEND_RETRIES", "3"))
 
 # 타임아웃 설정 (Django에서 bot API 호출 시 권장)
 DEFAULT_HTTP_TIMEOUT: int = int(os.getenv("DEFAULT_HTTP_TIMEOUT", "2"))
+
+DJANGO_API_URL: str = os.getenv("DJANGO_API_URL")
