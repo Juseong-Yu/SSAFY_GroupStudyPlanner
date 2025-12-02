@@ -13,6 +13,7 @@ from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSe
 from discord.models import DiscordStudyMapping
 
 from django.conf import settings
+import requests
 
 # Create your views here.
 
@@ -51,17 +52,17 @@ def notice_create(request, study_id):
         if serializer.is_valid():
 
             notice = serializer.save(author = request.user, study = study)
-            channel = DiscordStudyMapping.objects.get(study=study_id)
-            if channel:
+            mapping = DiscordStudyMapping.objects.get(study=study_id)
+            if mapping:
                 url = f"{settings.DISCORD_WEBHOOK_URL}notice/"
-                import requests
+
                 payload = {
-                    "channel_id": channel.guild.id,
+                    "channel_id": mapping.channel.id,
                     "study_id": study_id,
                     "title": serializer.data["title"],
                     "content": serializer.data["content"],
                     "author": user.username,
-                    "url": f"{settings.VUE_API_URL}studies/{study_id}/posts/notice_detail/{notice.id}"
+                    "url": f"{settings.VUE_API_URL}studies/{study_id}/notice/{notice.id}"
                 }
                 requests.post(url, json=payload)
 
