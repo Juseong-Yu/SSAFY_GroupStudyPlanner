@@ -27,7 +27,7 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
         url=payload.get("url")
     )
 
-    author = payload.get("author")
+    author = payload.get("author")["username"]
     if author:
         embed.set_footer(text=f"작성자: {author}")
 
