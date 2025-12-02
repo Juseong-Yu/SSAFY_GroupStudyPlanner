@@ -10,6 +10,9 @@ from rest_framework import status
 from .models import Notice, Post, UploadedImage
 from studies.models import Study, StudyMembership
 from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSerializer
+from discord.models import DiscordStudyMapping
+
+from django.conf import settings
 
 # Create your views here.
 
@@ -46,7 +49,22 @@ def notice_create(request, study_id):
 
         serializer = NoticeSerializer(data=request.data)
         if serializer.is_valid():
+
             notice = serializer.save(author = request.user, study = study)
+            channel = DiscordStudyMapping.objects.get(study=study_id)
+            if channel:
+                url = f"{settings.DISCORD_WEBHOOK_URL}notice/"
+                import requests
+                payload = {
+                    "channel_id": channel.guild.id,
+                    "study_id": study_id,
+                    "title": serializer.data["title"],
+                    "content": serializer.data["content"],
+                    "author": user.username,
+                    "url": f"{settings.VUE_API_URL}studies/{study_id}/posts/notice_detail/{notice.id}"
+                }
+                requests.post(url, json=payload)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
