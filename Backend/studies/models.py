@@ -9,7 +9,7 @@ class Study(models.Model):
         settings.AUTH_USER_MODEL,
         through = 'StudyMembership',
         related_name='joined_studies'
-    ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StudyMembership(models.Model):

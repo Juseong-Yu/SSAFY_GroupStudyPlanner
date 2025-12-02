@@ -21,5 +21,19 @@ urlpatterns = [
         views.exam_ai_generate,
         name="exam-ai-generate",
     ),
-   
+    path(
+        "<int:exam_id>/",
+        views.exam_detail,
+        name="exam-detail",
+    ),
+    path(
+        "<int:exam_id>/submit/",
+        views.exam_submit,
+        name="exam_submit",
+    ),
+    path(
+        "<int:exam_id>/my_result/",
+        views.exam_my_result,
+        name="exam_my_result",
+    ),
 ]
