@@ -47,8 +47,8 @@ def connect_channel(request, study_id):
 
 @api_view(['GET'])
 def study_schedule_list(request, study_id):
-    guild_id = request.query_params.get("guild_id")
-    mapping = get_object_or_404(DiscordStudyMapping, guild_id=guild_id, study_id=study_id)
+    channel_id = request.query_params.get("channel_id")
+    mapping = get_object_or_404(DiscordStudyMapping, channel_id=channel_id, study_id=study_id)
     study = Study.objects.get(id=study_id)
     schedules = StudySchedule.objects.filter(study=study)
 
@@ -65,6 +65,7 @@ def study_schedule_list(request, study_id):
 
     return Response(result, status=status.HTTP_200_OK)
 
+# 수정 필요
 @api_view(['GET'])
 def guild_schedule_list(request):
 
