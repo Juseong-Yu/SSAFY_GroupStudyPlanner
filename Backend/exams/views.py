@@ -4,7 +4,8 @@ import requests
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-
+from django.utils import timezone
+from django.db import transaction
 from rest_framework.decorators import (
     api_view,
     permission_classes,
@@ -16,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from studies.models import Study
-from .models import Exam, ExamQuestion, ExamAIDraft
+from .models import Exam, ExamQuestion, ExamAIDraft, ExamResult
 
 
 # ====== GMS 설정 (settings.py 에서 가져오기) ======
@@ -72,6 +73,15 @@ def exam_collection(request, study_id: int):
     if request.method == "GET":
         exams = Exam.objects.filter(study=study).order_by("-created_at")
 
+        # ✅ 현재 로그인 유저가 이 스터디에서 푼 시험들 한 번에 조회
+        user_results = ExamResult.objects.filter(
+            exam__study=study,
+            user=request.user,
+        )
+
+        # exam_id 집합만 사용 (점수는 안 씀)
+        taken_exam_ids = set(user_results.values_list("exam_id", flat=True))
+
         data = []
         for exam in exams:
             data.append(
@@ -82,6 +92,8 @@ def exam_collection(request, study_id: int):
                     "due_at": exam.due_at,
                     "created_at": exam.created_at,
                     "question_count": exam.questions.count(),
+                    # ✅ 내가 응시했는지 여부만 내려줌
+                    "has_taken": exam.id in taken_exam_ids,
                 }
             )
         return Response(data, status=status.HTTP_200_OK)
@@ -356,14 +368,224 @@ def exam_ai_generate(request, study_id: int):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def exam_ai_draft_detail(request, study_id: int, draft_id: int):
-    """
-    GET /studies/<study_id>/exams/ai-draft/<draft_id>/
-    → ExamEditorPage.vue 에서 초기 값 세팅할 때 사용
-    """
     draft = get_object_or_404(
         ExamAIDraft,
         pk=draft_id,
         study_id=study_id,
-        author=request.user,  # 본인이 만든 Draft만 조회
+        author=request.user,
     )
     return Response(draft.payload, status=status.HTTP_200_OK)
+
+# ====== 5. 문제 제출 상세 (POST) ======
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def exam_submit(request, study_id: int, exam_id: int):
+    """
+    POST /studies/<study_id>/exams/<exam_id>/submit/
+    """
+    exam = get_object_or_404(Exam, pk=exam_id, study_id=study_id)
+
+    # 🔧 스터디 참여자인지 검사 - 인스턴스.members 대신 ORM 필터 사용
+    if not Study.objects.filter(pk=exam.study_id, members__id=request.user.id).exists():
+        return Response({"detail": "이 시험에 응시할 권한이 없습니다."}, status=403)
+
+    answers = request.data.get("answers")
+    if not isinstance(answers, dict):
+        return Response(
+            {"detail": "answers 필드는 반드시 객체(JSON)여야 합니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 이미 제출했는지 검사
+    existing = ExamResult.objects.filter(exam=exam, user=request.user).first()
+    if existing:
+        return Response(
+            {"detail": "이미 이 시험을 제출했습니다."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 채점
+    questions = list(exam.questions.all().order_by("order"))
+    total_count = len(questions)
+    correct_count = 0
+    answers_detail = {}
+
+    for q in questions:
+        raw_answer = answers.get(str(q.id), answers.get(q.id, None))
+
+        selected_index = None
+        is_correct = False
+
+        if q.choices:  # 객관식
+            if isinstance(raw_answer, int):
+                if 0 <= raw_answer < len(q.choices):
+                    selected_index = raw_answer
+            elif isinstance(raw_answer, str):
+                try:
+                    selected_index = q.choices.index(raw_answer)
+                except ValueError:
+                    selected_index = None
+
+            if (
+                selected_index is not None
+                and q.correct_index is not None
+                and selected_index == q.correct_index
+            ):
+                is_correct = True
+        else:
+            is_correct = False
+
+        if is_correct:
+            correct_count += 1
+
+        answers_detail[q.id] = {
+            "question_id": q.id,
+            "order": q.order,
+            "raw_answer": raw_answer,
+            "selected_index": selected_index,
+            "correct_index": q.correct_index,
+            "is_correct": is_correct,
+        }
+
+    score = 0.0
+    if total_count > 0:
+        score = (correct_count / total_count) * 100.0
+
+    with transaction.atomic():
+        result = ExamResult.objects.create(
+            exam=exam,
+            user=request.user,
+            score=score,
+            correct_count=correct_count,
+            total_count=total_count,
+            submitted_at=timezone.now(),
+            answers=answers_detail,
+        )
+
+    return Response(
+        {
+            "id": result.id,
+            "exam_id": exam.id,
+            "user_id": request.user.id,
+            "score": score,
+            "correct_count": correct_count,
+            "total_count": total_count,
+            "submitted_at": result.submitted_at,
+            "answers": answers_detail,
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def exam_my_result(request, study_id: int, exam_id: int):
+    exam = get_object_or_404(Exam, pk=exam_id, study_id=study_id)
+    study = exam.study
+
+    # 🔧 멤버인지 확인 (인스턴스.members 안 쓰고 ORM으로 검사)
+    if not Study.objects.filter(pk=study.id, members__id=request.user.id).exists():
+        return Response(
+            {"detail": "이 시험 결과를 조회할 권한이 없습니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    is_leader = getattr(study, "leader_id", None) == request.user.id
+    visibility = exam.visibility  # 'public' | 'score_only' | 'private'
+
+    try:
+        my_result = ExamResult.objects.get(exam=exam, user=request.user)
+    except ExamResult.DoesNotExist:
+        return Response(
+            {"detail": "아직 이 시험을 응시하지 않았습니다."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if (not is_leader) and visibility == "private":
+        return Response(
+            {"detail": "이 시험의 결과는 비공개입니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    questions_qs = exam.questions.all().order_by("order")
+    questions_data = [
+        {
+            "id": q.id,
+            "order": q.order,
+            "text": q.text,
+            "choices": q.choices,
+        }
+        for q in questions_qs
+    ]
+
+    my_result_data = {
+        "id": my_result.id,
+        "user": {
+            "id": my_result.user.id,
+            "username": my_result.user.username,
+        },
+        "score": my_result.score,
+        "correct_count": my_result.correct_count,
+        "total_count": my_result.total_count,
+        "submitted_at": my_result.submitted_at,
+        "answers": my_result.answers,
+    }
+
+    can_see_scoreboard = is_leader or visibility == "public"
+    can_see_others_detail = is_leader
+
+    scoreboard = []
+    all_results_detail = []
+
+    if can_see_scoreboard or can_see_others_detail:
+        all_results_qs = (
+            ExamResult.objects.filter(exam=exam)
+            .select_related("user")
+            .order_by("-submitted_at")
+        )
+
+        if can_see_scoreboard:
+            scoreboard = [
+                {
+                    "result_id": r.id,
+                    "user": {
+                        "id": r.user.id,
+                        "username": r.user.username,
+                    },
+                    "score": r.score,
+                    "correct_count": r.correct_count,
+                    "total_count": r.total_count,
+                }
+                for r in all_results_qs
+            ]
+
+        if can_see_others_detail:
+            all_results_detail = [
+                {
+                    "result_id": r.id,
+                    "user": {
+                        "id": r.user.id,
+                        "username": r.user.username,
+                    },
+                    "score": r.score,
+                    "correct_count": r.correct_count,
+                    "total_count": r.total_count,
+                    "submitted_at": r.submitted_at,
+                    "answers": r.answers,
+                }
+                for r in all_results_qs
+            ]
+
+    response_data = {
+        "visibility": visibility,
+        "my_result": my_result_data,
+        "questions": questions_data,
+    }
+
+    if scoreboard:
+        response_data["scoreboard"] = scoreboard
+
+    if all_results_detail:
+        response_data["all_results_detail"] = all_results_detail
+
+    return Response(response_data, status=status.HTTP_200_OK)
