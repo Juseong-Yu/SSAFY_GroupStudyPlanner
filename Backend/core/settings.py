@@ -32,6 +32,12 @@ AUTH_USER_MODEL = 'accounts.User'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+from dotenv import load_dotenv
+import os
+load_dotenv()
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+VUE_API_URL = os.getenv("VUE_API_URL")
+
 # Application definition
 
 INSTALLED_APPS = [
