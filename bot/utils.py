@@ -32,3 +32,33 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
         embed.set_footer(text=f"작성자: {author}")
 
     return embed
+
+def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
+    """
+    payload에 있는 title/content/start_at/end_at로 Embed를 만들어 반환
+    """
+    title = payload.get("title", "공지")
+    description = payload.get("content", "")
+    start_at = payload.get("start_at")
+    end_at = payload.get("end_at")
+    url = payload.get("url")
+    if url:
+        title = f"[{title}]({url})"
+
+    embed = discord.Embed(
+        title=None,
+        description = (
+            f"## {title}\n\n"
+            f"{description}\n\n"
+            f"- 시작: {start_at}\n"
+            f"- 종료: {end_at}"
+        ),
+        type="rich",
+        color = 0x3498DB
+    )
+    embed.set_author(
+        name="🗓️ 신규 일정 생성"
+    )
+    embed.timestamp = discord.utils.utcnow()
+    
+    return embed

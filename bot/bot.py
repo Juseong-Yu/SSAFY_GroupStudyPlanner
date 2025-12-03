@@ -4,7 +4,7 @@ import logging
 from discord.ext import commands
 import discord
 from config import LOG_LEVEL, DJANGO_API_URL
-from worker import notice_worker
+from worker import notice_worker, schedule_worker
 
 # 로거 (모듈 단위 로깅)
 logging.basicConfig(level=LOG_LEVEL)
@@ -20,7 +20,8 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # 전역 비동기 큐: api.py 에서 put(), worker.py 에서 get()
-notice_queue: asyncio.Queue = asyncio.Queue()
+notice_queue = asyncio.Queue()
+schedule_queue = asyncio.Queue()
 
 @bot.event
 async def on_ready():
@@ -29,6 +30,7 @@ async def on_ready():
 
     # 봇 연결 완료 시 한 번 실행됨
     bot.loop.create_task(notice_worker(bot, notice_queue))
+    bot.loop.create_task(schedule_worker(bot, schedule_queue))
 
 # get 요청 보내기
 async def get_data(url, params=None):
