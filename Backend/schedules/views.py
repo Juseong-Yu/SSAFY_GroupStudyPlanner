@@ -9,6 +9,11 @@ from rest_framework import status
 from .models import Schedule, StudySchedule, PersonalSchedule
 from studies.models import Study, StudyMembership
 from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer
+from discord.models import DiscordStudyMapping
+
+from django.conf import settings
+import requests
+
 # Create your views here.
 
 NOT_MEMBER = "NOT_MEMBER"
@@ -45,6 +50,25 @@ def study_schedule_create(request, study_id):
     schedule_serializer = ScheduleSerializer(data = request.data)
     schedule_serializer.is_valid(raise_exception=True)
     schedule = schedule_serializer.save()
+
+    # 디스코드 알림
+    mapping = DiscordStudyMapping.objects.get(study=study_id)
+    if mapping:
+        url = f"{settings.DISCORD_WEBHOOK_URL}schedule/"
+
+        payload = {
+            "channel_id": mapping.channel.id,
+            "study_id": study_id,
+            "title": schedule_serializer.data["title"],
+            "content": schedule_serializer.data["description"],
+            "start_at": schedule_serializer.data["start_at"],
+            "end_at": schedule_serializer.data["end_at"],
+            "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
+        }
+        try:
+            requests.post(url, json=payload)
+        except:
+            pass
 
     # study schedule 생성
     study_schedule = StudySchedule.objects.create(
