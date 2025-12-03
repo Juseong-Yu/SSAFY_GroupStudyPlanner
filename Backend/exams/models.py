@@ -69,16 +69,7 @@ class ExamQuestion(models.Model):
 
 
 class ExamAIDraft(models.Model):
-    """
-    AI가 생성해둔 초안.
-    payload 구조:
-    {
-      "title": "...",
-      "questions": [
-        { "text": "...", "choices": [...], "correctIndex": 1 }
-      ]
-    }
-    """
+
     study = models.ForeignKey(
         Study,
         on_delete=models.CASCADE,
@@ -97,3 +88,31 @@ class ExamAIDraft(models.Model):
 
     def __str__(self):
         return f'AI Draft #{self.id} for study {self.study_id}'
+
+
+class ExamResult(models.Model):
+    exam = models.ForeignKey(
+        'Exam',
+        on_delete=models.CASCADE,
+        related_name='results'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='exam_results'
+    )
+
+    score = models.IntegerField(default=0)
+    correct_count = models.IntegerField(default=0)
+    total_count = models.IntegerField(default=0)
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    # 선택사항 (유저 답안 저장하고 싶을 때)
+    answers = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('exam', 'user')  # 한 사람당 한 번만 제출
+
+    def __str__(self):
+        return f"{self.user.username} - {self.exam.title} ({self.score}점)"

@@ -3,7 +3,6 @@
   <AppShell>
     <!-- ✅ 양쪽 여백 맞추기: 전체를 한 번 더 감싸서 max-width + 중앙 정렬 -->
     <div class="container-fluid py-4 d-flex justify-content-center">
-      <!-- ⬇⬇ 여기만 수정: inline style 제거 + study-page-wrapper 클래스 추가 -->
       <div class="w-100 study-page-wrapper">
         <h2 class="fw-bold mb-1">{{ studyTitle }}</h2>
         <p class="text-muted mb-4 small">
@@ -18,7 +17,7 @@
             </div>
           </div>
 
-          <!-- 오른쪽: 공지사항 + 일정 -->
+          <!-- 오른쪽: 공지사항 + 시험 + 일정 -->
           <div class="col-12 col-xl-4">
             <div class="right-stack sticky-xl-top" style="top: 88px">
               <!-- ✅ 공지사항 -->
@@ -71,6 +70,60 @@
                     class="list-group-item py-4 text-center text-muted small"
                   >
                     아직 등록된 공지사항이 없어요.
+                  </div>
+                </div>
+              </div>
+
+              <!-- ✅ 시험 카드 -->
+              <div class="card mb-3 shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <span class="fw-semibold">시험</span>
+                  <RouterLink
+                    :to="{ name: 'StudyExams', params: { studyId: studyId } }"
+                    class="btn btn-sm btn-outline-primary"
+                  >
+                    전체보기
+                  </RouterLink>
+                </div>
+
+                <div class="list-group list-group-flush">
+                  <!-- 가까운 시험 최대 3개 -->
+                  <RouterLink
+                    v-for="exam in upcomingExams"
+                    :key="exam.id"
+                    :to="{ name: 'StudyExams', params: { studyId: studyId } }"
+                    class="list-group-item py-3 text-reset text-decoration-none notice-link"
+                  >
+                    <div class="fw-semibold text-truncate mb-1">
+                      {{ exam.title }}
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2 small text-muted">
+                      <span>
+                        {{ formatExamDue(exam.due_at) }}
+                      </span>
+
+                      <span class="badge bg-secondary-subtle text-secondary">
+                        {{ visibilityLabelMap[exam.visibility] }}
+                      </span>
+
+                      <span
+                        :class="
+                          exam.has_taken
+                            ? 'badge bg-success-subtle text-success'
+                            : 'badge bg-primary-subtle text-primary'
+                        "
+                      >
+                        {{ exam.has_taken ? '응시 완료' : '미응시' }}
+                      </span>
+                    </div>
+                  </RouterLink>
+
+                  <div
+                    v-if="!upcomingExams.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small"
+                  >
+                    아직 등록된 시험이 없어요.
                   </div>
                 </div>
               </div>
@@ -252,7 +305,7 @@ const joinedAt = ref<string | null>(null)
 const createdAt = ref<string | null>(null)
 
 const isMounted = ref(false)
-const isLoaded = ref(false) // 공지 / 스터디 / 일정 로딩 여부
+const isLoaded = ref(false) // 공지 / 스터디 / 일정 / 시험 로딩 여부
 
 onMounted(() => {
   isMounted.value = true
@@ -262,7 +315,6 @@ onMounted(() => {
  *   공지사항 타입 / 상태
  * ========================= */
 
-// 백엔드 응답 그대로
 interface ApiNotice {
   id: number
   title: string
@@ -277,7 +329,6 @@ interface ApiNotice {
   }
 }
 
-// 프론트에서 쓰기 편한 형태
 type Notice = {
   id: number
   title: string
@@ -290,10 +341,8 @@ type Notice = {
   }
 }
 
-// 전체 공지 목록 (원본)
 const notices = ref<Notice[]>([])
 
-// 앞 페이지에 보여줄 최근 3개 공지
 const topNotices = computed(() =>
   [...notices.value]
     .sort(
@@ -313,8 +362,8 @@ interface StudyScheduleItem {
     id: number
     title: string
     description: string
-    start_at: string // "2025-11-21T13:00:00Z"
-    end_at: string   // "2025-11-22T00:00:00Z"
+    start_at: string
+    end_at: string
   }
   author: {
     id: number
@@ -362,6 +411,29 @@ const detailError = ref('')
 const detail = ref<ScheduleDetail | null>(null)
 
 /* =========================
+ *   시험 타입 / 상태
+ * ========================= */
+
+type VisibilityType = 'public' | 'score_only' | 'private'
+
+interface ExamListItem {
+  id: number
+  title: string
+  due_at: string | null
+  visibility: VisibilityType
+  has_taken: boolean
+}
+
+const exams = ref<ExamListItem[]>([])
+
+// 공개 범위 → 라벨 매핑
+const visibilityLabelMap: Record<VisibilityType, string> = {
+  public: '전체 공개',
+  score_only: '점수만 공개',
+  private: '비공개',
+}
+
+/* =========================
  *   API 호출 함수들
  * ========================= */
 
@@ -406,7 +478,6 @@ async function fetchSchedules() {
       const start = new Date(item.schedule.start_at)
       const end = new Date(item.schedule.end_at)
 
-      // ✅ end가 정확히 자정이면 1ms 빼서 "전날 23:59:59.999"로 맞추기
       if (
         end.getHours() === 0 &&
         end.getMinutes() === 0 &&
@@ -417,12 +488,12 @@ async function fetchSchedules() {
       }
 
       return {
-        id: String(item.id), // 🔥 detail에서 사용하는 id와 맞추기
+        id: String(item.id),
         title: item.schedule.title,
         start,
         end,
-        backgroundColor: '#e7f1ff', // 아주 연한 파랑
-        borderColor: '#b6d4fe',     // 보통 파랑
+        backgroundColor: '#e7f1ff',
+        borderColor: '#b6d4fe',
         textColor: '#084298',
       }
     })
@@ -455,7 +526,6 @@ async function fetchNotices() {
         id: n.author.id,
         username: n.author.username,
         email: n.author.email,
-        // 🔥 여기서 절대경로로 변환
         profileImg: n.author.profile_img
           ? `${API_BASE}${n.author.profile_img}`
           : null,
@@ -467,11 +537,35 @@ async function fetchNotices() {
   }
 }
 
+// 🔗 시험 목록 조회 API 호출
+async function fetchExams() {
+  try {
+    await ensureCsrf()
+
+    const { data } = await axios.get<any[]>(
+      `${API_BASE}/studies/${studyId.value}/exams/`,
+      {
+        withCredentials: true,
+      }
+    )
+
+    exams.value = data.map((exam) => ({
+      id: exam.id,
+      title: exam.title,
+      due_at: exam.due_at,
+      visibility: exam.visibility as VisibilityType,
+      has_taken: Boolean(exam.has_taken),
+    }))
+  } catch (error) {
+    console.error('시험 목록 조회 실패:', error)
+    exams.value = []
+  }
+}
+
 /* =========================
  *   유틸 함수들
  * ========================= */
 
-// 이니셜 생성
 function initials(name: string) {
   const parts = name.trim().split(/\s+/)
   const first = parts[0]?.[0] ?? ''
@@ -479,7 +573,6 @@ function initials(name: string) {
   return (first + last).toUpperCase()
 }
 
-// 날짜 표시 (yyyy.mm.dd)
 function formatDate(iso: string) {
   const d = new Date(iso)
   const yyyy = d.getFullYear()
@@ -488,7 +581,6 @@ function formatDate(iso: string) {
   return `${yyyy}.${mm}.${dd}`
 }
 
-// 일정 기간 표시 (MM/DD HH:mm ~ ...)
 function formatScheduleRange(startIso: string, endIso: string) {
   const start = new Date(startIso)
   const end = new Date(endIso)
@@ -509,7 +601,6 @@ function formatScheduleRange(startIso: string, endIso: string) {
   return `${startDate} ${startTime} ~ ${endDate} ${endTime}`
 }
 
-// 모달 시간용 (로컬 날짜/시간)
 function formatDateOnly(iso: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
@@ -527,29 +618,57 @@ function formatTimeOnly(iso: string) {
   return `${hh}:${mi}`
 }
 
+// ✅ 시험 마감일 표시
+function formatExamDue(iso: string | null) {
+  if (!iso) return '마감 없음'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '마감 없음'
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `마감: ${yyyy}.${mm}.${dd} ${hh}:${mi}`
+}
+
 /* =========================
  *   오른쪽 카드 계산 값
  * ========================= */
 
-// ✅ 오늘 00:00 기준(과거 일정 필터용)
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 
-// 오른쪽 카드에 보여줄 상위 3개 일정 (과거 일정 제외)
+// 일정: 오른쪽 카드에 보여줄 상위 3개 일정
 const upcomingSchedules = computed(() =>
   schedules.value
-    // 이미 끝난 일정(end_at < 오늘 00:00)은 제외
     .filter((item) => {
       const end = new Date(item.schedule.end_at)
       return end.getTime() >= today.getTime()
     })
-    // 가까운 일정 순으로 정렬
     .sort(
       (a, b) =>
         new Date(a.schedule.start_at).getTime() -
         new Date(b.schedule.start_at).getTime()
     )
-    // 상위 3개만 노출
+    .slice(0, 3)
+)
+
+// 시험: 가까운 시험 상위 3개
+const upcomingExams = computed(() =>
+  exams.value
+    .filter((exam) => {
+      if (!exam.due_at) return true // 마감 없음은 항상 표시
+      const due = new Date(exam.due_at)
+      return due.getTime() >= today.getTime()
+    })
+    .sort((a, b) => {
+      if (!a.due_at && !b.due_at) return 0
+      if (!a.due_at) return 1
+      if (!b.due_at) return -1
+      return (
+        new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
+      )
+    })
     .slice(0, 3)
 )
 
@@ -563,7 +682,7 @@ const calendarOptions = ref<CalendarOptions>({
   height: 'auto',
   locale: 'ko',
   selectable: true,
-  timeZone: 'UTC', // 서버에서 오는 ISO(UTC)를 그대로 쓰기
+  timeZone: 'UTC',
   events: [],
   dateClick: (info: any) => {
     console.log('dateClick:', info.dateStr)
@@ -604,7 +723,6 @@ function closeDetailModal() {
   detailError.value = ''
 }
 
-/* author 아바타 */
 const detailAuthorAvatar = computed(() => {
   if (!detail.value || !detail.value.author.profile_img) return null
   return `${API_BASE}${detail.value.author.profile_img}`
@@ -624,6 +742,7 @@ watch(
       await fetchStudy()
       await fetchSchedules()
       await fetchNotices()
+      await fetchExams() // ✅ 시험도 함께 로딩
     } finally {
       isLoaded.value = true
     }
@@ -647,9 +766,8 @@ watch(
 </script>
 
 <style scoped>
-/* ✅ 반응형 메인 래퍼: 화면 넓어질수록 조금씩 더 넓게 */
 .study-page-wrapper {
-  max-width: 1000px; /* 기본값: 기존과 비슷 */
+  max-width: 1000px;
 }
 
 @media (min-width: 992px) {
@@ -670,7 +788,6 @@ watch(
   }
 }
 
-/* 캘린더 카드 느낌 */
 .calendar-wrapper :deep(.fc) {
   background-color: #fff;
   border-radius: 1rem;
@@ -705,7 +822,6 @@ watch(
   text-decoration: none;
 }
 
-/* 요일 헤더(월화수목금토일) 색상 */
 :deep(.fc .fc-col-header-cell-cushion) {
   color: #3b4b70;
   text-decoration: none;
@@ -715,7 +831,6 @@ watch(
   color: #3b4b70;
 }
 
-/* 공지사항 아바타 */
 .avatar {
   width: 28px;
   height: 28px;
@@ -739,12 +854,10 @@ watch(
   border-radius: 1rem;
 }
 
-/* 공지 카드 클릭 스타일 */
 .notice-link:hover {
   background-color: #f8fafc;
 }
 
-/* 일정 리스트 hover 느낌 */
 .list-item-clickable {
   cursor: pointer;
 }
@@ -752,7 +865,6 @@ watch(
   background-color: #f8fafc;
 }
 
-/* 모달 공통 */
 .schedule-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -782,7 +894,6 @@ watch(
   padding: 1.5rem 1.75rem 1.75rem;
 }
 
-/* 시간 요약 박스 */
 .time-summary {
   background: #f7f9fc;
 }
