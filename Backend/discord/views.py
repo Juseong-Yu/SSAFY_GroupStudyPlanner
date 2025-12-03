@@ -65,12 +65,11 @@ def study_schedule_list(request, study_id):
 
     return Response(result, status=status.HTTP_200_OK)
 
-# 수정 필요
 @api_view(['GET'])
-def guild_schedule_list(request):
+def channel_schedule_list(request):
 
-    guild_id = request.GET.get("guild_id")
-    mappings = DiscordStudyMapping.objects.filter(guild=guild_id)
+    channel_id = request.GET.get("channel_id")
+    mappings = DiscordStudyMapping.objects.filter(channel_id=channel_id)
 
     if not mappings:
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -87,5 +86,4 @@ def guild_schedule_list(request):
                 continue
             res["schedule"].append(StudyScheduleSerializer(schedule).data)
         result.append(res)
-    print(result)
     return Response(result, status=status.HTTP_200_OK)
