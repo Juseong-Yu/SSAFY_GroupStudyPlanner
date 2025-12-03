@@ -1,10 +1,26 @@
 from typing import Optional, Dict, Any
 from fastapi import Header, HTTPException
+from datetime import datetime, timezone, timedelta
 import logging
 import discord
 from config import BOT_API_SECRET
 
 logger = logging.getLogger("utils")
+
+def normalize_datetime(dt: str) -> str:
+    dt_utc = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+    # kst = dt_utc.astimezone(timezone(timedelta(hours=9)))
+    return dt_utc.strftime("%Y-%m-%d %H:%M")
+
+def normalize_description(md: str) -> str:
+    lines = md.split("\n")
+    result = []
+    for line in lines:
+        if line.strip().startswith("```"):
+            result.append(line.strip())
+        else:
+            result.append(line)
+    return "\n".join(result)
 
 def verify_api_key(x_bot_secret: Optional[str]):
     """
@@ -29,7 +45,7 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
         title = None,
         description = (
             f"## {title}\n\n"
-            f"{description}"
+            f"{normalize_description(description)}"
         ),
         type = "rich",
         color=0xF1C40F
@@ -60,9 +76,9 @@ def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
         title=None,
         description = (
             f"## {title}\n\n"
-            f"{description}\n\n"
-            f"- 시작: {start_at}\n"
-            f"- 종료: {end_at}"
+            f"{normalize_description(description)}\n\n"
+            f"- 시작: {normalize_datetime(start_at)}\n"
+            f"- 종료: {normalize_datetime(end_at)}"
         ),
         type="rich",
         color = 0x3498DB
