@@ -20,16 +20,27 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
     payload에 있는 title/content/author_name로 Embed를 만들어 반환.
     확장 포인트: 필드별 색상, 타임스탬프, 필드 추가 등.
     """
+    title = payload.get("title", "공지")
+    description = payload.get("content", "")
+    url = payload.get("url")
+    if url:
+        title = f"[{title}]({url})"
     embed = discord.Embed(
-        title=payload.get("title", "공지"),
-        description=payload.get("content", ""),
-        type="rich",
-        url=payload.get("url")
+        title = None,
+        description = (
+            f"## {title}\n\n"
+            f"{description}"
+        ),
+        type = "rich",
+        color=0xF1C40F
     )
+    
+    embed.set_author(name="📢 공지사항")
+    embed.timestamp = discord.utils.utcnow()
 
-    author = payload.get("author")["username"]
-    if author:
-        embed.set_footer(text=f"작성자: {author}")
+    # author = payload.get("author")["username"]
+    # if author:
+    #     embed.set_footer(text=f"작성자: {author}")
 
     return embed
 
@@ -56,9 +67,7 @@ def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
         type="rich",
         color = 0x3498DB
     )
-    embed.set_author(
-        name="🗓️ 신규 일정 생성"
-    )
+    embed.set_author(name="🗓️ 신규 일정 생성")
     embed.timestamp = discord.utils.utcnow()
     
     return embed
