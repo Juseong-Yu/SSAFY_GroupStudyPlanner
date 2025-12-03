@@ -6,6 +6,16 @@ from config import BOT_API_SECRET
 
 logger = logging.getLogger("utils")
 
+def normalize_description(md: str) -> str:
+    lines = md.split("\n")
+    result = []
+    for line in lines:
+        if line.strip().startswith("```"):
+            result.append(line.strip())
+        else:
+            result.append(line)
+    return "\n".join(result)
+
 def verify_api_key(x_bot_secret: Optional[str]):
     """
     FastAPI 엔드포인트로 들어오는 요청에 대해 간단한 헤더 기반 인증 수행.
@@ -29,7 +39,7 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
         title = None,
         description = (
             f"## {title}\n\n"
-            f"{description}"
+            f"{normalize_description(description)}"
         ),
         type = "rich",
         color=0xF1C40F
@@ -60,7 +70,7 @@ def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
         title=None,
         description = (
             f"## {title}\n\n"
-            f"{description}\n\n"
+            f"{normalize_description(description)}\n\n"
             f"- 시작: {start_at}\n"
             f"- 종료: {end_at}"
         ),
