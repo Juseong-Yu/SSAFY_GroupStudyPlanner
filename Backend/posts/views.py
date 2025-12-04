@@ -58,7 +58,7 @@ def notice_create(request, study_id):
 
                 payload = {
                     "channel_id": mapping.channel.id,
-                    "study_id": study_id,
+                    "study_name": study.name,
                     "title": serializer.data["title"],
                     "content": serializer.data["content"],
                     "author": user.username,
