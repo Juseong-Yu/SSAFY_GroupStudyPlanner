@@ -58,7 +58,7 @@ def study_schedule_create(request, study_id):
 
         payload = {
             "channel_id": mapping.channel.id,
-            "study_id": study_id,
+            "study_name": study.name,
             "title": schedule_serializer.data["title"],
             "content": schedule_serializer.data["description"],
             "start_at": schedule_serializer.data["start_at"],
