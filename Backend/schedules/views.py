@@ -32,12 +32,10 @@ def error_list(code):
                         status=status.HTTP_403_FORBIDDEN,
                         json_dumps_params={"ensure_ascii": False})
 
-# @login_required
+@login_required
 @api_view(['POST'])
 def study_schedule_create(request, study_id):
-    # user = request.user
-    from accounts.models import User
-    user = User.objects.get(id = 1)
+    user = request.user
     study = get_object_or_404(Study, id = study_id)
     
     membership = StudyMembership.objects.filter(
