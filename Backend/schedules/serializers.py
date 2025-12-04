@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Schedule, StudySchedule, PersonalSchedule
+from .models import Schedule, StudySchedule, PersonalSchedule, Reminder
 from accounts.models import User
 from studies.models import Study
 
@@ -11,6 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'profile_img')
 
+
+class ReminderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reminder
+        fields = ('offset', 'sent_time', 'payload', 'sent')
+
 class ScheduleSerializer(serializers.ModelSerializer):
     """
     기본 일정 정보
@@ -18,7 +24,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Schedule
-        fields = ('title', 'description', 'start_at', 'end_at')
+        fields = ('id', 'title', 'description', 'start_at', 'end_at', 'has_reminders')
 
 class StudySerializer(serializers.ModelSerializer):
     """
