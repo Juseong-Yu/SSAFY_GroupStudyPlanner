@@ -68,7 +68,7 @@ async def notice_worker(bot, notice_queue: asyncio.Queue):
 
         notice_queue.task_done()
 
-async def schedule_worker(bot, schedule_queue: asyncio.Queue):
+async def schedule_worker(bot, schedule_queue: asyncio.Queue, new=True):
     await bot.wait_until_ready()
     logger.info("Schedule worker started (bot ready)")
 
@@ -90,7 +90,7 @@ async def schedule_worker(bot, schedule_queue: asyncio.Queue):
                 schedule_queue.task_done()
                 continue
         
-        embed = build_schedule_embed(item)
+        embed = build_schedule_embed(item, new)
 
         success = await send_with_retries(channel, embed)
         if success:

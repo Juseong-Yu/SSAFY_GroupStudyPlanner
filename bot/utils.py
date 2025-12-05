@@ -39,6 +39,7 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
     title = payload.get("title", "공지")
     description = payload.get("content", "")
     url = payload.get("url")
+    study = payload.get("study_name")
     if url:
         title = f"[{title}]({url})"
     embed = discord.Embed(
@@ -51,16 +52,12 @@ def build_notice_embed(payload: Dict[str, Any]) -> discord.Embed:
         color=0xF1C40F
     )
     
-    embed.set_author(name="📢 공지사항")
+    embed.set_author(name=f"📢 {study} 공지사항")
     embed.timestamp = discord.utils.utcnow()
-
-    # author = payload.get("author")["username"]
-    # if author:
-    #     embed.set_footer(text=f"작성자: {author}")
 
     return embed
 
-def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
+def build_schedule_embed(payload: Dict[str, Any], new) -> discord.Embed:
     """
     payload에 있는 title/content/start_at/end_at로 Embed를 만들어 반환
     """
@@ -69,6 +66,7 @@ def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
     start_at = payload.get("start_at")
     end_at = payload.get("end_at")
     url = payload.get("url")
+    study = payload.get("study_name")
     if url:
         title = f"[{title}]({url})"
 
@@ -83,7 +81,10 @@ def build_schedule_embed(payload: Dict[str, Any]) -> discord.Embed:
         type="rich",
         color = 0x3498DB
     )
-    embed.set_author(name="🗓️ 신규 일정 생성")
+    if new:
+        embed.set_author(name=f"🗓️ {study} 신규 일정")
+    else:
+        embed.set_author(name=f"🗓️ {study} 일정 알림")
     embed.timestamp = discord.utils.utcnow()
     
     return embed
