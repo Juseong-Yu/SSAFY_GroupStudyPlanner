@@ -21,7 +21,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # 전역 비동기 큐: api.py 에서 put(), worker.py 에서 get()
 notice_queue = asyncio.Queue()
-schedule_queue = asyncio.Queue()
+new_schedule_queue = asyncio.Queue()
+remind_schedule_queue = asyncio.Queue()
 
 @bot.event
 async def on_ready():
@@ -30,7 +31,8 @@ async def on_ready():
 
     # 봇 연결 완료 시 한 번 실행됨
     bot.loop.create_task(notice_worker(bot, notice_queue))
-    bot.loop.create_task(schedule_worker(bot, schedule_queue))
+    bot.loop.create_task(schedule_worker(bot, new_schedule_queue))
+    bot.loop.create_task(schedule_worker(bot, remind_schedule_queue, new=False))
 
 # get 요청 보내기
 async def get_data(url, params=None):

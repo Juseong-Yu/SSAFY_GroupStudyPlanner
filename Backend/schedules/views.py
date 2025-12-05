@@ -58,7 +58,7 @@ def study_schedule_create(request, study_id):
     # 디스코드 알림
     mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
     if mapping:
-        url = f"{settings.DISCORD_WEBHOOK_URL}schedule/"
+        url = f"{settings.DISCORD_WEBHOOK_URL}new_schedule/"
 
         payload = {
             "channel_id": mapping.channel.id,
