@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+from accounts.models import User
 from .models import Study, StudyMembership
 from .serializers import StudySerializer, StudyMembershipSerializer, StudyRoleSerializer
 
@@ -136,3 +137,55 @@ def get_my_role(request, study_id):
 
     serializer = StudyRoleSerializer(membership)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@login_required
+@api_view(['GET'])
+def member_list(request, study_id):
+    """
+    스터디 멤버면 누구나 조회 가능
+    """
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+
+    # 외부인 거부
+    if not membership:
+        return error_list(NOT_MEMBER)
+
+    serializer = StudyRoleSerializer(
+        StudyMembership.objects.filter(study=study, is_active=True),
+        many=True
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@login_required
+@api_view(['PUT'])
+def expel_member(request, study_id, user_id):
+    """
+    스터디 멤버 추방
+    """
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+
+    # 외부인 거부
+    if not membership:
+        return error_list(NOT_MEMBER)
+    
+    # 리더 제외 거부
+    if membership.role != 'leader':
+        return error_list(NOT_AUTHORIZED)
+
+    target = get_object_or_404(User, id=user_id)
+
+    if user == target:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    target_membership = get_object_or_404(StudyMembership, user=target, study=study, is_active=True)
+    target_membership.is_active = False
+    target_membership.save()
+    return Response(status=status.HTTP_204_NO_CONTENT)
