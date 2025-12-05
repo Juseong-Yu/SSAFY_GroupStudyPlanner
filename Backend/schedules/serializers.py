@@ -15,16 +15,17 @@ class UserSerializer(serializers.ModelSerializer):
 class ReminderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reminder
-        fields = ('offset', 'sent_time', 'payload', 'sent')
+        fields = ('offset',)
 
 class ScheduleSerializer(serializers.ModelSerializer):
     """
     기본 일정 정보
     StudySchedule / PersonalSchedule에서 공통으로 사용
     """
+    reminder = ReminderSerializer(read_only=True)
     class Meta:
         model = Schedule
-        fields = ('id', 'title', 'description', 'start_at', 'end_at', 'has_reminders')
+        fields = ('id', 'title', 'description', 'start_at', 'end_at', 'reminder')
 
 class StudySerializer(serializers.ModelSerializer):
     """

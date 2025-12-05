@@ -48,12 +48,12 @@ def study_schedule_create(request, study_id):
     
     if membership.role not in ('leader', 'admin'):
             return error_list(NOT_AUTHORIZED)
-    reminders = request.data.pop("reminders", None)
 
     # schedule 생성
     schedule_serializer = ScheduleSerializer(data = request.data)
     schedule_serializer.is_valid(raise_exception=True)
     schedule = schedule_serializer.save()
+    reminder_data = request.data.get("reminder", None)
 
     # 디스코드 알림
     mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
@@ -75,8 +75,8 @@ def study_schedule_create(request, study_id):
             pass
 
         # reminder 생성
-        if reminders:
-            offset = int(reminders.get('offset'))
+        if reminder_data:
+            offset = int(reminder_data.get('offset'))
             sent_time = schedule.start_at - timedelta(minutes=offset)
 
             if offset is not None:
@@ -140,18 +140,17 @@ def study_schedule_detail(request, study_id, schedule_id):
     elif request.method == 'PUT':
         if membership.role not in ('leader', 'admin'):
             return error_list(NOT_AUTHORIZED)
-        
-        reminders = request.data.pop("reminders", None)
 
         serializer = ScheduleSerializer(schedule, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        reminder_data = request.data.get("reminder", None)
 
         mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
         reminder = Reminder.objects.filter(schedule=schedule).first()
-        if reminder and not reminders:
+        if reminder and not reminder_data:
             reminder.delete()
-        elif mapping and reminders:
+        elif mapping and reminder_data:
             payload = {
                 "channel_id": mapping.channel.id,
                 "study_name": study.name,
@@ -161,22 +160,15 @@ def study_schedule_detail(request, study_id, schedule_id):
                 "end_at": serializer.data["end_at"],
                 "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
             }
-            offset = int(reminders.get('offset'))
+            offset = int(reminder_data.get('offset'))
             sent_time = schedule.start_at - timedelta(minutes=offset)
-            if not reminder:
-                Reminder.objects.create(
-                    schedule = schedule,
-                    offset = offset,
-                    sent_time = sent_time,
-                    payload = payload,
-                    sent = (timezone.now() > sent_time)
-                )
-            else:
-                reminder.offset = offset
-                reminder.sent_time = sent_time
-                reminder.payload = payload
-                reminder.sent = (timezone.now() > sent_time)
-                reminder.save()
+            reminder, _ = Reminder.objects.update_or_create(
+                schedule=schedule,
+                defaults={"offset": offset,
+                          "sent_time": sent_time,
+                          "payload": payload,
+                          "sent": (timezone.now() > sent_time)}
+            )
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
