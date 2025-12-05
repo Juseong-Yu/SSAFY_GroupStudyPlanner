@@ -122,12 +122,12 @@
     </div>
 
     <!-- 메뉴 리스트 -->
-    <div class="menu-section flex-grow-1 mt-3">
+    <div class="menu-section grow mt-3">
       <ul class="list-unstyled">
         <!-- 관리(리더) -->
         <li class="mb-3">
           <div
-            class="d-flex justify-content-between align-items-center px-3 fw-semibold text-secondary"
+            class="accordion-header d-flex justify-content-between align-items-center px-3 fw-semibold"
             @click="toggleAccordion('manage')"
             style="cursor: pointer"
           >
@@ -171,7 +171,7 @@
         <!-- 참여(멤버) -->
         <li>
           <div
-            class="d-flex justify-content-between align-items-center px-3 fw-semibold text-secondary"
+            class="accordion-header d-flex justify-content-between align-items-center px-3 fw-semibold"
             @click="toggleAccordion('participate')"
             style="cursor: pointer"
           >
@@ -336,10 +336,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import axios from 'axios'
-import { useUiStore } from '@/stores/ui'
-import { useUserStore } from '@/stores/user'
-import { useStudiesStore } from '@/stores/studies'
-import { resetAllStores } from '@/stores/resetAllStores'
+import { useUiStore } from '@/stores/ui.ts'
+import { useUserStore } from '@/stores/user.ts'
+import { useStudiesStore } from '@/stores/studies.ts'
+import { resetAllStores } from '@/stores/resetAllStores.ts'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
 const ui = useUiStore()
@@ -547,66 +547,74 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 사이드바: 기본 닫힘 (슬라이드) */
+/* 사이드바 (glassmorphism 스타일) */
 .sidebar {
   width: var(--sidebar-width, 250px);
-  top: var(--topbar-height, 56px); /* 탑바 아래부터 시작 */
+  top: var(--topbar-height, 56px);
   left: 0;
   z-index: 1070;
   transform: translateX(-100%);
   transition: transform 0.25s ease-in-out;
-  will-change: transform;
   height: calc(100vh - var(--topbar-height, 56px));
+  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.75);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
+
 .sidebar.is-open {
   transform: translateX(0);
 }
 
-/* 오버레이 (모바일 전용: d-lg-none로 제어) */
-.sidebar-backdrop {
-  position: fixed;
-  inset: var(--topbar-height, 56px) 0 0 0; /* 탑바를 가리지 않게 */
-  background: rgba(33, 37, 41, 0.45);
-  z-index: 1030;
-}
-
-/* 드롭다운/호버 */
+/* 프로필 */
 .profile-section {
-  overflow: visible;
-  position: relative;
-}
-.profile-section:hover {
-  background-color: #f8f9fa;
-  transition: background-color 0.2s;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s ease;
 }
 
-/* ✅ 프로필 클릭 가능 표시 */
+.profile-section:hover {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+
 .profile-click-target {
   cursor: pointer;
 }
 
-/* router-link-active 시에도 스타일 변화 없음 */
-:deep(a.text-dark.router-link-active),
-:deep(a.router-link-active) {
-  font-weight: inherit;
-  color: inherit !important;
+/* 아코디언 헤더 */
+.accordion-header {
+  padding: 0.45rem 0.9rem;
+  color: #334155; /* slate-600 */
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-/* 긴 목록 대비 내부 스크롤 */
+.accordion-header:hover {
+  background-color: rgba(100, 116, 139, 0.12); /* slate-500 약한 버전 */
+}
+
+
+/* 메뉴 아이템 */
+.menu-item {
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(148, 163, 184, 0.12);
+}
+
+.menu-item-active {
+  background-color: rgba(148, 163, 184, 0.2);
+  font-weight: 600;
+}
+
+/* 내부 스크롤 */
 .menu-section {
+  padding: 0.3rem 0.5rem;
   overflow: auto;
-}
-
-/* 모달 백드롭/모달 z-index를 올려 네비게이션 바까지 어둡게 덮기 (scoped → :deep) */
-:deep(.modal-backdrop) {
-  z-index: 5000 !important; /* 네비게이션 바 z-index보다 충분히 크게 */
-}
-:deep(.modal) {
-  z-index: 5005 !important;
-}
-
-/* 항목 hover */
-:deep(a.text-dark):hover {
-  text-decoration: underline;
 }
 </style>
