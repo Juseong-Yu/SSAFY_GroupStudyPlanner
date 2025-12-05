@@ -2,14 +2,14 @@
   <div class="app-shell">
     <TopNavbar />
 
-    <Sidebar />
+    <Sidebar class="app-sidebar" />
 
-    <!-- 메인 -->
     <main class="main-content" :class="{ 'with-sidebar': ui.isLgUp && ui.sidebarOpen }">
       <slot />
     </main>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import TopNavbar from '@/components/layout/TopNavBar.vue'
@@ -18,6 +18,7 @@ import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
 </script>
+/* AppShell.vue */
 
 <style scoped>
 .app-shell {
@@ -29,6 +30,8 @@ const ui = useUiStore()
   min-height: 100vh;
   padding-top: var(--topbar-height, 56px);
   transition: padding-left 0.25s ease-in-out;
+  position: relative;
+  z-index: 1;              /* 컨텐츠는 가장 아래 */
 }
 
 /* lg 이상일 때만 사이드바가 열려 있으면 좌측 패딩 적용 */
@@ -40,10 +43,16 @@ const ui = useUiStore()
 </style>
 
 <style>
-/* Bootstrap 모달 백드롭이 네비게이션 바까지 덮이게 */
+/* 💡 사이드바: 컨텐츠보다 위, 모달보단 아래 */
+.app-sidebar {
+  position: fixed;         /* 이미 fixed 라면 생략 가능 */
+  z-index: 1040;
+}
+
+/* Bootstrap 모달이 전부 다 덮도록 최상단 */
 .modal-backdrop {
   z-index: 9998 !important;
-  background-color: rgba(33, 37, 41, 0.55) !important; /* 어둡게 */
+  background-color: rgba(33, 37, 41, 0.55) !important;
 }
 
 .modal {

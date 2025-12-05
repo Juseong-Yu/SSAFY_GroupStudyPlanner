@@ -6,15 +6,20 @@
       <div class="w-100 study-page-wrapper">
         <h2 class="fw-bold mb-1">{{ studyTitle }}</h2>
         <p class="text-muted mb-4 small">
-          참여 코드 : {{ studyId }}
+          참여 코드 :
+          <span class="badge rounded-pill bg-primary-subtle text-primary ms-1">
+            {{ studyId }}
+          </span>
         </p>
 
         <div class="row g-4">
           <!-- 왼쪽: 달력 -->
           <div class="col-12 col-xl-8">
-            <div v-if="isMounted" class="calendar-wrapper">
-              <FullCalendar :options="calendarOptions" />
-            </div>
+            <BaseScheduleCalendar
+              :events="calendarEvents"
+              :loading="!isLoaded && !calendarEvents.length"
+              @event-click="handleEventClick"
+            />
           </div>
 
           <!-- 오른쪽: 공지사항 + 시험 + 일정 -->
@@ -26,9 +31,9 @@
                   <span class="fw-semibold">공지사항</span>
                   <RouterLink
                     :to="{ name: 'NoticeMain', params: { id: studyId } }"
-                    class="btn btn-sm btn-outline-primary"
+                    class="header-link"
                   >
-                    전체보기
+                    ->
                   </RouterLink>
                 </div>
 
@@ -54,13 +59,15 @@
                         referrerpolicy="no-referrer"
                       />
                       <div v-else class="avatar avatar-fallback me-2">
-                        {{ initials(n.author.username) }}
+                        <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
                       </div>
 
                       <!-- 작성자 이름 + 날짜 -->
-                      <span class="me-2">{{ n.author.username }}</span>
+                      <span class="me-2 fw-semibold">{{ n.author.username }}</span>
                       <span aria-hidden="true" class="mx-1">·</span>
-                      <time :datetime="n.createdAt">{{ formatDate(n.createdAt) }}</time>
+                      <time class="text-muted" :datetime="n.createdAt">
+                        {{ formatDate(n.createdAt) }}
+                      </time>
                     </div>
                   </RouterLink>
 
@@ -80,9 +87,9 @@
                   <span class="fw-semibold">시험</span>
                   <RouterLink
                     :to="{ name: 'StudyExams', params: { studyId: studyId } }"
-                    class="btn btn-sm btn-outline-primary"
+                    class="header-link"
                   >
-                    전체보기
+                    ->
                   </RouterLink>
                 </div>
 
@@ -123,7 +130,7 @@
                     v-if="!upcomingExams.length && isLoaded"
                     class="list-group-item py-4 text-center text-muted small"
                   >
-                    아직 등록된 시험이 없어요.
+                    아직 예정된 시험이 없어요.
                   </div>
                 </div>
               </div>
@@ -134,9 +141,9 @@
                   <span class="fw-semibold">일정</span>
                   <RouterLink
                     :to="{ name: 'ScheduleMain', params: { id: studyId } }"
-                    class="btn btn-sm btn-outline-primary"
+                    class="header-link"
                   >
-                    전체보기
+                    ->
                   </RouterLink>
                 </div>
 
@@ -148,6 +155,7 @@
                     @click="openDetailModal(s.id)"
                   >
                     <div class="fw-semibold text-truncate">
+                      <i class="bi bi-calendar-event me-1 text-primary"></i>
                       {{ s.schedule.title }}
                     </div>
                     <div class="text-muted small">
@@ -159,7 +167,7 @@
                     v-if="!upcomingSchedules.length && isLoaded"
                     class="list-group-item py-4 text-center text-muted small"
                   >
-                    아직 등록된 일정이 없어요.
+                    아직 등록된 스터디 일정이 없어요.
                   </div>
                 </div>
               </div>
@@ -170,127 +178,25 @@
       </div>
     </div>
 
-    <!-- ====================== -->
-    <!-- 일정 상세 모달 -->
-    <!-- ====================== -->
-    <div v-if="showDetailModal" class="schedule-modal-backdrop">
-      <div class="schedule-modal">
-        <div class="card shadow-sm">
-          <div
-            class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2"
-          >
-            <div>
-              <h5 class="mb-1 fw-bold">
-                {{ detail?.schedule.title || '일정 상세' }}
-              </h5>
-            </div>
-            <button
-              type="button"
-              class="btn btn-light btn-sm ms-auto"
-              @click="closeDetailModal"
-            >
-              닫기
-            </button>
-          </div>
-
-          <div class="card-body">
-            <div v-if="detailError" class="alert alert-danger py-2 small mb-3">
-              {{ detailError }}
-            </div>
-            <div v-if="isDetailLoading" class="py-4 text-center text-muted small">
-              불러오는 중...
-            </div>
-
-            <template v-else-if="detail">
-              <div class="row g-4 align-items-start">
-                <!-- 왼쪽: 정보 -->
-                <div class="col-12 col-md-7">
-                  <div class="d-flex align-items-center mb-3">
-                    <div
-                      v-if="detailAuthorAvatar"
-                      class="rounded-circle border bg-light me-3 overflow-hidden"
-                      style="width: 44px; height: 44px"
-                    >
-                      <img
-                        :src="detailAuthorAvatar"
-                        alt="author"
-                        class="w-100 h-100"
-                        style="object-fit: cover"
-                      />
-                    </div>
-                    <div
-                      v-else
-                      class="rounded-circle border bg-light me-3 d-flex align-items-center justify-content-center"
-                      style="width: 44px; height: 44px; font-size: 0.8rem"
-                    >
-                      {{ detail.author.username.charAt(0).toUpperCase() }}
-                    </div>
-                    <div class="small">
-                      <div class="fw-semibold">{{ detail.author.username }}</div>
-                      <div class="text-muted">{{ detail.author.email }}</div>
-                    </div>
-                  </div>
-
-                  <hr class="my-3" />
-
-                  <div class="mb-4">
-                    <div class="fw-semibold small text-muted mb-1">일정 제목</div>
-                    <div class="fs-6">{{ detail.schedule.title }}</div>
-                  </div>
-
-                  <div class="mb-0">
-                    <div class="fw-semibold small text-muted mb-1">일정 상세</div>
-                    <p class="mb-0 small text-body" style="white-space: pre-wrap">
-                      {{ detail.schedule.description || '내용 없음' }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- 오른쪽: 시간 요약 -->
-                <div class="col-12 col-md-5">
-                  <div class="time-summary p-3 rounded-3 border small">
-                    <div class="fw-semibold mb-3 d-flex align-items-center gap-2">
-                      <span>시간 요약</span>
-                    </div>
-
-                    <div class="mb-3">
-                      <div class="text-muted fw-semibold mb-1">시작</div>
-                      <div>{{ formatDateOnly(detail.schedule.start_at) }}</div>
-                      <div>{{ formatTimeOnly(detail.schedule.start_at) }}</div>
-                    </div>
-
-                    <div>
-                      <div class="text-muted fw-semibold mb-1">종료</div>
-                      <div>
-                        {{ formatDateOnly(detail.schedule.end_at || detail.schedule.start_at) }}
-                      </div>
-                      <div>
-                        {{ formatTimeOnly(detail.schedule.end_at || detail.schedule.start_at) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- ✅ 공용 일정 상세 모달 사용 (MainPage와 동일 디자인) -->
+    <ScheduleDetailModal
+      :show="showDetailModal"
+      :error="detailError"
+      :detail="detail"
+      @close="closeDetailModal"
+    />
   </AppShell>
 </template>
 
 <script setup lang="ts">
-import AppShell from '@/layouts/AppShell.vue'
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
-
-/** FullCalendar */
-import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import type { CalendarOptions } from '@fullcalendar/core'
+import AppShell from '@/layouts/AppShell.vue'
+import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
+import ScheduleDetailModal from '@/components/ScheduleDetailModal.vue'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import type { EventInput, EventClickArg } from '@fullcalendar/core'
 
 // 백엔드 베이스 URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
@@ -304,12 +210,7 @@ const studyLeader = ref<string | null>(null)
 const joinedAt = ref<string | null>(null)
 const createdAt = ref<string | null>(null)
 
-const isMounted = ref(false)
 const isLoaded = ref(false) // 공지 / 스터디 / 일정 / 시험 로딩 여부
-
-onMounted(() => {
-  isMounted.value = true
-})
 
 /* =========================
  *   공지사항 타입 / 상태
@@ -347,9 +248,9 @@ const topNotices = computed(() =>
   [...notices.value]
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    .slice(0, 3)
+    .slice(0, 2),
 )
 
 /* =========================
@@ -379,7 +280,22 @@ interface StudyScheduleItem {
 
 const schedules = ref<StudyScheduleItem[]>([])
 
-/* 상세 조회 타입 / 상태 */
+/* FullCalendar에 내려줄 이벤트 */
+const calendarEvents = ref<EventInput[]>([])
+
+/* =========================
+ *   일정 상세 타입 / 상태
+ *   (공용 모달 ScheduleDetailModal 의 StoredEvent 구조에 맞춤)
+ * ========================= */
+
+type ScheduleType = 'study' | 'personal'
+
+interface CombinedScheduleCore {
+  title: string
+  description: string
+  start_at: string
+  end_at?: string | null
+}
 
 interface ScheduleAuthor {
   id: number
@@ -393,7 +309,21 @@ interface ScheduleStudy {
   name: string
 }
 
-interface ScheduleDetail {
+interface CombinedData {
+  id: number
+  schedule: CombinedScheduleCore
+  author?: ScheduleAuthor
+  study?: ScheduleStudy
+  [key: string]: any
+}
+
+interface StoredEvent {
+  type: ScheduleType
+  data: CombinedData
+}
+
+// 상세 API 응답 타입 (백엔드 실제 응답)
+interface ScheduleDetailApi {
   id: number
   schedule: {
     title: string
@@ -406,9 +336,8 @@ interface ScheduleDetail {
 }
 
 const showDetailModal = ref(false)
-const isDetailLoading = ref(false)
 const detailError = ref('')
-const detail = ref<ScheduleDetail | null>(null)
+const detail = ref<StoredEvent | null>(null)
 
 /* =========================
  *   시험 타입 / 상태
@@ -446,7 +375,7 @@ async function fetchStudy() {
     const { data } = await axios.get(`${API_BASE}/studies/${studyId.value}/`, {
       withCredentials: true,
       headers: {
-        'X-CSRFToken': csrftoken,
+        'X-CSRFToken': csrftoken || '',
       },
     })
 
@@ -469,15 +398,16 @@ async function fetchSchedules() {
       `${API_BASE}/studies/${studyId.value}/schedules/study_schedule_list/`,
       {
         withCredentials: true,
-      }
+      },
     )
 
     schedules.value = data
 
-    const fcEvents = data.map((item) => {
+    const events: EventInput[] = data.map((item) => {
       const start = new Date(item.schedule.start_at)
       const end = new Date(item.schedule.end_at)
 
+      // 종일 처리: 00:00 으로 들어오면 -1ms 해서 하루 안에서 끝나게
       if (
         end.getHours() === 0 &&
         end.getMinutes() === 0 &&
@@ -492,17 +422,17 @@ async function fetchSchedules() {
         title: item.schedule.title,
         start,
         end,
-        backgroundColor: '#e7f1ff',
-        borderColor: '#b6d4fe',
-        textColor: '#084298',
+        backgroundColor: '#e4edff',
+        borderColor: '#a7c4ff',
+        textColor: '#111827',
       }
     })
 
-    calendarOptions.value.events = fcEvents
+    calendarEvents.value = events
   } catch (error) {
     console.error('일정 목록 조회 실패:', error)
     schedules.value = []
-    calendarOptions.value.events = []
+    calendarEvents.value = []
   }
 }
 
@@ -515,7 +445,7 @@ async function fetchNotices() {
       `${API_BASE}/studies/${studyId.value}/posts/notice_list/`,
       {
         withCredentials: true,
-      }
+      },
     )
 
     notices.value = data.map((n) => ({
@@ -546,7 +476,7 @@ async function fetchExams() {
       `${API_BASE}/studies/${studyId.value}/exams/`,
       {
         withCredentials: true,
-      }
+      },
     )
 
     exams.value = data.map((exam) => ({
@@ -587,12 +517,12 @@ function formatScheduleRange(startIso: string, endIso: string) {
 
   const startDate = `${start.getMonth() + 1}/${start.getDate()}`
   const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(
-    start.getMinutes()
+    start.getMinutes(),
   ).padStart(2, '0')}`
 
   const endDate = `${end.getMonth() + 1}/${end.getDate()}`
   const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(
-    end.getMinutes()
+    end.getMinutes(),
   ).padStart(2, '0')}`
 
   if (startDate === endDate) {
@@ -601,24 +531,6 @@ function formatScheduleRange(startIso: string, endIso: string) {
   return `${startDate} ${startTime} ~ ${endDate} ${endTime}`
 }
 
-function formatDateOnly(iso: string) {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${yyyy}.${mm}.${dd}`
-}
-
-function formatTimeOnly(iso: string) {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mi = String(d.getMinutes()).padStart(2, '0')
-  return `${hh}:${mi}`
-}
-
-// ✅ 시험 마감일 표시
 function formatExamDue(iso: string | null) {
   if (!iso) return '마감 없음'
   const d = new Date(iso)
@@ -648,9 +560,9 @@ const upcomingSchedules = computed(() =>
     .sort(
       (a, b) =>
         new Date(a.schedule.start_at).getTime() -
-        new Date(b.schedule.start_at).getTime()
+        new Date(b.schedule.start_at).getTime(),
     )
-    .slice(0, 3)
+    .slice(0, 2),
 )
 
 // 시험: 가까운 시험 상위 3개
@@ -669,25 +581,8 @@ const upcomingExams = computed(() =>
         new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
       )
     })
-    .slice(0, 3)
+    .slice(0, 2),
 )
-
-/* =========================
- *   FullCalendar 옵션
- * ========================= */
-
-const calendarOptions = ref<CalendarOptions>({
-  plugins: [dayGridPlugin, interactionPlugin],
-  initialView: 'dayGridMonth',
-  height: 'auto',
-  locale: 'ko',
-  selectable: true,
-  timeZone: 'UTC',
-  events: [],
-  dateClick: (info: any) => {
-    console.log('dateClick:', info.dateStr)
-  },
-})
 
 /* =========================
  *   일정 상세 모달 관련
@@ -696,24 +591,36 @@ const calendarOptions = ref<CalendarOptions>({
 async function openDetailModal(id: number) {
   if (!studyId.value) return
   showDetailModal.value = true
-  isDetailLoading.value = true
   detailError.value = ''
   detail.value = null
 
   try {
     await ensureCsrf()
-    const { data } = await axios.get<ScheduleDetail>(
+    const { data } = await axios.get<ScheduleDetailApi>(
       `${API_BASE}/studies/${studyId.value}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
-      }
+      },
     )
-    detail.value = data
+
+    // ✅ 공용 모달에서 쓰는 StoredEvent 구조로 변환
+    detail.value = {
+      type: 'study',
+      data: {
+        id: data.id,
+        schedule: {
+          title: data.schedule.title,
+          description: data.schedule.description,
+          start_at: data.schedule.start_at,
+          end_at: data.schedule.end_at,
+        },
+        author: data.author,
+        study: data.study,
+      },
+    }
   } catch (e) {
     console.error(e)
     detailError.value = '일정 정보를 불러오지 못했습니다.'
-  } finally {
-    isDetailLoading.value = false
   }
 }
 
@@ -723,10 +630,13 @@ function closeDetailModal() {
   detailError.value = ''
 }
 
-const detailAuthorAvatar = computed(() => {
-  if (!detail.value || !detail.value.author.profile_img) return null
-  return `${API_BASE}${detail.value.author.profile_img}`
-})
+/* BaseScheduleCalendar 의 event-click 핸들러 */
+const handleEventClick = (info: EventClickArg) => {
+  const id = Number(info.event.id)
+  if (!Number.isNaN(id)) {
+    openDetailModal(id)
+  }
+}
 
 /* =========================
  *   스터디 ID 변경 감시
@@ -742,101 +652,42 @@ watch(
       await fetchStudy()
       await fetchSchedules()
       await fetchNotices()
-      await fetchExams() // ✅ 시험도 함께 로딩
+      await fetchExams()
     } finally {
       isLoaded.value = true
     }
   },
-  { immediate: true }
-)
-
-// 캘린더 이벤트 클릭 → 상세 모달
-watch(
-  () => calendarOptions.value.events,
-  () => {
-    calendarOptions.value.eventClick = (info: any) => {
-      const id = Number(info.event.id)
-      if (!Number.isNaN(id)) {
-        openDetailModal(id)
-      }
-    }
-  },
-  { immediate: true }
+  { immediate: true },
 )
 </script>
 
 <style scoped>
 .study-page-wrapper {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1300px;        /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem;     /* 항상 좌우 여백 유지 */
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-@media (min-width: 992px) {
+@media (min-width: 768px) {
   .study-page-wrapper {
-    max-width: 1140px;
+    max-width: 1300px;
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 }
 
-@media (min-width: 1200px) {
-  .study-page-wrapper {
-    max-width: 1320px;
-  }
-}
 
-@media (min-width: 1400px) {
-  .study-page-wrapper {
-    max-width: 1440px;
-  }
-}
-
-.calendar-wrapper :deep(.fc) {
-  background-color: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 1rem;
-}
-:deep(.fc-toolbar-title) {
-  color: #2b3a67;
-  font-weight: 700;
-}
-:deep(.fc-col-header-cell) {
-  background: #f7f9fc;
-  font-weight: 600;
-  color: #3b4b70;
-}
-:deep(.fc .fc-daygrid-day-number),
-:deep(.fc .fc-daygrid-day-number:link),
-:deep(.fc .fc-daygrid-day-number:visited),
-:deep(.fc .fc-daygrid-day-number:hover),
-:deep(.fc .fc-daygrid-day-number:focus),
-:deep(.fc .fc-daygrid-day-number:active) {
-  color: inherit !important;
-  text-decoration: none !important;
-  cursor: default !important;
-  outline: none !important;
-}
-:deep(.fc .fc-daygrid-day:hover) {
-  background: #fafcff;
-}
-:deep(.fc .fc-daygrid-event a) {
-  color: inherit;
-  text-decoration: none;
-}
-
-:deep(.fc .fc-col-header-cell-cushion) {
-  color: #3b4b70;
-  text-decoration: none;
-}
-:deep(.fc .fc-col-header-cell-cushion:hover),
-:deep(.fc .fc-col-header-cell-cushion:focus) {
-  color: #3b4b70;
-}
-
+/* 오른쪽 카드 / 아바타 등 기존 스타일 유지 */
 .avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
 }
+
 .avatar-fallback {
   width: 28px;
   height: 28px;
@@ -851,50 +702,38 @@ watch(
 }
 
 .right-stack .card {
-  border-radius: 1rem;
+  border-radius: 0.5rem; /* FullCalendar와 비슷한 둥글기 */
 }
 
-.notice-link:hover {
+/* list-group 기본 보더 제거 → 깔끔해짐 */
+.right-stack .list-group-item {
+  border: 0 !important;
+}
+
+/* 카드 모서리 살리기 위해 마지막 아이템에만 라운드 적용 */
+.right-stack .list-group-item:last-child {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.notice-link:hover,
+.list-item-clickable:hover {
   background-color: #f8fafc;
 }
 
 .list-item-clickable {
   cursor: pointer;
 }
-.list-item-clickable:hover {
-  background-color: #f8fafc;
+
+.header-link {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #64748b; /* slate-500 */
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
 }
 
-.schedule-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.schedule-modal {
-  width: 100%;
-  max-width: 760px;
-  padding: 0 1rem;
-}
-
-.schedule-modal .card {
-  border-radius: 18px;
-  border: none;
-}
-
-.schedule-modal .card-header {
-  padding: 1.25rem 1.75rem 1rem;
-}
-
-.schedule-modal .card-body {
-  padding: 1.5rem 1.75rem 1.75rem;
-}
-
-.time-summary {
-  background: #f7f9fc;
+.header-link:hover {
+  color: #1e293b; /* slate-800 */
 }
 </style>
