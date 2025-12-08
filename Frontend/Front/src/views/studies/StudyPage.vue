@@ -4,22 +4,24 @@
     <!-- ✅ 양쪽 여백 맞추기: 전체를 한 번 더 감싸서 max-width + 중앙 정렬 -->
     <div class="container-fluid py-4 d-flex justify-content-center">
       <div class="w-100 study-page-wrapper">
-        <h2 class="fw-bold mb-1">{{ studyTitle }}</h2>
-        <p class="text-muted mb-4 small">
-          참여 코드 :
-          <span class="badge rounded-pill bg-primary-subtle text-primary ms-1">
-            {{ studyId }}
-          </span>
-        </p>
+        <!-- 상단: 제목 + 참여 코드 + 스터디 관리 버튼 -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h2 class="fw-bold mb-3">{{ studyTitle }}</h2> 
+          </div>
+
+          <button type="button" class="btn btn-light-outline btn-sm d-flex align-items-center justify-content-center"
+            @click="openManageModal" aria-label="스터디 관리" title="스터디 관리">
+            <!-- 사람 + 설정 느낌 -->
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
 
         <div class="row g-4">
           <!-- 왼쪽: 달력 -->
           <div class="col-12 col-xl-8">
-            <BaseScheduleCalendar
-              :events="calendarEvents"
-              :loading="!isLoaded && !calendarEvents.length"
-              @event-click="handleEventClick"
-            />
+            <BaseScheduleCalendar :events="calendarEvents" :loading="!isLoaded && !calendarEvents.length"
+              @event-click="handleEventClick" />
           </div>
 
           <!-- 오른쪽: 공지사항 + 시험 + 일정 -->
@@ -29,40 +31,26 @@
               <div class="card mb-3 shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">공지사항</span>
-                  <RouterLink
-                    :to="{ name: 'NoticeMain', params: { id: studyId } }"
-                    class="header-link"
-                  >
+                  <RouterLink :to="{ name: 'NoticeMain', params: { id: studyId } }" class="header-link">
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
-                  <!-- 🔥 최근 3개만 / 클릭 시 상세 페이지로 이동 -->
-                  <RouterLink
-                    v-for="n in topNotices"
-                    :key="n.id"
-                    :to="`/studies/${studyId}/notice/${n.id}`"
-                    class="list-group-item py-3 text-reset text-decoration-none notice-link"
-                  >
+                  <!-- 최근 2개 -->
+                  <RouterLink v-for="n in topNotices" :key="n.id" :to="`/studies/${studyId}/notice/${n.id}`"
+                    class="list-group-item py-3 text-reset text-decoration-none notice-link">
                     <div class="fw-semibold text-truncate mb-1">
                       {{ n.title }}
                     </div>
 
                     <div class="d-flex align-items-center text-muted small">
-                      <!-- 아바타 -->
-                      <img
-                        v-if="n.author.profileImg"
-                        :src="n.author.profileImg"
-                        alt="avatar"
-                        class="avatar me-2"
-                        referrerpolicy="no-referrer"
-                      />
+                      <img v-if="n.author.profileImg" :src="n.author.profileImg" alt="avatar" class="avatar me-2"
+                        referrerpolicy="no-referrer" />
                       <div v-else class="avatar avatar-fallback me-2">
                         <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
                       </div>
 
-                      <!-- 작성자 이름 + 날짜 -->
                       <span class="me-2 fw-semibold">{{ n.author.username }}</span>
                       <span aria-hidden="true" class="mx-1">·</span>
                       <time class="text-muted" :datetime="n.createdAt">
@@ -71,11 +59,7 @@
                     </div>
                   </RouterLink>
 
-                  <!-- 공지 없을 때 -->
-                  <div
-                    v-if="!topNotices.length && isLoaded"
-                    class="list-group-item py-4 text-center text-muted small"
-                  >
+                  <div v-if="!topNotices.length && isLoaded" class="list-group-item py-4 text-center text-muted small">
                     아직 등록된 공지사항이 없어요.
                   </div>
                 </div>
@@ -85,22 +69,16 @@
               <div class="card mb-3 shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">시험</span>
-                  <RouterLink
-                    :to="{ name: 'StudyExams', params: { studyId: studyId } }"
-                    class="header-link"
-                  >
+                  <RouterLink :to="{ name: 'StudyExams', params: { studyId: studyId } }" class="header-link">
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
-                  <!-- 가까운 시험 최대 3개 -->
-                  <RouterLink
-                    v-for="exam in upcomingExams"
-                    :key="exam.id"
+                  <!-- 가까운 시험 최대 2개 -->
+                  <RouterLink v-for="exam in upcomingExams" :key="exam.id"
                     :to="{ name: 'StudyExams', params: { studyId: studyId } }"
-                    class="list-group-item py-3 text-reset text-decoration-none notice-link"
-                  >
+                    class="list-group-item py-3 text-reset text-decoration-none notice-link">
                     <div class="fw-semibold text-truncate mb-1">
                       {{ exam.title }}
                     </div>
@@ -114,22 +92,17 @@
                         {{ visibilityLabelMap[exam.visibility] }}
                       </span>
 
-                      <span
-                        :class="
-                          exam.has_taken
-                            ? 'badge bg-success-subtle text-success'
-                            : 'badge bg-primary-subtle text-primary'
-                        "
-                      >
+                      <span :class="exam.has_taken
+                        ? 'badge bg-success-subtle text-success'
+                        : 'badge bg-primary-subtle text-primary'
+                        ">
                         {{ exam.has_taken ? '응시 완료' : '미응시' }}
                       </span>
                     </div>
                   </RouterLink>
 
-                  <div
-                    v-if="!upcomingExams.length && isLoaded"
-                    class="list-group-item py-4 text-center text-muted small"
-                  >
+                  <div v-if="!upcomingExams.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small">
                     아직 예정된 시험이 없어요.
                   </div>
                 </div>
@@ -139,21 +112,14 @@
               <div class="card shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">일정</span>
-                  <RouterLink
-                    :to="{ name: 'ScheduleMain', params: { id: studyId } }"
-                    class="header-link"
-                  >
+                  <RouterLink :to="{ name: 'ScheduleMain', params: { id: studyId } }" class="header-link">
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
-                  <div
-                    class="list-group-item py-3 list-item-clickable"
-                    v-for="s in upcomingSchedules"
-                    :key="s.id"
-                    @click="openDetailModal(s.id)"
-                  >
+                  <div class="list-group-item py-3 list-item-clickable" v-for="s in upcomingSchedules" :key="s.id"
+                    @click="openDetailModal(s.id)">
                     <div class="fw-semibold text-truncate">
                       <i class="bi bi-calendar-event me-1 text-primary"></i>
                       {{ s.schedule.title }}
@@ -163,10 +129,8 @@
                     </div>
                   </div>
 
-                  <div
-                    v-if="!upcomingSchedules.length && isLoaded"
-                    class="list-group-item py-4 text-center text-muted small"
-                  >
+                  <div v-if="!upcomingSchedules.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small">
                     아직 등록된 스터디 일정이 없어요.
                   </div>
                 </div>
@@ -178,30 +142,35 @@
       </div>
     </div>
 
-    <!-- ✅ 공용 일정 상세 모달 사용 (MainPage와 동일 디자인) -->
-    <ScheduleDetailModal
-      :show="showDetailModal"
-      :error="detailError"
-      :detail="detail"
-      @close="closeDetailModal"
-    />
+    <!-- 일정 상세 모달 -->
+    <ScheduleDetailModal :show="showDetailModal" :error="detailError" :detail="detail" @close="closeDetailModal" />
+
+    <!-- 스터디 관리 모달 -->
+    <StudyManageModal :show="showManageModal" :isLeader="isLeader" :myRole="myRole" :studyId="studyId"
+      :studyTitle="studyTitle" :members="members" :loadingMembers="loadingMembers" :membersError="membersError"
+      @close="handleCloseManageModal" @leave="handleLeaveStudy" @dissolve="handleDissolveStudy" @kick="handleKickMember"
+      @change-role="handleChangeRole" />
   </AppShell>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
 import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
 import ScheduleDetailModal from '@/components/ScheduleDetailModal.vue'
+import StudyManageModal from '@/views/studies/components/StudyManageModal.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import type { EventInput, EventClickArg } from '@fullcalendar/core'
+import { useStudyRoleStore, type StudyRole } from '@/stores/studyRoleStore'
 
 // 백엔드 베이스 URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 
 const route = useRoute()
+const router = useRouter()
+const studyRoleStore = useStudyRoleStore()
 
 // 🔗 스터디 기본 정보
 const studyId = computed(() => Number(route.params.id))
@@ -210,7 +179,7 @@ const studyLeader = ref<string | null>(null)
 const joinedAt = ref<string | null>(null)
 const createdAt = ref<string | null>(null)
 
-const isLoaded = ref(false) // 공지 / 스터디 / 일정 / 시험 로딩 여부
+const isLoaded = ref(false)
 
 /* =========================
  *   공지사항 타입 / 상태
@@ -279,23 +248,13 @@ interface StudyScheduleItem {
 }
 
 const schedules = ref<StudyScheduleItem[]>([])
-
-/* FullCalendar에 내려줄 이벤트 */
 const calendarEvents = ref<EventInput[]>([])
 
 /* =========================
  *   일정 상세 타입 / 상태
- *   (공용 모달 ScheduleDetailModal 의 StoredEvent 구조에 맞춤)
  * ========================= */
 
 type ScheduleType = 'study' | 'personal'
-
-interface CombinedScheduleCore {
-  title: string
-  description: string
-  start_at: string
-  end_at?: string | null
-}
 
 interface ScheduleAuthor {
   id: number
@@ -307,6 +266,13 @@ interface ScheduleAuthor {
 interface ScheduleStudy {
   id: number
   name: string
+}
+
+interface CombinedScheduleCore {
+  title: string
+  description: string
+  start_at: string
+  end_at?: string | null
 }
 
 interface CombinedData {
@@ -322,7 +288,6 @@ interface StoredEvent {
   data: CombinedData
 }
 
-// 상세 API 응답 타입 (백엔드 실제 응답)
 interface ScheduleDetailApi {
   id: number
   schedule: {
@@ -355,7 +320,6 @@ interface ExamListItem {
 
 const exams = ref<ExamListItem[]>([])
 
-// 공개 범위 → 라벨 매핑
 const visibilityLabelMap: Record<VisibilityType, string> = {
   public: '전체 공개',
   score_only: '점수만 공개',
@@ -363,10 +327,39 @@ const visibilityLabelMap: Record<VisibilityType, string> = {
 }
 
 /* =========================
+ *   스터디 멤버 / 역할 / 관리 모달 상태
+ * ========================= */
+
+interface StudyMember {
+  id: number
+  username: string
+  email: string
+  profile_img: string | null
+  role: StudyRole
+}
+
+const showManageModal = ref(false)
+const members = ref<StudyMember[]>([])
+const loadingMembers = ref(false)
+const membersError = ref('')
+
+// store 기반 내 역할
+const myRole = computed<StudyRole>(() => {
+  const id = studyId.value
+  if (!id) return 'member'
+  return studyRoleStore.getRole(id) ?? 'member'
+})
+
+const isLeader = computed(() => {
+  const id = studyId.value
+  if (!id) return false
+  return studyRoleStore.isLeader(id)
+})
+
+/* =========================
  *   API 호출 함수들
  * ========================= */
 
-// 🔗 스터디 조회 API 호출
 async function fetchStudy() {
   try {
     await ensureCsrf()
@@ -389,7 +382,6 @@ async function fetchStudy() {
   }
 }
 
-// 🔗 일정 목록 조회 API 호출
 async function fetchSchedules() {
   try {
     await ensureCsrf()
@@ -407,7 +399,6 @@ async function fetchSchedules() {
       const start = new Date(item.schedule.start_at)
       const end = new Date(item.schedule.end_at)
 
-      // 종일 처리: 00:00 으로 들어오면 -1ms 해서 하루 안에서 끝나게
       if (
         end.getHours() === 0 &&
         end.getMinutes() === 0 &&
@@ -436,7 +427,6 @@ async function fetchSchedules() {
   }
 }
 
-// 🔗 공지사항 목록 조회 API 호출
 async function fetchNotices() {
   try {
     await ensureCsrf()
@@ -467,7 +457,6 @@ async function fetchNotices() {
   }
 }
 
-// 🔗 시험 목록 조회 API 호출
 async function fetchExams() {
   try {
     await ensureCsrf()
@@ -492,16 +481,44 @@ async function fetchExams() {
   }
 }
 
+async function fetchMembers() {
+  if (!studyId.value) return
+  loadingMembers.value = true
+  membersError.value = ''
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    const { data } = await axios.get<any[]>(
+      `${API_BASE}/studies/${studyId.value}/member_list/`,
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    members.value = data.map((item) => ({
+      id: item.user.id,
+      username: item.user.username,
+      email: item.user.email,
+      profile_img: null,
+      role: item.role as StudyRole,
+    }))
+  } catch (e) {
+    console.error('멤버 목록 조회 실패:', e)
+    membersError.value = '멤버 목록을 불러오지 못했습니다.'
+    members.value = []
+  } finally {
+    loadingMembers.value = false
+  }
+}
+
 /* =========================
  *   유틸 함수들
  * ========================= */
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/)
-  const first = parts[0]?.[0] ?? ''
-  const last = parts[1]?.[0] ?? ''
-  return (first + last).toUpperCase()
-}
 
 function formatDate(iso: string) {
   const d = new Date(iso)
@@ -550,7 +567,6 @@ function formatExamDue(iso: string | null) {
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 
-// 일정: 오른쪽 카드에 보여줄 상위 3개 일정
 const upcomingSchedules = computed(() =>
   schedules.value
     .filter((item) => {
@@ -565,11 +581,10 @@ const upcomingSchedules = computed(() =>
     .slice(0, 2),
 )
 
-// 시험: 가까운 시험 상위 3개
 const upcomingExams = computed(() =>
   exams.value
     .filter((exam) => {
-      if (!exam.due_at) return true // 마감 없음은 항상 표시
+      if (!exam.due_at) return true
       const due = new Date(exam.due_at)
       return due.getTime() >= today.getTime()
     })
@@ -603,7 +618,6 @@ async function openDetailModal(id: number) {
       },
     )
 
-    // ✅ 공용 모달에서 쓰는 StoredEvent 구조로 변환
     detail.value = {
       type: 'study',
       data: {
@@ -630,11 +644,147 @@ function closeDetailModal() {
   detailError.value = ''
 }
 
-/* BaseScheduleCalendar 의 event-click 핸들러 */
 const handleEventClick = (info: EventClickArg) => {
   const id = Number(info.event.id)
   if (!Number.isNaN(id)) {
     openDetailModal(id)
+  }
+}
+
+/* =========================
+ *   스터디 관리 모달 관련
+ * ========================= */
+
+function openManageModal() {
+  showManageModal.value = true
+  if (isLeader.value) {
+    fetchMembers()
+  }
+}
+
+function handleCloseManageModal() {
+  showManageModal.value = false
+}
+
+async function handleLeaveStudy() {
+  if (myRole.value === 'leader') {
+    alert('리더는 스터디를 해산해야만 나갈 수 있습니다.')
+    return
+  }
+  if (!studyId.value) return
+
+  const ok = window.confirm('정말 이 스터디에서 탈퇴하시겠습니까?')
+  if (!ok) return
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    // 🔥 실제 "나가기" 엔드포인트로 수정 필요
+    await axios.post(
+      `${API_BASE}/studies/${studyId.value}/leave/`,
+      {},
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    alert('스터디에서 탈퇴되었습니다.')
+    router.push('/studies')
+  } catch (e) {
+    console.error('스터디 탈퇴 실패:', e)
+    alert('스터디 탈퇴 중 오류가 발생했습니다.')
+  }
+}
+
+async function handleDissolveStudy() {
+  if (!studyId.value) return
+
+  const ok = window.confirm(
+    '정말 이 스터디를 해산하시겠습니까?\n모든 일정, 공지, 시험 데이터가 삭제됩니다.',
+  )
+  if (!ok) return
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await axios.delete(
+      `${API_BASE}/studies/${studyId.value}/study_delete/`,
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    alert('스터디가 해산되었습니다.')
+    router.push('/studies')
+  } catch (e) {
+    console.error('스터디 해산 실패:', e)
+    alert('스터디 해산 중 오류가 발생했습니다.')
+  }
+}
+
+async function handleKickMember(memberId: number) {
+  if (!studyId.value) return
+  const ok = window.confirm('이 멤버를 스터디에서 추방하시겠습니까?')
+  if (!ok) return
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await axios.put(
+      `${API_BASE}/studies/${studyId.value}/${memberId}/expel_member/`,
+      {},
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    members.value = members.value.filter((m) => m.id !== memberId)
+  } catch (e) {
+    console.error('멤버 추방 실패:', e)
+    alert('멤버 추방 중 오류가 발생했습니다.')
+  }
+}
+
+async function handleChangeRole(memberId: number, role: StudyRole) {
+  if (!studyId.value) return
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await axios.put(
+      `${API_BASE}/studies/${studyId.value}/change_role/`,
+      {
+        user: memberId,
+        role,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    const target = members.value.find((m) => m.id === memberId)
+    if (target) {
+      target.role = role
+    }
+  } catch (e) {
+    console.error('역할 변경 실패:', e)
+    alert('역할 변경 중 오류가 발생했습니다.')
   }
 }
 
@@ -649,6 +799,9 @@ watch(
     isLoaded.value = false
 
     try {
+      // 역할 먼저 캐싱
+      await studyRoleStore.fetchMyRole(newId)
+
       await fetchStudy()
       await fetchSchedules()
       await fetchNotices()
@@ -664,8 +817,8 @@ watch(
 <style scoped>
 .study-page-wrapper {
   width: 100%;
-  max-width: 1300px;        /* 전체 폭 중앙 정렬 */
-  padding-left: 1rem;     /* 항상 좌우 여백 유지 */
+  max-width: 1300px;
+  padding-left: 1rem;
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
@@ -679,8 +832,6 @@ watch(
   }
 }
 
-
-/* 오른쪽 카드 / 아바타 등 기존 스타일 유지 */
 .avatar {
   width: 28px;
   height: 28px;
@@ -702,15 +853,13 @@ watch(
 }
 
 .right-stack .card {
-  border-radius: 0.5rem; /* FullCalendar와 비슷한 둥글기 */
+  border-radius: 0.5rem;
 }
 
-/* list-group 기본 보더 제거 → 깔끔해짐 */
 .right-stack .list-group-item {
   border: 0 !important;
 }
 
-/* 카드 모서리 살리기 위해 마지막 아이템에만 라운드 적용 */
 .right-stack .list-group-item:last-child {
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
@@ -728,12 +877,12 @@ watch(
 .header-link {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
   text-decoration: none;
   transition: color 0.15s ease-in-out;
 }
 
 .header-link:hover {
-  color: #1e293b; /* slate-800 */
+  color: #1e293b;
 }
 </style>

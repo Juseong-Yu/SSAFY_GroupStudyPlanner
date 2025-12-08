@@ -2,7 +2,7 @@
   <div class="app-shell">
     <TopNavbar />
 
-    <Sidebar class="app-sidebar" />
+    <Sidebar/>
 
     <main class="main-content" :class="{ 'with-sidebar': ui.isLgUp && ui.sidebarOpen }">
       <slot />
@@ -42,11 +42,6 @@ const ui = useUiStore()
 </style>
 
 <style>
-/* 💡 사이드바: 컨텐츠보다 위, 모달보단 아래 */
-.app-sidebar {
-  position: fixed;         /* 이미 fixed 라면 생략 가능 */
-  z-index: 1030;
-}
 
 /* Bootstrap 모달이 전부 다 덮도록 최상단 */
 .modal-backdrop {

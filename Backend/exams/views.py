@@ -20,10 +20,6 @@ from studies.models import Study, StudyMembership
 from .models import Exam, ExamQuestion, ExamAIDraft, ExamResult
 
 
-# ====== GMS 설정 (settings.py 에서 가져오기) ======
-GMS_API_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
-GMS_KEY = 'S14P02AE06-7c0b7b86-468b-4efe-836e-3ff67dd5c373'
-
 
 # ====== 파일에서 텍스트 뽑는 유틸 ======
 def _extract_text_from_file(django_file) -> str:
@@ -275,14 +271,15 @@ def exam_ai_generate(request, study_id: int):
         ],
     }
 
+        
     headers = {
+        "Authorization": f"Bearer {settings.GMS_KEY}",
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {GMS_KEY}",
     }
 
     # ---- GMS API 호출 ----
     try:
-        gms_res = requests.post(GMS_API_URL, headers=headers, json=payload, timeout=60)
+        gms_res = requests.post(settings.GMS_API_URL, headers=headers, json=payload, timeout=60)
     except requests.RequestException as e:
         return Response(
             {"error": "GMS API 요청 중 오류가 발생했습니다.", "detail": str(e)},
