@@ -37,3 +37,9 @@ class StudyRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudyMembership
         fields = ('user', 'study', 'role')
+
+class RoleSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = StudyMembership
+        fields = ('user', 'role')
