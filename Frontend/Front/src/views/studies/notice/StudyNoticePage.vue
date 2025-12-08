@@ -7,9 +7,11 @@
         <!-- 제목 영역 -->
         <div class="d-flex align-items-center justify-content-between mb-4 w-100">
           <h2 class="fw-bold mb-0">공지사항</h2>
-          <RouterLink :to="`/studies/${studyId}/notice/create`" class="btn btn-light-outline btn-sm">
-            +add
+          <RouterLink v-if="canManageNotices" :to="`/studies/${studyId}/notice/create`"
+            class="btn btn-light-outline btn-sm">
+            + 공지 생성
           </RouterLink>
+
         </div>
 
         <!-- 공지 목록 카드 -->
@@ -111,6 +113,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
+import { useStudyRoleStore } from '@/stores/studyRoleStore'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -142,6 +145,11 @@ type Row = {
 
 const route = useRoute()
 const studyId = route.params.id as string
+
+const studyRoleStore = useStudyRoleStore()
+
+// 공지 생성 권한 (leader 또는 admin)
+const canManageNotices = computed(() => studyRoleStore.isAdmin(studyId))
 
 // 실제 공지 데이터
 const notices = ref<Row[]>([])
@@ -339,5 +347,4 @@ onMounted(async () => {
   color: #0f172a;
   font-weight: 600;
 }
-
 </style>

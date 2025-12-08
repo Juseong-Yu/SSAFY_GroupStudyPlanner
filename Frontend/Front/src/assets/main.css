@@ -7,4 +7,19 @@ html, body {
                'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif;
 }
 
+.study-page-wrapper {
+  width: 100%;
+  max-width: 1300px;        /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem;       /* 항상 좌우 여백 유지 */
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
 
+@media (min-width: 768px) {
+  .study-page-wrapper {
+    max-width: 1300px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}

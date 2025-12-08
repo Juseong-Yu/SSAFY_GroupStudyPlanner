@@ -12,11 +12,14 @@
               <div class="text-success fw-semibold small">
                 공지사항
               </div>
-              <button type="button" class="btn btn-light-outline btn-sm" @click="goList">
+              <button
+                type="button"
+                class="btn btn-light-outline btn-sm"
+                @click="goList"
+              >
                 이전
               </button>
             </div>
-
 
             <!-- 제목 -->
             <h1 class="post-title mb-2">
@@ -49,29 +52,45 @@
 
           <!-- 본문 영역 -->
           <div class="post-body">
-            <!-- ✅ md-editor-v3 Preview로 렌더링: 작성 화면과 거의 동일 UI -->
-            <MdPreview class="notice-content" :id="previewId" :modelValue="notice.content || ''" theme="light"
-              previewTheme="github" :showCodeRowNumber="true" language="en-US" />
+            <!-- md-editor-v3 Preview -->
+            <MdPreview
+              class="notice-content"
+              :id="previewId"
+              :modelValue="notice.content || ''"
+              theme="light"
+              previewTheme="github"
+              :showCodeRowNumber="true"
+              language="en-US"
+            />
 
             <!-- 수정 시간 + 버튼 영역 -->
-            <div class="post-footer d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top">
+            <div
+              class="post-footer d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top"
+            >
               <div v-if="notice.updated_at" class="text-muted small mb-2 mb-md-0">
                 마지막 수정: {{ formatDate(notice.updated_at) }}
               </div>
 
               <div class="d-flex gap-2">
-                <RouterLink :to="`/studies/${studyId}/notice/${noticeId}/edit`"
-                  class="btn btn-light-outline btn-sm btn-primary-outline">
+                <!-- ✅ 리더/관리자만 수정/삭제 가능 -->
+                <RouterLink
+                  v-if="canManageNotices"
+                  :to="`/studies/${studyId}/notice/${noticeId}/edit`"
+                  class="btn btn-light-outline btn-sm btn-primary-outline"
+                >
                   수정
                 </RouterLink>
-                <button type="button" class="btn btn-light-outline btn-sm btn-danger-outline" @click="onDelete">
+                <button
+                  v-if="canManageNotices"
+                  type="button"
+                  class="btn btn-light-outline btn-sm btn-danger-outline"
+                  @click="onDelete"
+                >
                   삭제
                 </button>
-                <button type="button" class="btn btn-light-outline btn-sm" @click="goList">
-                  목록
-                </button>
-              </div>
 
+                <!-- 요청대로 하단 '목록' 버튼 제거 -->
+              </div>
             </div>
           </div>
         </div>
@@ -88,15 +107,17 @@ import axios from 'axios'
 import { MdPreview } from 'md-editor-v3'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
+import { useStudyRoleStore } from '@/stores/studyRoleStore'
 
 const route = useRoute()
 const router = useRouter()
+const studyRoleStore = useStudyRoleStore()
 
 const studyId = route.params.id
 const noticeId = route.params.noticeId
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
-const previewId = 'notice-preview' // MdPreview용 id (고정이면 충분)
+const previewId = 'notice-preview' // MdPreview용 id
 
 // 공지 데이터
 const notice = ref({
@@ -109,6 +130,7 @@ const notice = ref({
   updated_at: '',
 })
 
+// 공지 작성자 이름
 const displayAuthor = computed(() => {
   const raw = notice.value.author
   if (!raw) return ''
@@ -116,25 +138,28 @@ const displayAuthor = computed(() => {
   return raw.username || ''
 })
 
+// 프로필 이미지
 const profileImg = computed(() => {
   if (!notice.value?.author?.profile_img) return '/default-avatar.png'
 
   const path = notice.value.author.profile_img
-
   if (path.startsWith('http')) return path
 
   return `${API_BASE.replace(/\/$/, '')}${path}`
 })
 
+// 날짜 포맷
 const formatDate = dt => {
   if (!dt) return ''
   return dt.replace('T', ' ').slice(0, 16)
 }
 
+// 목록 이동
 const goList = () => {
   router.push(`/studies/${studyId}/notice`)
 }
 
+// 공지 삭제
 const onDelete = async () => {
   if (!confirm('이 공지를 삭제할까요? 삭제 후에는 되돌릴 수 없습니다.')) return
 
@@ -150,7 +175,7 @@ const onDelete = async () => {
           'X-CSRFToken': csrftoken,
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     router.push(`/studies/${studyId}/notice`)
@@ -165,19 +190,25 @@ const onDelete = async () => {
   }
 }
 
-onMounted(async () => {
-  await ensureCsrf()
-  const csrftoken = getCookie('csrftoken')
+// ✅ 현재 스터디에서 공지 관리 가능 여부 (leader/admin)
+const canManageNotices = computed(() => studyRoleStore.isAdmin(studyId))
 
+onMounted(async () => {
   try {
+    // 내 역할부터 캐싱
+    await studyRoleStore.fetchMyRole(studyId)
+
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
     const res = await axios.get(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken },
-      }
+      },
     )
-    console.log(res)
+
     notice.value = { ...notice.value, ...res.data }
   } catch (err) {
     console.error(err)
@@ -200,9 +231,7 @@ onMounted(async () => {
   min-height: 100vh;
   width: 100%;
   max-width: 1300px;
-  /* 전체 폭 중앙 정렬 */
   padding-left: 1rem;
-  /* 항상 좌우 여백 유지 */
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
@@ -274,7 +303,6 @@ onMounted(async () => {
 
 /* md-editor-v3 프리뷰 전체 래퍼 */
 .notice-content {
-  /* 필요하면 위아래 간격만 살짝 조절 */
   margin-top: 0.25rem;
 }
 
@@ -351,5 +379,4 @@ onMounted(async () => {
   border-color: #fca5a5;
   color: #b91c1c;
 }
-
 </style>
