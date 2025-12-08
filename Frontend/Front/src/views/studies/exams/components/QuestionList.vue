@@ -62,17 +62,20 @@ const props = defineProps<{
 }>()
 
 function buttonClass(problemId: number, idx: number) {
-  // ✅ 현재 문제: 너무 파란 배경 대신, 은은한 강조용 커스텀 클래스
+  // 현재 문제
   if (idx === props.currentIndex) {
     return 'btn-current-question'
   }
-  // ✅ 답변한 문제
+
+  // 답변 완료 문제
   if (props.answers[problemId]) {
     return 'btn-outline-success'
   }
-  // ✅ 아직 안 푼 문제
-  return 'btn-outline-secondary'
+
+  // 아직 안 푼 문제 → 테두리 없음 + hover만 회색
+  return 'btn-plain'
 }
+
 </script>
 
 <style scoped>
@@ -105,4 +108,52 @@ function buttonClass(problemId: number, idx: number) {
   opacity: 0.6;
   pointer-events: none;
 }
+
+/* 기본: transition 통일 (있으면 더 부드러움) */
+button.btn {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* 아직 안 푼 문제 */
+.btn-plain {
+  background-color: #ffffff;
+  border: none;
+  color: #374151;
+}
+
+/* hover */
+.btn-plain:hover {
+  background-color: #f3f4f6;
+}
+
+/* 👇 눌렀을 때 / 포커스 때도 거의 같은 톤 유지 */
+.btn-plain:active,
+.btn-plain:focus-visible {
+  background-color: #e5e7eb;
+  box-shadow: none;
+}
+
+/* 현재 문제 */
+.btn-current-question {
+  background-color: #f1f5f9;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+/* hover */
+.btn-current-question:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+/* 👇 클릭 순간에도 색 안 튀게 */
+.btn-current-question:active,
+.btn-current-question:focus-visible {
+  background-color: #e2e8f0;
+  border-color: #bfdbfe;
+  box-shadow: none;
+}
+
+
 </style>
