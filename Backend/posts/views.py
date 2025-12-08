@@ -64,7 +64,10 @@ def notice_create(request, study_id):
                     "author": user.username,
                     "url": f"{settings.VUE_API_URL}studies/{study_id}/notice/{notice.id}"
                 }
-                requests.post(url, json=payload)
+                try:
+                    requests.post(url, json=payload)
+                except:
+                    pass
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
