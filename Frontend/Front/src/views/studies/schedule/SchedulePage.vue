@@ -12,13 +12,13 @@
 
           <!-- 일정 추가 버튼 -->
           <button
-    v-if="canManageSchedules"
-    type="button"
-    class="btn btn-light-outline btn-sm"
-    @click="openCreateModal"
-  >
-    + 일정 추가
-  </button>
+            v-if="canManageSchedules"
+            type="button"
+            class="btn btn-light-outline btn-sm"
+            @click="openCreateModal"
+          >
+            + 일정 추가
+          </button>
         </div>
 
         <!-- 상태 요약 배지 -->
@@ -39,12 +39,20 @@
         <!-- 뷰 전환 토글 (캘린더 / 목록) - 노션 스타일, 왼쪽 정렬 -->
         <div class="d-flex justify-content-start mb-3">
           <div class="schedule-view-toggle d-inline-flex align-items-center">
-            <button type="button" class="toggle-btn" :class="{ 'is-active': viewMode === 'calendar' }"
-              @click="viewMode = 'calendar'">
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'is-active': viewMode === 'calendar' }"
+              @click="viewMode = 'calendar'"
+            >
               캘린더
             </button>
-            <button type="button" class="toggle-btn" :class="{ 'is-active': viewMode === 'list' }"
-              @click="viewMode = 'list'">
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'is-active': viewMode === 'list' }"
+              @click="viewMode = 'list'"
+            >
               목록
             </button>
           </div>
@@ -54,27 +62,39 @@
         <div class="w-100 schedule-main">
           <!-- ✅ 캘린더 뷰: BaseScheduleCalendar 사용 -->
           <div v-if="viewMode === 'calendar'" class="schedule-main-calendar">
-            <BaseScheduleCalendar :events="calendarEvents" :loading="isLoading" @event-click="handleEventClick" />
+            <BaseScheduleCalendar
+              :events="calendarEvents"
+              :loading="isLoading"
+              @event-click="handleEventClick"
+            />
           </div>
 
           <!-- 목록(카드) 뷰 -->
           <div v-else>
             <!-- 진행중 일정 -->
             <div class="card shadow-sm mb-3" v-if="ongoingSchedules.length || isLoading">
-              <div class="card-header d-flex align-items-center justify-content-between schedule-section-header-today">
+              <div
+                class="card-header d-flex align-items-center justify-content-between schedule-section-header-today"
+              >
                 <span class="fw-semibold small">진행중인 일정</span>
                 <span class="badge bg-primary-subtle text-primary small">
                   {{ ongoingSchedules.length }}
                 </span>
               </div>
               <div class="card-body p-0">
-                <div v-if="!ongoingSchedules.length && !isLoading" class="py-3 text-center text-muted small">
+                <div
+                  v-if="!ongoingSchedules.length && !isLoading"
+                  class="py-3 text-center text-muted small"
+                >
                   진행중인 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div v-for="item in ongoingSchedules" :key="'ongoing-' + item.id"
+                  <div
+                    v-for="item in ongoingSchedules"
+                    :key="'ongoing-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)">
+                    @click="openDetailModal(item.id)"
+                  >
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -112,13 +132,19 @@
                 </span>
               </div>
               <div class="card-body p-0">
-                <div v-if="!upcomingSchedules.length && !isLoading" class="py-3 text-center text-muted small">
+                <div
+                  v-if="!upcomingSchedules.length && !isLoading"
+                  class="py-3 text-center text-muted small"
+                >
                   다가오는 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div v-for="item in upcomingSchedules" :key="'upcoming-' + item.id"
+                  <div
+                    v-for="item in upcomingSchedules"
+                    :key="'upcoming-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)">
+                    @click="openDetailModal(item.id)"
+                  >
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -131,8 +157,10 @@
                         <div class="fw-semibold text-truncate me-2">
                           {{ item.schedule.title }}
                         </div>
-                        <span v-if="getDDay(item) !== null"
-                          class="badge rounded-pill bg-success-subtle text-success small">
+                        <span
+                          v-if="getDDay(item) !== null"
+                          class="badge rounded-pill bg-success-subtle text-success small"
+                        >
                           {{ getDDay(item) === 0 ? "D-day" : "D-" + getDDay(item) }}
                         </span>
                       </div>
@@ -157,13 +185,19 @@
                 </span>
               </div>
               <div class="card-body p-0">
-                <div v-if="!pastSchedules.length && !isLoading" class="py-3 text-center text-muted small">
+                <div
+                  v-if="!pastSchedules.length && !isLoading"
+                  class="py-3 text-center text-muted small"
+                >
                   지난 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div v-for="item in pastSchedules.slice(0, 5)" :key="'past-' + item.id"
+                  <div
+                    v-for="item in pastSchedules.slice(0, 5)"
+                    :key="'past-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)">
+                    @click="openDetailModal(item.id)"
+                  >
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -171,7 +205,7 @@
                       </div>
                     </div>
 
-                    <div class="flex-grow-1">
+                    <div class="grow">
                       <div class="fw-semibold text-truncate mb-1">
                         {{ item.schedule.title }}
                       </div>
@@ -185,7 +219,10 @@
                   </div>
 
                   <!-- 나중에 진짜 히스토리 페이지 만들면 RouterLink로 교체 -->
-                  <div v-if="pastSchedules.length > 5" class="list-group-item text-center small text-muted">
+                  <div
+                    v-if="pastSchedules.length > 5"
+                    class="list-group-item text-center small text-muted"
+                  >
                     지난 일정 더보기 ({{ pastSchedules.length - 5 }}개)
                   </div>
                 </div>
@@ -200,17 +237,26 @@
     <!-- ====================== -->
     <!-- 일정 상세 모달: ScheduleDetailModal 사용 -->
     <!-- ====================== -->
-    <ScheduleDetailModal :show="showDetailModal" :error="detailError" :detail="detail" @close="closeDetailModal"
-      @delete="handleDetailDelete" />
+    <ScheduleDetailModal
+      :show="showDetailModal"
+      :error="detailError"
+      :detail="detail"
+      :user-role="myScheduleRole"
+      @close="closeDetailModal"
+      @delete="handleDetailDelete"
+      @edit="handleDetailEdit"
+    />
 
     <!-- ====================== -->
-    <!-- 일정 추가 모달 (기존 그대로 사용) -->
+    <!-- 일정 추가 / 수정 모달 -->
     <!-- ====================== -->
     <div v-if="showCreateModal" class="schedule-modal-backdrop">
       <div class="schedule-modal">
         <div class="card shadow-sm">
           <div class="card-header">
-            <h5 class="mb-0 fw-bold">일정 추가</h5>
+            <h5 class="mb-0 fw-bold">
+              {{ isEditing ? "일정 수정" : "일정 추가" }}
+            </h5>
           </div>
 
           <div class="card-body">
@@ -233,11 +279,16 @@
               </div>
 
               <!-- 시작 / 종료 -->
-              <div class="row g-3">
+              <div class="row g-3 mb-3">
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">시작 일시</label>
                   <div class="d-flex gap-2">
-                    <input v-model="form.startDate" type="date" class="form-control" required />
+                    <input
+                      v-model="form.startDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
                     <input v-model="form.startTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -245,19 +296,43 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">종료 일시</label>
                   <div class="d-flex gap-2">
-                    <input v-model="form.endDate" type="date" class="form-control" required />
+                    <input
+                      v-model="form.endDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
                     <input v-model="form.endTime" type="time" class="form-control" />
                   </div>
                 </div>
               </div>
 
+              <!-- 알림 설정 -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">알림</label>
+                <select v-model="form.reminderOffset" class="form-select">
+                  <option value="none">알림 없음</option>
+                  <option value="10">10분 전</option>
+                  <option value="30">30분 전</option>
+                  <option value="60">1시간 전</option>
+                  <option value="1440">하루 전</option>
+                </select>
+                <div class="form-text small text-muted">
+                  알림 시간은 시작 시간 기준이며, 서버에는 <strong>offset(분 단위)</strong>으로 전송됩니다.
+                </div>
+              </div>
+
               <!-- 버튼 -->
               <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-outline-secondary btn-sm" @click="closeCreateModal">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="closeCreateModal"
+                >
                   취소
                 </button>
                 <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmitting">
-                  {{ isSubmitting ? "저장 중..." : "저장" }}
+                  {{ submitButtonLabel }}
                 </button>
               </div>
             </form>
@@ -277,10 +352,8 @@ import AppShell from "@/layouts/AppShell.vue"
 import { ensureCsrf, getCookie } from "@/utils/csrf_cors"
 
 import BaseScheduleCalendar from "@/components/BaseScheduleCalendar.vue"
-import ScheduleDetailModal, {
-  type StoredEvent,
-} from "@/components/ScheduleDetailModal.vue"
-import { useStudyRoleStore } from "@/stores/studyRoleStore"   
+import ScheduleDetailModal, { type StoredEvent } from "@/components/ScheduleDetailModal.vue"
+import { useStudyRoleStore } from "@/stores/studyRoleStore"
 import type { EventInput, EventClickArg } from "@fullcalendar/core"
 
 /* ==============================
@@ -299,12 +372,19 @@ const viewMode = ref<"calendar" | "list">("calendar")
    타입 정의
 ================================= */
 
+type StudyRole = "leader" | "admin" | "member"
+
+interface ScheduleReminder {
+  offset: number // 🔹 분 단위
+}
+
 interface ScheduleCore {
   id?: number
   title: string
   description: string
   start_at: string // ISO UTC
   end_at?: string | null
+  reminder?: ScheduleReminder | null
 }
 
 interface ScheduleItem {
@@ -338,10 +418,12 @@ interface ScheduleDetailResponse {
 const schedules = ref<ScheduleItem[]>([])
 const isLoading = ref(false)
 
-/* 생성 모달 상태 */
+/* 생성/수정 모달 상태 */
 const showCreateModal = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref("")
+const isEditing = ref(false)
+const editingId = ref<number | null>(null)
 
 const form = ref({
   title: "",
@@ -350,6 +432,8 @@ const form = ref({
   startTime: "",
   endDate: "",
   endTime: "",
+  // 'none' 이면 reminder 필드 자체를 보내지 않음
+  reminderOffset: "none" as string, // 분 단위 선택값 (10, 30, 60, 1440, ...)
 })
 
 /* 상세 모달 상태 (ScheduleDetailModal용) */
@@ -384,12 +468,15 @@ const calendarEvents = computed<EventInput[]>(() =>
       backgroundColor: "#e7f1ff",
       borderColor: "#b6d4fe",
       textColor: "#084298",
+      extendedProps: {
+        reminder: item.schedule.reminder ?? null,
+      },
     }
   })
 )
 
 /* ==============================
-   날짜 유틸 (UTC 기준)
+   날짜 유틸 (UTC 기준 포맷)
 ================================= */
 
 const parseUtc = (value: string): Date => {
@@ -441,6 +528,22 @@ const formatRangeUtc = (startIso: string, endIso?: string | null): string => {
     return `${sDate} ${sTime} ~ ${eTime}`
   }
   return `${sDate} ${sTime} ~ ${eDate} ${eTime}`
+}
+
+/* 폼용: ISO → date/time (로컬 기준) */
+const isoToLocalParts = (iso: string | undefined | null) => {
+  if (!iso) return { date: "", time: "" }
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return { date: "", time: "" }
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mi = String(d.getMinutes()).padStart(2, "0")
+  return {
+    date: `${yyyy}-${mm}-${dd}`,
+    time: `${hh}:${mi}`,
+  }
 }
 
 /* D-day (다가오는 일정용) */
@@ -586,12 +689,12 @@ const openDetailModal = async (id: number) => {
           description: res.data.schedule.description,
           start_at: res.data.schedule.start_at,
           end_at: res.data.schedule.end_at,
+          reminder: res.data.schedule.reminder ?? null,
         },
         author: res.data.author,
         study: res.data.study,
       },
     }
-
     detail.value = stored
   } catch (e) {
     console.error(e)
@@ -613,16 +716,44 @@ const handleEventClick = (arg: EventClickArg) => {
   }
 }
 
-/* ScheduleDetailModal에서 개인 일정 삭제 이벤트를 emit하지만,
-   이 페이지는 study 일정만 사용하므로 실제로 호출될 일은 없음.
-   그래도 타입 맞게 핸들러만 정의. */
+/* ScheduleDetailModal에서 삭제 이벤트 */
 const handleDetailDelete = async (id: number) => {
   await onClickDelete(id)
   closeDetailModal()
 }
 
+/* ScheduleDetailModal에서 수정 이벤트 (admin 이상 + 스터디 일정) */
+const handleDetailEdit = (payload: StoredEvent) => {
+  if (!payload?.data?.schedule) return
+
+  const s = payload.data.schedule
+  const startParts = isoToLocalParts(s.start_at)
+  const endParts = isoToLocalParts(s.end_at || s.start_at)
+
+  form.value = {
+    title: s.title ?? "",
+    description: s.description ?? "",
+    startDate: startParts.date,
+    startTime: startParts.time,
+    endDate: endParts.date,
+    endTime: endParts.time,
+    reminderOffset:
+      s.reminder && typeof s.reminder.offset === "number"
+        ? String(s.reminder.offset)
+        : "none",
+  }
+
+  isEditing.value = true
+  editingId.value = payload.data.id
+  errorMessage.value = ""
+
+  // 상세 모달 닫고, 생성/수정 모달 오픈
+  closeDetailModal()
+  showCreateModal.value = true
+}
+
 /* ==============================
-   생성 관련
+   생성 / 수정 관련
 ================================= */
 
 const buildDateTime = (date: string, time: string, fallback: string): string => {
@@ -633,6 +764,8 @@ const buildDateTime = (date: string, time: string, fallback: string): string => 
 }
 
 const openCreateModal = () => {
+  isEditing.value = false
+  editingId.value = null
   form.value = {
     title: "",
     description: "",
@@ -640,6 +773,7 @@ const openCreateModal = () => {
     startTime: "",
     endDate: "",
     endTime: "",
+    reminderOffset: "none",
   }
   errorMessage.value = ""
   showCreateModal.value = true
@@ -647,6 +781,8 @@ const openCreateModal = () => {
 
 const closeCreateModal = () => {
   showCreateModal.value = false
+  isEditing.value = false
+  editingId.value = null
 }
 
 const validateForm = (): boolean => {
@@ -694,22 +830,52 @@ const onSubmitCreate = async () => {
       "23:59"
     )
 
-    await axios.post(
-      `${API_BASE}/studies/${studyId}/schedules/study_schedule_create/`,
-      {
-        title: form.value.title.trim(),
-        description: form.value.description.trim(),
-        start_at,
-        end_at,
-      },
-      {
-        withCredentials: true,
-        headers: {
-          "X-CSRFToken": csrftoken || "",
-          "Content-Type": "application/json",
-        },
+    let reminder: ScheduleReminder | null = null
+    if (form.value.reminderOffset && form.value.reminderOffset !== "none") {
+      const minutes = Number(form.value.reminderOffset)
+      if (!Number.isNaN(minutes) && minutes > 0) {
+        reminder = { offset: minutes }
       }
-    )
+    }
+
+    const payload: Record<string, unknown> = {
+      title: form.value.title.trim(),
+      description: form.value.description.trim(),
+      start_at,
+      end_at,
+    }
+
+    if (reminder) {
+      payload.reminder = reminder
+    }
+
+    if (isEditing.value && editingId.value !== null) {
+      // 수정
+      await axios.put(
+        `${API_BASE}/studies/${studyId}/schedules/${editingId.value}/study_schedule_detail/`,
+        payload,
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": csrftoken || "",
+            "Content-Type": "application/json",
+          },
+        }
+      )
+    } else {
+      // 생성
+      await axios.post(
+        `${API_BASE}/studies/${studyId}/schedules/study_schedule_create/`,
+        payload,
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": csrftoken || "",
+            "Content-Type": "application/json",
+          },
+        }
+      )
+    }
 
     await fetchSchedules()
     closeCreateModal()
@@ -718,14 +884,25 @@ const onSubmitCreate = async () => {
   }
 }
 
-  /* ==============================
+/* 제출 버튼 라벨 */
+const submitButtonLabel = computed(() => {
+  if (isEditing.value) {
+    return isSubmitting.value ? "수정 중..." : "수정"
+  }
+  return isSubmitting.value ? "저장 중..." : "저장"
+})
+
+/* ==============================
    권한
 ================================= */
 const studyRoleStore = useStudyRoleStore()
 
 // 이 스터디에서 일정 관리 권한 여부 (leader 또는 admin)
-const canManageSchedules = computed(() =>
-  studyRoleStore.isAdmin(studyId)
+const canManageSchedules = computed(() => studyRoleStore.isAdmin(studyId))
+
+// Modal에 내려줄 내 역할 (isAdmin이면 admin 취급, 아니면 member)
+const myScheduleRole = computed<StudyRole>(() =>
+  studyRoleStore.isAdmin(studyId) ? "admin" : "member"
 )
 
 /* ==============================
@@ -844,13 +1021,10 @@ onMounted(async () => {
 
 /* 노션 느낌 뷰 전환 토글 */
 .schedule-view-toggle {
-  background: #f3f4f6;
-  /* 연한 회색 배경 */
-  border-radius: 999px;
-  /* 완전한 캡슐 모양 */
+  background: #f3f4f6; /* 연한 회색 배경 */
+  border-radius: 999px; /* 완전한 캡슐 모양 */
   padding: 3px;
-  border: 1px solid #e5e7eb;
-  /* 아주 연한 테두리 */
+  border: 1px solid #e5e7eb; /* 아주 연한 테두리 */
   gap: 2px;
 }
 
@@ -861,8 +1035,7 @@ onMounted(async () => {
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #6b7280;
-  /* 비활성 텍스트 (회색) */
+  color: #6b7280; /* 비활성 텍스트 (회색) */
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -877,8 +1050,7 @@ onMounted(async () => {
 
 .schedule-view-toggle .toggle-btn.is-active {
   background: #ffffff;
-  color: #111827;
-  /* 활성 텍스트 (진한 회색) */
+  color: #111827; /* 활성 텍스트 (진한 회색) */
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
 }
 

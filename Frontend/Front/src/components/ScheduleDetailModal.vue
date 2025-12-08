@@ -9,17 +9,30 @@
             {{ detail?.data.schedule.title || '일정 상세' }}
           </h5>
 
-          <!-- 오른쪽: 타입 배지 + (개인일정일 때) 수정/삭제 + 닫기 버튼 -->
+          <!-- 오른쪽: 타입 배지 + (권한에 따른) 수정/삭제 + 닫기 버튼 -->
           <div class="d-flex align-items-center gap-2 ms-auto">
-            <span v-if="detail" class="badge rounded-pill small" :class="detail.type === 'study'
-                ? 'bg-primary-subtle text-primary'
-                : 'bg-purple-subtle text-purple'
-              ">
+            <span
+              v-if="detail"
+              class="badge rounded-pill small"
+              :class="
+                detail.type === 'study'
+                  ? 'bg-primary-subtle text-primary'
+                  : 'bg-purple-subtle text-purple'
+              "
+            >
               {{ detail.type === 'study' ? '스터디 일정' : '개인 일정' }}
             </span>
 
-            <!-- ✅ 개인 일정일 때만 수정/삭제 버튼 노출 -->
-            <template v-if="detail && detail.type === 'personal'">
+            <!-- ✅ 개인 일정이거나, 스터디 일정 + admin/leader 일 때만 수정/삭제 버튼 노출 -->
+            <template
+              v-if="
+                detail &&
+                (
+                  detail.type === 'personal' ||
+                  (detail.type === 'study' && (userRole === 'leader' || userRole === 'admin'))
+                )
+              "
+            >
               <button type="button" class="btn btn-ghost btn-sm" @click="onClickEdit">
                 수정
               </button>
@@ -31,7 +44,6 @@
             <button type="button" class="btn btn-light btn-sm" @click="emit('close')">
               닫기
             </button>
-
           </div>
         </div>
 
@@ -49,20 +61,33 @@
               <!-- 왼쪽: 정보 -->
               <div class="col-12 col-md-7">
                 <!-- ✅ 스터디 일정이면 스터디명 표시 -->
-                <div v-if="detail.type === 'study' && detail.data.study" class="mb-2 small text-muted">
+                <div
+                  v-if="detail.type === 'study' && detail.data.study"
+                  class="mb-2 small text-muted"
+                >
                   {{ detail.data.study.name }}
                 </div>
 
                 <!-- 스터디 일정일 때만 작성자 정보 -->
                 <template v-if="detail.type === 'study' && detail.data.author">
                   <div class="d-flex align-items-center mb-3">
-                    <div v-if="detailAuthorAvatar" class="rounded-circle border bg-light me-3 overflow-hidden"
-                      style="width: 44px; height: 44px">
-                      <img :src="detailAuthorAvatar" alt="author" class="w-100 h-100" style="object-fit: cover" />
+                    <div
+                      v-if="detailAuthorAvatar"
+                      class="rounded-circle border bg-light me-3 overflow-hidden"
+                      style="width: 44px; height: 44px"
+                    >
+                      <img
+                        :src="detailAuthorAvatar"
+                        alt="author"
+                        class="w-100 h-100"
+                        style="object-fit: cover"
+                      />
                     </div>
-                    <div v-else
+                    <div
+                      v-else
                       class="rounded-circle border bg-light me-3 d-flex align-items-center justify-content-center"
-                      style="width: 44px; height: 44px; font-size: 0.8rem">
+                      style="width: 44px; height: 44px; font-size: 0.8rem"
+                    >
                       <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
                     </div>
 
@@ -123,6 +148,14 @@
                       }}
                     </div>
                   </div>
+
+                  <!-- ✅ 알림 정보 -->
+                  <div class="mt-3 pt-3 border-top">
+                    <div class="text-muted fw-semibold mb-1">알림</div>
+                    <div>
+                      {{ formatReminder(detail.data.schedule.reminder) }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -141,11 +174,18 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 /** ===== 타입 정의 (MainPage StoredEvent와 동일 구조) ===== **/
 export type ScheduleType = 'study' | 'personal'
 
+export type StudyRole = 'leader' | 'admin' | 'member'
+
+export interface ScheduleReminder {
+  offset: number // 분 단위
+}
+
 export interface CombinedScheduleCore {
   title: string
   description: string
   start_at: string
   end_at?: string | null
+  reminder?: ScheduleReminder | null
 }
 
 export interface CombinedAuthor {
@@ -177,6 +217,8 @@ const props = defineProps<{
   show: boolean
   error: string
   detail: StoredEvent | null
+  /** 현재 스터디에서의 내 역할 (없으면 member 취급) */
+  userRole?: StudyRole
 }>()
 
 const emit = defineEmits<{
@@ -184,6 +226,8 @@ const emit = defineEmits<{
   (e: 'delete', id: number): void
   (e: 'edit', payload: StoredEvent): void
 }>()
+
+const userRole = computed<StudyRole>(() => props.userRole ?? 'member')
 
 /* 날짜 유틸 (UTC 기준) */
 const parseUtc = (value: string): Date => {
@@ -207,6 +251,30 @@ const formatShortDateUtc = (value: string): string => {
   return `${month}월 ${day}일`
 }
 
+/* 알림 포맷터 */
+const formatReminder = (reminder?: ScheduleReminder | null): string => {
+  if (!reminder || typeof reminder.offset !== 'number') {
+    return '알림 없음'
+  }
+
+  const minutes = reminder.offset
+
+  // 하루 단위
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440
+    return `시작 ${days}일 전`
+  }
+
+  // 시간 단위
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60
+    return `시작 ${hours}시간 전`
+  }
+
+  // 분 단위 그대로
+  return `시작 ${minutes}분 전`
+}
+
 /* 작성자 아바타 */
 const detailAuthorAvatar = computed(() => {
   const d = props.detail
@@ -215,16 +283,16 @@ const detailAuthorAvatar = computed(() => {
   return `${API_BASE}${author.profile_img}`
 })
 
-/* ✅ 개인 일정 수정 */
+/* ✅ 일정 수정 (개인 + 권한 있는 스터디) */
 const onClickEdit = () => {
   if (!props.detail) return
   emit('edit', props.detail)
 }
 
-/* ✅ 개인 일정 삭제 */
+/* ✅ 일정 삭제 (개인 + 권한 있는 스터디) */
 const onClickDelete = () => {
   if (!props.detail) return
-  if (!window.confirm('이 개인 일정을 삭제할까요?')) return
+  if (!window.confirm('이 일정을 삭제할까요?')) return
   emit('delete', props.detail.data.id)
 }
 </script>
@@ -310,5 +378,4 @@ const onClickDelete = () => {
   background-color: rgba(248, 113, 113, 0.08); /* red-400 alpha */
   color: #991b1b; /* red-800 */
 }
-
 </style>
