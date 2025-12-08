@@ -13,15 +13,22 @@
           </div>
 
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-light-outline btn-sm" @click="openCreateModal">
+            <button
+              type="button"
+              class="btn btn-light-outline btn-sm"
+              @click="openCreateModal"
+            >
               + 개인 일정 추가
             </button>
           </div>
         </div>
 
         <!-- ✅ BaseScheduleCalendar 사용 -->
-        <BaseScheduleCalendar :events="calendarEvents" :loading="isLoading && !isMounted"
-          @event-click="handleEventClick">
+        <BaseScheduleCalendar
+          :events="calendarEvents"
+          :loading="isLoading && !isMounted"
+          @event-click="handleEventClick"
+        >
           <template #footer>
             <div class="mt-3 small text-muted">
               • 파란색: 스터디 일정 / 보라색: 개인 일정
@@ -34,19 +41,26 @@
     <!-- ====================== -->
     <!-- ✅ 공용 일정 상세 모달 (스터디/개인 공통 디자인) -->
     <!-- ====================== -->
-    <!-- 일정 상세 모달 (공용 컴포넌트) -->
-    <ScheduleDetailModal :show="showDetailModal" :error="detailError" :detail="detail" @close="closeDetailModal"
-      @delete="handleDeleteSchedule" @edit="handleEditSchedule" />
-
+    <ScheduleDetailModal
+      :show="showDetailModal"
+      :error="detailError"
+      :detail="detail"
+      user-role="member"              
+      @close="closeDetailModal"
+      @delete="handleDeleteSchedule"
+      @edit="handleEditSchedule"
+    />
 
     <!-- ====================== -->
-    <!-- 생성 모달 -->
+    <!-- 생성 / 수정 모달 -->
     <!-- ====================== -->
     <div v-if="showCreateModal" class="schedule-modal-backdrop">
       <div class="schedule-modal">
         <div class="card shadow-sm">
           <div class="card-header">
-            <h5 class="mb-0 fw-bold">일정 추가</h5>
+            <h5 class="mb-0 fw-bold">
+              {{ isEditing ? '일정 수정' : '일정 추가' }}
+            </h5>
           </div>
 
           <div class="card-body">
@@ -69,7 +83,12 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">시작 일시</label>
                   <div class="d-flex gap-2">
-                    <input v-model="form.startDate" type="date" class="form-control" required />
+                    <input
+                      v-model="form.startDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
                     <input v-model="form.startTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -77,18 +96,27 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">종료 일시</label>
                   <div class="d-flex gap-2">
-                    <input v-model="form.endDate" type="date" class="form-control" required />
+                    <input
+                      v-model="form.endDate"
+                      type="date"
+                      class="form-control"
+                      required
+                    />
                     <input v-model="form.endTime" type="time" class="form-control" />
                   </div>
                 </div>
               </div>
 
               <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-outline-secondary btn-sm" @click="closeCreateModal">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="closeCreateModal"
+                >
                   취소
                 </button>
                 <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmitting">
-                  {{ isSubmitting ? '저장 중...' : '저장' }}
+                  {{ isSubmitting ? '저장 중...' : isEditing ? '수정' : '저장' }}
                 </button>
               </div>
             </form>
@@ -166,7 +194,6 @@ const detail = ref<StoredEvent | null>(null)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
 
-
 /* BaseScheduleCalendar 에 내려줄 이벤트 배열 */
 const calendarEvents = ref<EventInput[]>([])
 
@@ -181,7 +208,7 @@ const buildDateTime = (date: string, time: string, fallback: string): string => 
   return `${d} ${t}`
 }
 
-/* 일정 로드 */
+/* 일정 로드 (개인 + 스터디) */
 const loadSchedules = async () => {
   try {
     isLoading.value = true
@@ -289,7 +316,7 @@ const validateForm = (): boolean => {
   return true
 }
 
-/* 생성 모달 */
+/* 생성 모달 열기 (새 개인 일정) */
 const openCreateModal = () => {
   form.value = {
     title: '',
@@ -300,6 +327,8 @@ const openCreateModal = () => {
     endTime: '',
   }
   errorMessage.value = ''
+  isEditing.value = false
+  editingId.value = null
   showCreateModal.value = true
 }
 
@@ -307,7 +336,7 @@ const closeCreateModal = () => {
   showCreateModal.value = false
 }
 
-/* 개인 일정 생성 */
+/* 개인 일정 생성 / 수정 */
 const onSubmitCreate = async () => {
   if (!validateForm()) return
 
@@ -327,8 +356,7 @@ const onSubmitCreate = async () => {
     }
 
     if (isEditing.value && editingId.value !== null) {
-      // ✅ 수정
-      // 엔드포인트는 예시야. 실제 URL로 변경 필요!
+      // ✅ 개인 일정 수정
       await axios.put(
         `${API_BASE}/schedules/${editingId.value}/personal_schedule_detail/`,
         payload,
@@ -341,7 +369,7 @@ const onSubmitCreate = async () => {
         },
       )
     } else {
-      // ✅ 생성
+      // ✅ 개인 일정 생성
       await axios.post(`${API_BASE}/schedules/personal_schedule_create/`, payload, {
         withCredentials: true,
         headers: {
@@ -363,9 +391,9 @@ const onSubmitCreate = async () => {
   }
 }
 
-
+/* 개인 일정 수정 트리거 (모달에서 edit emit) */
 const handleEditSchedule = (payload: StoredEvent) => {
-  // 혹시나 해서 personal만 허용
+  // ✅ 개인 일정만 허용
   if (payload.type !== 'personal') return
 
   const data = payload.data
@@ -394,19 +422,12 @@ const handleEditSchedule = (payload: StoredEvent) => {
   showCreateModal.value = true
 }
 
-/* 마운트 */
-onMounted(async () => {
-  isMounted.value = true
-  await ensureCsrf()
-  await loadSchedules()
-})
-
+/* 개인 일정 삭제 */
 const handleDeleteSchedule = async (id: number) => {
   try {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // 🔥 실제 엔드포인트에 맞게 수정해야 함
     await axios.delete(`${API_BASE}/schedules/${id}/personal_schedule_detail/`, {
       withCredentials: true,
       headers: {
@@ -422,13 +443,19 @@ const handleDeleteSchedule = async (id: number) => {
   }
 }
 
+/* 마운트 */
+onMounted(async () => {
+  isMounted.value = true
+  await ensureCsrf()
+  await loadSchedules()
+})
 </script>
 
 <style scoped>
 .main-page-wrapper {
   width: 100%;
-  max-width: 1300px;      /* 화면이 커도 1100px까지만 */
-  padding-left: 1rem;   /* 항상 좌우 여백 유지 */
+  max-width: 1300px;
+  padding-left: 1rem;
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
@@ -481,12 +508,7 @@ const handleDeleteSchedule = async (id: number) => {
   font-size: 1.1rem;
 }
 
-/* 시간 요약 박스 */
-.time-summary {
-  background: #f7f9fc;
-}
-
-/* 개인 일정 배지 색상 */
+/* 개인 일정 배지 색상 (ScheduleDetailModal에서 재사용 가능) */
 .bg-purple-subtle {
   background-color: #f3e8ff;
 }

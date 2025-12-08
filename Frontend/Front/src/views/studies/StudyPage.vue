@@ -7,11 +7,16 @@
         <!-- 상단: 제목 + 참여 코드 + 스터디 관리 버튼 -->
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <h2 class="fw-bold mb-3">{{ studyTitle }}</h2> 
+            <h2 class="fw-bold mb-3">{{ studyTitle }}</h2>
           </div>
 
-          <button type="button" class="btn btn-light-outline btn-sm d-flex align-items-center justify-content-center"
-            @click="openManageModal" aria-label="스터디 관리" title="스터디 관리">
+          <button
+            type="button"
+            class="btn btn-light-outline btn-sm d-flex align-items-center justify-content-center"
+            @click="openManageModal"
+            aria-label="스터디 관리"
+            title="스터디 관리"
+          >
             <!-- 사람 + 설정 느낌 -->
             <i class="bi bi-gear"></i>
           </button>
@@ -20,8 +25,11 @@
         <div class="row g-4">
           <!-- 왼쪽: 달력 -->
           <div class="col-12 col-xl-8">
-            <BaseScheduleCalendar :events="calendarEvents" :loading="!isLoaded && !calendarEvents.length"
-              @event-click="handleEventClick" />
+            <BaseScheduleCalendar
+              :events="calendarEvents"
+              :loading="!isLoaded && !calendarEvents.length"
+              @event-click="handleEventClick"
+            />
           </div>
 
           <!-- 오른쪽: 공지사항 + 시험 + 일정 -->
@@ -31,22 +39,34 @@
               <div class="card mb-3 shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">공지사항</span>
-                  <RouterLink :to="{ name: 'NoticeMain', params: { id: studyId } }" class="header-link">
+                  <RouterLink
+                    :to="{ name: 'NoticeMain', params: { id: studyId } }"
+                    class="header-link"
+                  >
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
                   <!-- 최근 2개 -->
-                  <RouterLink v-for="n in topNotices" :key="n.id" :to="`/studies/${studyId}/notice/${n.id}`"
-                    class="list-group-item py-3 text-reset text-decoration-none notice-link">
+                  <RouterLink
+                    v-for="n in topNotices"
+                    :key="n.id"
+                    :to="`/studies/${studyId}/notice/${n.id}`"
+                    class="list-group-item py-3 text-reset text-decoration-none notice-link"
+                  >
                     <div class="fw-semibold text-truncate mb-1">
                       {{ n.title }}
                     </div>
 
                     <div class="d-flex align-items-center text-muted small">
-                      <img v-if="n.author.profileImg" :src="n.author.profileImg" alt="avatar" class="avatar me-2"
-                        referrerpolicy="no-referrer" />
+                      <img
+                        v-if="n.author.profileImg"
+                        :src="n.author.profileImg"
+                        alt="avatar"
+                        class="avatar me-2"
+                        referrerpolicy="no-referrer"
+                      />
                       <div v-else class="avatar avatar-fallback me-2">
                         <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
                       </div>
@@ -59,7 +79,10 @@
                     </div>
                   </RouterLink>
 
-                  <div v-if="!topNotices.length && isLoaded" class="list-group-item py-4 text-center text-muted small">
+                  <div
+                    v-if="!topNotices.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small"
+                  >
                     아직 등록된 공지사항이 없어요.
                   </div>
                 </div>
@@ -69,16 +92,22 @@
               <div class="card mb-3 shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">시험</span>
-                  <RouterLink :to="{ name: 'StudyExams', params: { studyId: studyId } }" class="header-link">
+                  <RouterLink
+                    :to="{ name: 'StudyExams', params: { studyId: studyId } }"
+                    class="header-link"
+                  >
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
                   <!-- 가까운 시험 최대 2개 -->
-                  <RouterLink v-for="exam in upcomingExams" :key="exam.id"
+                  <RouterLink
+                    v-for="exam in upcomingExams"
+                    :key="exam.id"
                     :to="{ name: 'StudyExams', params: { studyId: studyId } }"
-                    class="list-group-item py-3 text-reset text-decoration-none notice-link">
+                    class="list-group-item py-3 text-reset text-decoration-none notice-link"
+                  >
                     <div class="fw-semibold text-truncate mb-1">
                       {{ exam.title }}
                     </div>
@@ -92,17 +121,22 @@
                         {{ visibilityLabelMap[exam.visibility] }}
                       </span>
 
-                      <span :class="exam.has_taken
-                        ? 'badge bg-success-subtle text-success'
-                        : 'badge bg-primary-subtle text-primary'
-                        ">
+                      <span
+                        :class="
+                          exam.has_taken
+                            ? 'badge bg-success-subtle text-success'
+                            : 'badge bg-primary-subtle text-primary'
+                        "
+                      >
                         {{ exam.has_taken ? '응시 완료' : '미응시' }}
                       </span>
                     </div>
                   </RouterLink>
 
-                  <div v-if="!upcomingExams.length && isLoaded"
-                    class="list-group-item py-4 text-center text-muted small">
+                  <div
+                    v-if="!upcomingExams.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small"
+                  >
                     아직 예정된 시험이 없어요.
                   </div>
                 </div>
@@ -112,14 +146,21 @@
               <div class="card shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between">
                   <span class="fw-semibold">일정</span>
-                  <RouterLink :to="{ name: 'ScheduleMain', params: { id: studyId } }" class="header-link">
+                  <RouterLink
+                    :to="{ name: 'ScheduleMain', params: { id: studyId } }"
+                    class="header-link"
+                  >
                     ->
                   </RouterLink>
                 </div>
 
                 <div class="list-group list-group-flush">
-                  <div class="list-group-item py-3 list-item-clickable" v-for="s in upcomingSchedules" :key="s.id"
-                    @click="openDetailModal(s.id)">
+                  <div
+                    class="list-group-item py-3 list-item-clickable"
+                    v-for="s in upcomingSchedules"
+                    :key="s.id"
+                    @click="openDetailModal(s.id)"
+                  >
                     <div class="fw-semibold text-truncate">
                       <i class="bi bi-calendar-event me-1 text-primary"></i>
                       {{ s.schedule.title }}
@@ -129,8 +170,10 @@
                     </div>
                   </div>
 
-                  <div v-if="!upcomingSchedules.length && isLoaded"
-                    class="list-group-item py-4 text-center text-muted small">
+                  <div
+                    v-if="!upcomingSchedules.length && isLoaded"
+                    class="list-group-item py-4 text-center text-muted small"
+                  >
                     아직 등록된 스터디 일정이 없어요.
                   </div>
                 </div>
@@ -143,13 +186,32 @@
     </div>
 
     <!-- 일정 상세 모달 -->
-    <ScheduleDetailModal :show="showDetailModal" :error="detailError" :detail="detail" @close="closeDetailModal" />
+    <ScheduleDetailModal
+      :show="showDetailModal"
+      :error="detailError"
+      :detail="detail"
+      :user-role="myScheduleRole" 
+      @close="closeDetailModal"
+      @delete="handleDetailDelete"
+      @edit="handleDetailEdit"
+    />
 
     <!-- 스터디 관리 모달 -->
-    <StudyManageModal :show="showManageModal" :isLeader="isLeader" :myRole="myRole" :studyId="studyId"
-      :studyTitle="studyTitle" :members="members" :loadingMembers="loadingMembers" :membersError="membersError"
-      @close="handleCloseManageModal" @leave="handleLeaveStudy" @dissolve="handleDissolveStudy" @kick="handleKickMember"
-      @change-role="handleChangeRole" />
+    <StudyManageModal
+      :show="showManageModal"
+      :isLeader="isLeader"
+      :myRole="myRole"
+      :studyId="studyId"
+      :studyTitle="studyTitle"
+      :members="members"
+      :loadingMembers="loadingMembers"
+      :membersError="membersError"
+      @close="handleCloseManageModal"
+      @leave="handleLeaveStudy"
+      @dissolve="handleDissolveStudy"
+      @kick="handleKickMember"
+      @change-role="handleChangeRole"
+    />
   </AppShell>
 </template>
 
@@ -355,6 +417,9 @@ const isLeader = computed(() => {
   if (!id) return false
   return studyRoleStore.isLeader(id)
 })
+
+/** ✅ 모달에 내려줄 역할 (admin/leader만 수정·삭제 버튼 노출) */
+const myScheduleRole = computed(() => myRole.value)
 
 /* =========================
  *   API 호출 함수들
@@ -651,6 +716,55 @@ const handleEventClick = (info: EventClickArg) => {
   }
 }
 
+/** ✅ admin 이상일 때만 의미 있게 동작하는 삭제 핸들러 */
+async function handleDetailDelete(id: number) {
+  if (myRole.value === 'member') {
+    alert('일정 삭제 권한이 없습니다.')
+    return
+  }
+  if (!studyId.value) return
+
+  const ok = window.confirm('이 일정을 삭제하시겠습니까?')
+  if (!ok) return
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await axios.delete(
+      `${API_BASE}/studies/${studyId.value}/schedules/${id}/study_schedule_detail/`,
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrftoken || '',
+        },
+      },
+    )
+
+    await fetchSchedules()
+    closeDetailModal()
+  } catch (e) {
+    console.error('일정 삭제 실패:', e)
+    alert('일정 삭제 중 오류가 발생했습니다.')
+  }
+}
+
+/** ✅ 수정 버튼: 일단 스터디 일정 페이지로 라우팅 (거기서 수정 모달 열도록 확장 가능) */
+function handleDetailEdit(payload: StoredEvent) {
+  if (myRole.value === 'member') {
+    alert('일정 수정 권한이 없습니다.')
+    return
+  }
+  if (!payload?.data?.id || !studyId.value) return
+
+  // 나중에 SchedulePage에서 `query.editId` 읽어서 바로 수정 모달 열게 만들면 깔끔
+  router.push({
+    name: 'ScheduleMain',
+    params: { id: studyId.value },
+    query: { editId: String(payload.data.id) },
+  })
+}
+
 /* =========================
  *   스터디 관리 모달 관련
  * ========================= */
@@ -682,8 +796,10 @@ async function handleLeaveStudy() {
 
     // 🔥 실제 "나가기" 엔드포인트로 수정 필요
     await axios.post(
-      `${API_BASE}/studies/${studyId.value}/leave/`,
-      {},
+      `${API_BASE}/studies/leave/`,
+      {
+        id: studyId.value,
+      },
       {
         withCredentials: true,
         headers: {
@@ -693,7 +809,7 @@ async function handleLeaveStudy() {
     )
 
     alert('스터디에서 탈퇴되었습니다.')
-    router.push('/studies')
+    router.push('/main')
   } catch (e) {
     console.error('스터디 탈퇴 실패:', e)
     alert('스터디 탈퇴 중 오류가 발생했습니다.')
@@ -767,7 +883,7 @@ async function handleChangeRole(memberId: number, role: StudyRole) {
     await axios.put(
       `${API_BASE}/studies/${studyId.value}/change_role/`,
       {
-        user: memberId,
+        target_id: memberId,
         role,
       },
       {
@@ -884,5 +1000,15 @@ watch(
 
 .header-link:hover {
   color: #1e293b;
+}
+
+.btn-light-outline {
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+}
+
+.btn-light-outline:hover {
+  color: #000000;
 }
 </style>

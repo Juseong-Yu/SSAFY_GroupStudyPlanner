@@ -389,6 +389,7 @@ onMounted(() => {
 .btn-primary-outline {
   color: #2563eb;
   border-color: #93c5fd;
+  border-radius: 8px;
 }
 
 .btn-primary-outline:hover {
