@@ -63,23 +63,27 @@
 
       <!-- 이동 버튼 -->
       <div class="d-flex justify-content-between mt-4">
+
+        <!-- 이전 문제 버튼: 첫 문제에서는 숨김 -->
         <button
+          v-if="currentIndex > 0"
           type="button"
           class="btn btn-outline-secondary"
           @click="$emit('goPrev')"
-          :disabled="currentIndex === 0"
         >
           이전 문제
         </button>
 
+        <!-- 다음 문제 버튼: 마지막 문제에서는 숨김 -->
         <button
+          v-if="currentIndex < total - 1"
           type="button"
           class="btn btn-outline-primary"
           @click="$emit('goNext')"
-          :disabled="currentIndex === total - 1"
         >
           다음 문제
         </button>
+
       </div>
     </div>
   </div>
@@ -109,7 +113,6 @@ const emit = defineEmits<{
   (e: 'goPrev'): void
 }>()
 
-// v-model 대응용 computed
 const model = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),

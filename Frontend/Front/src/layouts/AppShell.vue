@@ -30,8 +30,7 @@ const ui = useUiStore()
   min-height: 100vh;
   padding-top: var(--topbar-height, 56px);
   transition: padding-left 0.25s ease-in-out;
-  position: relative;
-  z-index: 1;              /* 컨텐츠는 가장 아래 */
+  position: relative;             /* 컨텐츠는 가장 아래 */
 }
 
 /* lg 이상일 때만 사이드바가 열려 있으면 좌측 패딩 적용 */
@@ -46,16 +45,20 @@ const ui = useUiStore()
 /* 💡 사이드바: 컨텐츠보다 위, 모달보단 아래 */
 .app-sidebar {
   position: fixed;         /* 이미 fixed 라면 생략 가능 */
-  z-index: 1040;
+  z-index: 1030;
 }
 
 /* Bootstrap 모달이 전부 다 덮도록 최상단 */
 .modal-backdrop {
-  z-index: 9998 !important;
+  position: fixed;
+  inset: 0;
+  z-index: 1050 !important;
   background-color: rgba(33, 37, 41, 0.55) !important;
 }
 
 .modal {
-  z-index: 9999 !important;
+  z-index: 1060 !important;
 }
+
+
 </style>

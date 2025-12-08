@@ -12,12 +12,13 @@
 
           <!-- 일정 추가 버튼 -->
           <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            @click="openCreateModal"
-          >
-            + 일정 추가
-          </button>
+    v-if="canManageSchedules"
+    type="button"
+    class="btn btn-light-outline btn-sm"
+    @click="openCreateModal"
+  >
+    + 일정 추가
+  </button>
         </div>
 
         <!-- 상태 요약 배지 -->
@@ -38,20 +39,12 @@
         <!-- 뷰 전환 토글 (캘린더 / 목록) - 노션 스타일, 왼쪽 정렬 -->
         <div class="d-flex justify-content-start mb-3">
           <div class="schedule-view-toggle d-inline-flex align-items-center">
-            <button
-              type="button"
-              class="toggle-btn"
-              :class="{ 'is-active': viewMode === 'calendar' }"
-              @click="viewMode = 'calendar'"
-            >
+            <button type="button" class="toggle-btn" :class="{ 'is-active': viewMode === 'calendar' }"
+              @click="viewMode = 'calendar'">
               캘린더
             </button>
-            <button
-              type="button"
-              class="toggle-btn"
-              :class="{ 'is-active': viewMode === 'list' }"
-              @click="viewMode = 'list'"
-            >
+            <button type="button" class="toggle-btn" :class="{ 'is-active': viewMode === 'list' }"
+              @click="viewMode = 'list'">
               목록
             </button>
           </div>
@@ -59,49 +52,29 @@
 
         <!-- 본문: 선택한 뷰만 보여주기 -->
         <div class="w-100 schedule-main">
-          <!-- 캘린더 뷰 (화면 꽉 차게) -->
+          <!-- ✅ 캘린더 뷰: BaseScheduleCalendar 사용 -->
           <div v-if="viewMode === 'calendar'" class="schedule-main-calendar">
-            <div class="card shadow-sm schedule-calendar-card">
-              <div class="card-body p-3">
-                <div
-                  v-if="isLoading && !isMounted"
-                  class="py-5 text-center text-muted small"
-                >
-                  불러오는 중...
-                </div>
-                <div v-else-if="isMounted" class="calendar-wrapper">
-                  <FullCalendar :options="calendarOptions" />
-                </div>
-              </div>
-            </div>
+            <BaseScheduleCalendar :events="calendarEvents" :loading="isLoading" @event-click="handleEventClick" />
           </div>
 
           <!-- 목록(카드) 뷰 -->
           <div v-else>
             <!-- 진행중 일정 -->
             <div class="card shadow-sm mb-3" v-if="ongoingSchedules.length || isLoading">
-              <div
-                class="card-header d-flex align-items-center justify-content-between schedule-section-header-today"
-              >
+              <div class="card-header d-flex align-items-center justify-content-between schedule-section-header-today">
                 <span class="fw-semibold small">진행중인 일정</span>
                 <span class="badge bg-primary-subtle text-primary small">
                   {{ ongoingSchedules.length }}
                 </span>
               </div>
               <div class="card-body p-0">
-                <div
-                  v-if="!ongoingSchedules.length && !isLoading"
-                  class="py-3 text-center text-muted small"
-                >
+                <div v-if="!ongoingSchedules.length && !isLoading" class="py-3 text-center text-muted small">
                   진행중인 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div
-                    v-for="item in ongoingSchedules"
-                    :key="'ongoing-' + item.id"
+                  <div v-for="item in ongoingSchedules" :key="'ongoing-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)"
-                  >
+                    @click="openDetailModal(item.id)">
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -114,9 +87,7 @@
                         <div class="fw-semibold text-truncate me-2">
                           {{ item.schedule.title }}
                         </div>
-                        <span
-                          class="badge rounded-pill bg-primary-subtle text-primary small"
-                        >
+                        <span class="badge rounded-pill bg-primary-subtle text-primary small">
                           진행중
                         </span>
                       </div>
@@ -134,28 +105,20 @@
 
             <!-- 다가오는 일정 -->
             <div class="card shadow-sm mb-3" v-if="upcomingSchedules.length || isLoading">
-              <div
-                class="card-header d-flex align-items-center justify-content-between"
-              >
+              <div class="card-header d-flex align-items-center justify-content-between">
                 <span class="fw-semibold small">다가오는 일정</span>
                 <span class="badge bg-success-subtle text-success small">
                   {{ upcomingSchedules.length }}
                 </span>
               </div>
               <div class="card-body p-0">
-                <div
-                  v-if="!upcomingSchedules.length && !isLoading"
-                  class="py-3 text-center text-muted small"
-                >
+                <div v-if="!upcomingSchedules.length && !isLoading" class="py-3 text-center text-muted small">
                   다가오는 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div
-                    v-for="item in upcomingSchedules"
-                    :key="'upcoming-' + item.id"
+                  <div v-for="item in upcomingSchedules" :key="'upcoming-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)"
-                  >
+                    @click="openDetailModal(item.id)">
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -168,10 +131,8 @@
                         <div class="fw-semibold text-truncate me-2">
                           {{ item.schedule.title }}
                         </div>
-                        <span
-                          v-if="getDDay(item) !== null"
-                          class="badge rounded-pill bg-success-subtle text-success small"
-                        >
+                        <span v-if="getDDay(item) !== null"
+                          class="badge rounded-pill bg-success-subtle text-success small">
                           {{ getDDay(item) === 0 ? "D-day" : "D-" + getDDay(item) }}
                         </span>
                       </div>
@@ -189,28 +150,20 @@
 
             <!-- 지난 일정 -->
             <div class="card shadow-sm" v-if="pastSchedules.length || isLoading">
-              <div
-                class="card-header d-flex align-items-center justify-content-between"
-              >
+              <div class="card-header d-flex align-items-center justify-content-between">
                 <span class="fw-semibold small">지난 일정</span>
                 <span class="badge bg-secondary-subtle text-secondary small">
                   {{ pastSchedules.length }}
                 </span>
               </div>
               <div class="card-body p-0">
-                <div
-                  v-if="!pastSchedules.length && !isLoading"
-                  class="py-3 text-center text-muted small"
-                >
+                <div v-if="!pastSchedules.length && !isLoading" class="py-3 text-center text-muted small">
                   지난 일정이 없습니다.
                 </div>
                 <div v-else class="list-group list-group-flush">
-                  <div
-                    v-for="item in pastSchedules.slice(0, 5)"
-                    :key="'past-' + item.id"
+                  <div v-for="item in pastSchedules.slice(0, 5)" :key="'past-' + item.id"
                     class="list-group-item d-flex align-items-start list-item-clickable"
-                    @click="openDetailModal(item.id)"
-                  >
+                    @click="openDetailModal(item.id)">
                     <!-- 시작 날짜만 (시간 X) -->
                     <div class="schedule-time text-muted me-3">
                       <div class="fw-semibold small">
@@ -232,10 +185,7 @@
                   </div>
 
                   <!-- 나중에 진짜 히스토리 페이지 만들면 RouterLink로 교체 -->
-                  <div
-                    v-if="pastSchedules.length > 5"
-                    class="list-group-item text-center small text-muted"
-                  >
+                  <div v-if="pastSchedules.length > 5" class="list-group-item text-center small text-muted">
                     지난 일정 더보기 ({{ pastSchedules.length - 5 }}개)
                   </div>
                 </div>
@@ -248,224 +198,13 @@
     </div>
 
     <!-- ====================== -->
-    <!-- 일정 상세 모달 (왼쪽 정보 / 오른쪽 시간 요약) -->
+    <!-- 일정 상세 모달: ScheduleDetailModal 사용 -->
     <!-- ====================== -->
-    <div v-if="showDetailModal" class="schedule-modal-backdrop">
-      <div class="schedule-modal">
-        <div class="card shadow-sm">
-          <div
-            class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2"
-          >
-            <div>
-              <h5 class="mb-1 fw-bold">
-                {{ detail?.schedule.title || "일정 상세" }}
-              </h5>
-            </div>
-            <div class="d-flex align-items-center gap-2 ms-auto">
-              <button
-                v-if="detail"
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                @click="onClickDeleteFromDetail"
-              >
-                삭제
-              </button>
-              <button
-                v-if="detail"
-                type="button"
-                class="btn btn-outline-secondary btn-sm"
-                @click="toggleEditMode"
-              >
-                {{ isEditMode ? "수정 취소" : "수정" }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-light btn-sm"
-                @click="closeDetailModal"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div v-if="detailError" class="alert alert-danger py-2 small mb-3">
-              {{ detailError }}
-            </div>
-            <div v-if="isDetailLoading" class="py-4 text-center text-muted small">
-              불러오는 중...
-            </div>
-
-            <template v-else-if="detail">
-              <!-- 보기 모드: 왼쪽 정보 / 오른쪽 시간 요약 -->
-              <div v-if="!isEditMode" class="row g-4 align-items-start">
-                <!-- 왼쪽: 정보 영역 -->
-                <div class="col-12 col-md-7">
-                  <div class="d-flex align-items-center mb-3">
-                    <div
-                      v-if="detailAuthorAvatar"
-                      class="rounded-circle border bg-light me-3 overflow-hidden"
-                      style="width: 44px; height: 44px"
-                    >
-                      <img
-                        :src="detailAuthorAvatar"
-                        alt="author"
-                        class="w-100 h-100"
-                        style="object-fit: cover"
-                      />
-                    </div>
-                    <div
-                      v-else
-                      class="rounded-circle border bg-light me-3 d-flex align-items-center justify-content-center"
-                      style="width: 44px; height: 44px; font-size: 0.8rem"
-                    >
-                      {{ detail.author.username.charAt(0).toUpperCase() }}
-                    </div>
-                    <div class="small">
-                      <div class="fw-semibold">{{ detail.author.username }}</div>
-                      <div class="text-muted">{{ detail.author.email }}</div>
-                    </div>
-                  </div>
-
-                  <hr class="my-3" />
-
-                  <div class="mb-4">
-                    <div class="fw-semibold small text-muted mb-1">일정 제목</div>
-                    <div class="fs-6">{{ detail.schedule.title }}</div>
-                  </div>
-
-                  <div class="mb-0">
-                    <div class="fw-semibold small text-muted mb-1">일정 상세</div>
-                    <p class="mb-0 small text-body" style="white-space: pre-wrap">
-                      {{ detail.schedule.description || "내용 없음" }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- 오른쪽: 시간 요약 박스 -->
-                <div class="col-12 col-md-5">
-                  <div class="time-summary p-3 rounded-3 border small">
-                    <div class="fw-semibold mb-3 d-flex align-items-center gap-2">
-                      <span>시간 요약</span>
-                    </div>
-
-                    <div class="mb-3">
-                      <div class="text-muted fw-semibold mb-1">시작</div>
-                      <div>{{ formatShortDateUtc(detail.schedule.start_at) }}</div>
-                      <div>{{ formatTimeUtc(detail.schedule.start_at) }}</div>
-                    </div>
-
-                    <div>
-                      <div class="text-muted fw-semibold mb-1">종료</div>
-                      <div>
-                        {{
-                          formatShortDateUtc(
-                            detail.schedule.end_at || detail.schedule.start_at
-                          )
-                        }}
-                      </div>
-                      <div>
-                        {{
-                          formatTimeUtc(
-                            detail.schedule.end_at || detail.schedule.start_at
-                          )
-                        }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 수정 모드: 전체 폭 사용 -->
-              <div v-else>
-                <div
-                  v-if="editErrorMessage"
-                  class="alert alert-danger py-2 small mb-3"
-                >
-                  {{ editErrorMessage }}
-                </div>
-
-                <form @submit.prevent="onSubmitUpdate">
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold small">일정 제목</label>
-                    <input
-                      v-model="editForm.title"
-                      type="text"
-                      class="form-control"
-                      required
-                    />
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold small">일정 상세</label>
-                    <textarea
-                      v-model="editForm.description"
-                      class="form-control"
-                      rows="3"
-                    ></textarea>
-                  </div>
-
-                  <div class="row g-3">
-                    <div class="col-md-6">
-                      <label class="form-label fw-semibold small">시작 일시</label>
-                      <div class="d-flex gap-2">
-                        <input
-                          v-model="editForm.startDate"
-                          type="date"
-                          class="form-control"
-                          required
-                        />
-                        <input
-                          v-model="editForm.startTime"
-                          type="time"
-                          class="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label fw-semibold small">종료 일시</label>
-                      <div class="d-flex gap-2">
-                        <input
-                          v-model="editForm.endDate"
-                          type="date"
-                          class="form-control"
-                          required
-                        />
-                        <input
-                          v-model="editForm.endTime"
-                          type="time"
-                          class="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      @click="toggleEditMode"
-                    >
-                      취소
-                    </button>
-                    <button
-                      type="submit"
-                      class="btn btn-primary btn-sm"
-                      :disabled="isUpdating"
-                    >
-                      {{ isUpdating ? "수정 중..." : "수정 저장" }}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ScheduleDetailModal :show="showDetailModal" :error="detailError" :detail="detail" @close="closeDetailModal"
+      @delete="handleDetailDelete" />
 
     <!-- ====================== -->
-    <!-- 일정 추가 모달 -->
+    <!-- 일정 추가 모달 (기존 그대로 사용) -->
     <!-- ====================== -->
     <div v-if="showCreateModal" class="schedule-modal-backdrop">
       <div class="schedule-modal">
@@ -484,22 +223,13 @@
               <!-- 제목 -->
               <div class="mb-3">
                 <label class="form-label fw-semibold">일정 제목</label>
-                <input
-                  v-model="form.title"
-                  type="text"
-                  class="form-control"
-                  required
-                />
+                <input v-model="form.title" type="text" class="form-control" required />
               </div>
 
               <!-- 상세 -->
               <div class="mb-4">
                 <label class="form-label fw-semibold">일정 상세</label>
-                <textarea
-                  v-model="form.description"
-                  class="form-control"
-                  rows="3"
-                ></textarea>
+                <textarea v-model="form.description" class="form-control" rows="3"></textarea>
               </div>
 
               <!-- 시작 / 종료 -->
@@ -507,52 +237,26 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">시작 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.startDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
-                    <input
-                      v-model="form.startTime"
-                      type="time"
-                      class="form-control"
-                    />
+                    <input v-model="form.startDate" type="date" class="form-control" required />
+                    <input v-model="form.startTime" type="time" class="form-control" />
                   </div>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">종료 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.endDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
-                    <input
-                      v-model="form.endTime"
-                      type="time"
-                      class="form-control"
-                    />
+                    <input v-model="form.endDate" type="date" class="form-control" required />
+                    <input v-model="form.endTime" type="time" class="form-control" />
                   </div>
                 </div>
               </div>
 
               <!-- 버튼 -->
               <div class="d-flex justify-content-end gap-2 mt-4">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  @click="closeCreateModal"
-                >
+                <button type="button" class="btn btn-outline-secondary btn-sm" @click="closeCreateModal">
                   취소
                 </button>
-                <button
-                  type="submit"
-                  class="btn btn-primary btn-sm"
-                  :disabled="isSubmitting"
-                >
+                <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmitting">
                   {{ isSubmitting ? "저장 중..." : "저장" }}
                 </button>
               </div>
@@ -572,11 +276,16 @@ import axios from "axios"
 import AppShell from "@/layouts/AppShell.vue"
 import { ensureCsrf, getCookie } from "@/utils/csrf_cors"
 
-import FullCalendar from "@fullcalendar/vue3"
-import dayGridPlugin from "@fullcalendar/daygrid"
-import interactionPlugin from "@fullcalendar/interaction"
-import type { CalendarOptions } from "@fullcalendar/core"
+import BaseScheduleCalendar from "@/components/BaseScheduleCalendar.vue"
+import ScheduleDetailModal, {
+  type StoredEvent,
+} from "@/components/ScheduleDetailModal.vue"
+import { useStudyRoleStore } from "@/stores/studyRoleStore"   
+import type { EventInput, EventClickArg } from "@fullcalendar/core"
 
+/* ==============================
+   라우트 / 상수
+================================= */
 const route = useRoute()
 const studyId = route.params.id as string
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
@@ -615,7 +324,7 @@ interface ScheduleStudy {
   name: string
 }
 
-interface ScheduleDetail {
+interface ScheduleDetailResponse {
   id: number
   schedule: ScheduleCore
   author: ScheduleAuthor
@@ -628,7 +337,6 @@ interface ScheduleDetail {
 
 const schedules = ref<ScheduleItem[]>([])
 const isLoading = ref(false)
-const isMounted = ref(false)
 
 /* 생성 모달 상태 */
 const showCreateModal = ref(false)
@@ -644,42 +352,41 @@ const form = ref({
   endTime: "",
 })
 
-/* 상세 모달 상태 */
+/* 상세 모달 상태 (ScheduleDetailModal용) */
 const showDetailModal = ref(false)
-const isDetailLoading = ref(false)
 const detailError = ref("")
-const detail = ref<ScheduleDetail | null>(null)
-
-const isEditMode = ref(false)
-const isUpdating = ref(false)
-const editErrorMessage = ref("")
-
-const editForm = ref({
-  title: "",
-  description: "",
-  startDate: "",
-  startTime: "",
-  endDate: "",
-  endTime: "",
-})
+const detail = ref<StoredEvent | null>(null)
 
 /* ==============================
-   FullCalendar 옵션
+   FullCalendar 이벤트 데이터
 ================================= */
 
-const calendarOptions = ref<CalendarOptions>({
-  plugins: [dayGridPlugin, interactionPlugin],
-  initialView: "dayGridMonth",
-  height: "100%", // ✅ 부모 높이를 꽉 채우기
-  expandRows: true,
-  locale: "ko",
-  selectable: true,
-  timeZone: "UTC",
-  events: [],
-  dateClick: (info) => {
-    console.log("dateClick:", info.dateStr)
-  },
-})
+const calendarEvents = computed<EventInput[]>(() =>
+  schedules.value.map((item) => {
+    const start = new Date(item.schedule.start_at)
+    const end = new Date(item.schedule.end_at || item.schedule.start_at)
+
+    // end가 자정이면 하루 길게 잡히지 않도록 1ms 당기기
+    if (
+      end.getUTCHours() === 0 &&
+      end.getUTCMinutes() === 0 &&
+      end.getUTCSeconds() === 0 &&
+      end.getUTCMilliseconds() === 0
+    ) {
+      end.setTime(end.getTime() - 1)
+    }
+
+    return {
+      id: String(item.id),
+      title: item.schedule.title,
+      start,
+      end,
+      backgroundColor: "#e7f1ff",
+      borderColor: "#b6d4fe",
+      textColor: "#084298",
+    }
+  })
+)
 
 /* ==============================
    날짜 유틸 (UTC 기준)
@@ -826,34 +533,6 @@ const fetchSchedules = async () => {
       }
     )
     schedules.value = res.data || []
-
-    // FullCalendar 이벤트 세팅
-    const fcEvents = schedules.value.map((item) => {
-      const start = new Date(item.schedule.start_at)
-      const end = new Date(item.schedule.end_at || item.schedule.start_at)
-
-      // end가 자정이면 하루 길게 잡히지 않도록 1ms 당기기
-      if (
-        end.getUTCHours() === 0 &&
-        end.getUTCMinutes() === 0 &&
-        end.getUTCSeconds() === 0 &&
-        end.getUTCMilliseconds() === 0
-      ) {
-        end.setTime(end.getTime() - 1)
-      }
-
-      return {
-        id: String(item.id),
-        title: item.schedule.title,
-        start,
-        end,
-        backgroundColor: "#e7f1ff", // 아주 연한 파랑
-        borderColor: "#b6d4fe", // 보통 파랑
-        textColor: "#084298",
-      }
-    })
-
-    calendarOptions.value.events = fcEvents
   } finally {
     isLoading.value = false
   }
@@ -882,63 +561,69 @@ const onClickDelete = async (id: number) => {
 }
 
 /* ==============================
-   상세 조회 / 수정
+   상세 조회 (ScheduleDetailModal용 데이터로 변환)
 ================================= */
 
 const openDetailModal = async (id: number) => {
   showDetailModal.value = true
-  isDetailLoading.value = true
   detailError.value = ""
-  isEditMode.value = false
-  editErrorMessage.value = ""
   detail.value = null
 
   try {
-    const res = await axios.get<ScheduleDetail>(
+    const res = await axios.get<ScheduleDetailResponse>(
       `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
       }
     )
-    detail.value = res.data
 
-    // editForm 초기값 세팅
-    const s = parseUtc(res.data.schedule.start_at)
-    const e = parseUtc(res.data.schedule.end_at || res.data.schedule.start_at)
-
-    const toInputDate = (d: Date): string =>
-      isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
-    const toInputTime = (d: Date): string =>
-      isNaN(d.getTime()) ? "" : d.toISOString().slice(11, 16)
-
-    editForm.value = {
-      title: res.data.schedule.title,
-      description: res.data.schedule.description,
-      startDate: toInputDate(s),
-      startTime: toInputTime(s),
-      endDate: toInputDate(e),
-      endTime: toInputTime(e),
+    const stored: StoredEvent = {
+      type: "study",
+      data: {
+        id: res.data.id,
+        schedule: {
+          title: res.data.schedule.title,
+          description: res.data.schedule.description,
+          start_at: res.data.schedule.start_at,
+          end_at: res.data.schedule.end_at,
+        },
+        author: res.data.author,
+        study: res.data.study,
+      },
     }
+
+    detail.value = stored
   } catch (e) {
     console.error(e)
     detailError.value = "일정 상세를 불러오지 못했습니다."
-  } finally {
-    isDetailLoading.value = false
   }
 }
 
 const closeDetailModal = () => {
   showDetailModal.value = false
   detail.value = null
-  isEditMode.value = false
-  editErrorMessage.value = ""
+  detailError.value = ""
 }
 
-const toggleEditMode = () => {
-  if (!detail.value) return
-  isEditMode.value = !isEditMode.value
-  editErrorMessage.value = ""
+/* BaseScheduleCalendar → event 클릭 */
+const handleEventClick = (arg: EventClickArg) => {
+  const id = Number(arg.event.id)
+  if (!Number.isNaN(id)) {
+    openDetailModal(id)
+  }
 }
+
+/* ScheduleDetailModal에서 개인 일정 삭제 이벤트를 emit하지만,
+   이 페이지는 study 일정만 사용하므로 실제로 호출될 일은 없음.
+   그래도 타입 맞게 핸들러만 정의. */
+const handleDetailDelete = async (id: number) => {
+  await onClickDelete(id)
+  closeDetailModal()
+}
+
+/* ==============================
+   생성 관련
+================================= */
 
 const buildDateTime = (date: string, time: string, fallback: string): string => {
   const d = (date || "").trim()
@@ -946,108 +631,6 @@ const buildDateTime = (date: string, time: string, fallback: string): string => 
   const t = (time || "").trim() || fallback
   return `${d} ${t}`
 }
-
-const validateEditForm = (): boolean => {
-  const startStr = buildDateTime(
-    editForm.value.startDate,
-    editForm.value.startTime,
-    "00:00"
-  )
-  const endStr = buildDateTime(
-    editForm.value.endDate,
-    editForm.value.endTime,
-    "23:59"
-  )
-
-  if (!startStr || !endStr) {
-    editErrorMessage.value = "날짜를 입력해주세요."
-    return false
-  }
-
-  const start = new Date(startStr)
-  const end = new Date(endStr)
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    editErrorMessage.value = "날짜/시간 형식이 올바르지 않습니다."
-    return false
-  }
-
-  if (end < start) {
-    editErrorMessage.value = "종료 시간이 더 빠릅니다."
-    return false
-  }
-
-  editErrorMessage.value = ""
-  return true
-}
-
-const onSubmitUpdate = async () => {
-  if (!detail.value) return
-  if (!validateEditForm()) return
-
-  try {
-    isUpdating.value = true
-    await ensureCsrf()
-    const csrftoken = getCookie("csrftoken")
-
-    const start_at = buildDateTime(
-      editForm.value.startDate,
-      editForm.value.startTime,
-      "00:00"
-    )
-    const end_at = buildDateTime(
-      editForm.value.endDate,
-      editForm.value.endTime,
-      "23:59"
-    )
-
-    await axios.put(
-      `${API_BASE}/studies/${studyId}/schedules/${detail.value.id}/study_schedule_detail/`,
-      {
-        id: detail.value.id,
-        title: editForm.value.title.trim(),
-        description: editForm.value.description.trim(),
-        start_at,
-        end_at,
-      },
-      {
-        withCredentials: true,
-        headers: {
-          "X-CSRFToken": csrftoken || "",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-
-    // 리스트/캘린더 갱신
-    await fetchSchedules()
-
-    // 상세 데이터도 프론트에서 동기화
-    if (detail.value) {
-      detail.value.schedule.title = editForm.value.title.trim()
-      detail.value.schedule.description = editForm.value.description.trim()
-      detail.value.schedule.start_at = start_at
-      detail.value.schedule.end_at = end_at
-    }
-
-    isEditMode.value = false
-  } catch (e) {
-    console.error(e)
-    editErrorMessage.value = "일정 수정에 실패했습니다."
-  } finally {
-    isUpdating.value = false
-  }
-}
-
-const onClickDeleteFromDetail = async () => {
-  if (!detail.value) return
-  await onClickDelete(detail.value.id)
-  closeDetailModal()
-}
-
-/* ==============================
-   생성 관련
-================================= */
 
 const openCreateModal = () => {
   form.value = {
@@ -1135,30 +718,22 @@ const onSubmitCreate = async () => {
   }
 }
 
-/* ==============================
-   계산된 값 / computed
+  /* ==============================
+   권한
 ================================= */
+const studyRoleStore = useStudyRoleStore()
 
-const detailAuthorAvatar = computed(() => {
-  if (!detail.value || !detail.value.author.profile_img) return null
-  return `${API_BASE}${detail.value.author.profile_img}`
-})
+// 이 스터디에서 일정 관리 권한 여부 (leader 또는 admin)
+const canManageSchedules = computed(() =>
+  studyRoleStore.isAdmin(studyId)
+)
 
 /* ==============================
    Mount
 ================================= */
 onMounted(async () => {
-  isMounted.value = true
   await ensureCsrf()
   await fetchSchedules()
-
-  // FullCalendar 이벤트 클릭 → 상세 모달
-  calendarOptions.value.eventClick = (info: any) => {
-    const id = Number(info.event.id)
-    if (!Number.isNaN(id)) {
-      openDetailModal(id)
-    }
-  }
 })
 </script>
 
@@ -1193,84 +768,9 @@ onMounted(async () => {
   max-height: calc(100vh - 220px);
 }
 
-/* 캘린더 뷰에서 카드가 세로 공간을 전부 차지하게 */
+/* 캘린더 컨테이너 */
 .schedule-main-calendar {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.schedule-calendar-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 카드 바디도 남은 공간을 채우게 */
-.schedule-calendar-card .card-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 캘린더 래퍼와 FullCalendar도 100% */
-.calendar-wrapper {
-  flex: 1;
-  height: 100%;
-}
-
-.calendar-wrapper :deep(.fc) {
-  height: 100%;
-  background-color: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 0.5rem;
-}
-
-:deep(.fc-toolbar-title) {
-  color: #2b3a67;
-  font-weight: 700;
-}
-
-:deep(.fc-col-header-cell) {
-  background: #f7f9fc;
-  font-weight: 600;
-  color: #3b4b70;
-}
-
-/* 날짜 숫자 파란색 → 일반 텍스트 색으로 */
-:deep(.fc .fc-daygrid-day-number) {
-  color: #212529;
-  text-decoration: none;
-}
-
-:deep(.fc .fc-daygrid-day-number:hover),
-:deep(.fc .fc-daygrid-day-number:focus) {
-  color: #212529;
-}
-
-:deep(.fc .fc-daygrid-event) {
-  color: #212529;
-}
-
-:deep(.fc .fc-daygrid-day:hover) {
-  background: #fafcff;
-}
-
-:deep(.fc .fc-daygrid-event a) {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* 요일 헤더(월화수목금토일) 색상 */
-:deep(.fc .fc-col-header-cell-cushion) {
-  color: #3b4b70;
-  text-decoration: none;
-}
-
-:deep(.fc .fc-col-header-cell-cushion:hover),
-:deep(.fc .fc-col-header-cell-cushion:focus) {
-  color: #3b4b70;
 }
 
 /* 카드 공통 */
@@ -1285,7 +785,7 @@ onMounted(async () => {
   color: #1d4ed8;
 }
 
-/* 공통 모달 백드롭 */
+/* 공통 모달 백드롭 (생성 모달용) */
 .schedule-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1344,10 +844,13 @@ onMounted(async () => {
 
 /* 노션 느낌 뷰 전환 토글 */
 .schedule-view-toggle {
-  background: #f3f4f6; /* 연한 회색 배경 */
-  border-radius: 999px; /* 완전한 캡슐 모양 */
+  background: #f3f4f6;
+  /* 연한 회색 배경 */
+  border-radius: 999px;
+  /* 완전한 캡슐 모양 */
   padding: 3px;
-  border: 1px solid #e5e7eb; /* 아주 연한 테두리 */
+  border: 1px solid #e5e7eb;
+  /* 아주 연한 테두리 */
   gap: 2px;
 }
 
@@ -1358,7 +861,8 @@ onMounted(async () => {
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #6b7280; /* 비활성 텍스트 (회색) */
+  color: #6b7280;
+  /* 비활성 텍스트 (회색) */
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -1373,11 +877,25 @@ onMounted(async () => {
 
 .schedule-view-toggle .toggle-btn.is-active {
   background: #ffffff;
-  color: #111827; /* 활성 텍스트 (진한 회색) */
+  color: #111827;
+  /* 활성 텍스트 (진한 회색) */
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
 }
 
 .schedule-view-toggle .toggle-btn.is-active:active {
   transform: translateY(1px);
+}
+
+.btn-light-outline {
+  border: 1px solid #d0d7e2;
+  background-color: #ffffff;
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+}
+
+.btn-light-outline:hover {
+  background-color: #f1f5f9;
+  border-color: #c5cedb;
 }
 </style>

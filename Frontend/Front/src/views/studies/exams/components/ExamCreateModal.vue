@@ -275,10 +275,5 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-.modal-backdrop {
-  z-index: 1040;
-}
-.modal {
-  z-index: 1050;
-}
+
 </style>

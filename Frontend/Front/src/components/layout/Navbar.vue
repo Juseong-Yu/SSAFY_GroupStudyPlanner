@@ -552,13 +552,13 @@ onBeforeUnmount(() => {
   width: var(--sidebar-width, 250px);
   top: var(--topbar-height, 56px);
   left: 0;
-  z-index: 1070;
   transform: translateX(-100%);
   transition: transform 0.25s ease-in-out;
   height: calc(100vh - var(--topbar-height, 56px));
   backdrop-filter: blur(16px);
   background: rgba(255, 255, 255, 0.75);
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 1030;
 }
 
 .sidebar.is-open {

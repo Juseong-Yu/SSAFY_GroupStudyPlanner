@@ -1,67 +1,92 @@
 <!-- src/views/studies/exams/ExamTakePage.vue -->
 <template>
   <AppShell>
-    <div class="container-fluid py-4">
-      <!-- 상단 헤더 영역 -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 class="fw-bold mb-1">
-            시험 응시
-            <span v-if="examTitle"> - {{ examTitle }}</span>
-          </h2>
-          <p class="text-muted small mb-0">
-            스터디 ID: {{ studyId }} / 시험 ID: {{ examId }}
-          </p>
-          <p v-if="examDueAtText" class="text-muted small mb-0">
-            마감 시간: {{ examDueAtText }}
-          </p>
-        </div>
-        <!-- 타이머 자리 (나중에 실제 타이머로 교체 가능) -->
-        <div class="text-end">
-          <span class="badge bg-primary-subtle text-primary px-3 py-2">
-            남은 시간: {{ dummyTimeText }}
-          </span>
-        </div>
-      </div>
+    <div class="container-fluid py-4 d-flex justify-content-center">
+      <div class="w-100 study-page-wrapper">
+        <!-- 상단 헤더 카드 -->
+        <div class="card shadow-sm border-0 mb-3">
+          <div class="card-body py-3">
+            <div
+              class="exam-header d-flex justify-content-between align-items-center flex-wrap gap-3"
+            >
+              <div>
+                <h2 class="fw-bold mb-1">
+                  시험 응시
+                  <span v-if="examTitle"> - {{ examTitle }}</span>
+                </h2>
+                <p class="text-muted small mb-0">
+                  스터디 ID: {{ studyId }} / 시험 ID: {{ examId }}
+                </p>
+                <p v-if="examDueAtText" class="text-muted small mb-0">
+                  마감 시간: {{ examDueAtText }}
+                </p>
+              </div>
 
-      <!-- 로딩 / 에러 / 본문 -->
-      <div v-if="loading" class="text-center text-muted py-5">
-        시험 정보를 불러오는 중입니다...
-      </div>
-
-      <div v-else-if="error" class="alert alert-danger">
-        {{ error }}
-      </div>
-
-      <div v-else-if="!currentProblem">
-        <div class="alert alert-warning">
-          표시할 문제가 없습니다.
-        </div>
-      </div>
-
-      <div v-else class="row g-3">
-        <!-- 왼쪽: 문제 풀이 영역 -->
-        <div class="col-12 col-lg-9">
-          <ProblemView
-            :problem="currentProblem"
-            :currentIndex="currentIndex"
-            :total="problems.length"
-            v-model="answers[currentProblem.id]"
-            @goNext="goNext"
-            @goPrev="goPrev"
-          />
+              <!-- 타이머 영역 -->
+              <div class="timer-box text-end ms-auto">
+                <div class="text-muted small mb-1">남은 시간</div>
+                <div class="badge rounded-pill bg-primary text-white px-3 py-2 fs-6">
+                  {{ dummyTimeText }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 오른쪽: 문제 번호 + 제출 버튼 -->
-        <div class="col-12 col-lg-3">
-          <QuestionList
-            :problems="problems"
-            :answers="answers"
-            :currentIndex="currentIndex"
-            :submitting="submitting"
-            @select="selectProblem"
-            @submitExam="submitExam"
-          />
+        <!-- 본문 카드 (로딩/에러/문제 표시) -->
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <!-- 로딩 -->
+            <div v-if="loading" class="text-center text-muted py-5">
+              시험 정보를 불러오는 중입니다...
+            </div>
+
+            <!-- 에러 -->
+            <div v-else-if="error">
+              <div class="alert alert-danger mb-0">
+                {{ error }}
+              </div>
+            </div>
+
+            <!-- 문제 없음 -->
+            <div v-else-if="!currentProblem">
+              <div class="alert alert-warning mb-0">
+                표시할 문제가 없습니다.
+              </div>
+            </div>
+
+            <!-- 문제/번호 영역 -->
+            <div
+              v-else
+              class="row g-4 align-items-start"
+            >
+              <!-- 왼쪽: 문제 풀이 -->
+              <div class="col-12 col-lg-9">
+                <ProblemView
+                  :problem="currentProblem"
+                  :currentIndex="currentIndex"
+                  :total="problems.length"
+                  v-model="answers[currentProblem.id]"
+                  @goNext="goNext"
+                  @goPrev="goPrev"
+                />
+              </div>
+
+              <!-- 오른쪽: 문제 번호 + 제출 -->
+              <div class="col-12 col-lg-3">
+                <div class="exam-sidebar">
+                  <QuestionList
+                    :problems="problems"
+                    :answers="answers"
+                    :currentIndex="currentIndex"
+                    :submitting="submitting"
+                    @select="selectProblem"
+                    @submitExam="submitExam"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -72,11 +97,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+
 import AppShell from '@/layouts/AppShell.vue'
-import QuestionList from './QuestionList.vue'
-import ProblemView from './ProblemView.vue'
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+import QuestionList from '@/views/studies/exams/components/QuestionList.vue'
+import ProblemView from '@/views/studies/exams/components/ProblemView.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
 interface BackendExamQuestion {
   id: number
@@ -100,15 +127,14 @@ interface BackendExamDetail {
   questions: BackendExamQuestion[]
 }
 
-// 프론트에서 쓰는 문제 타입
 type ProblemType = 'multiple' | 'short' | 'essay'
 
 interface Problem {
   id: number
-  number: number          // = order
+  number: number
   type: ProblemType
   question: string
-  choices?: string[]      // 객관식일 경우만
+  choices?: string[]
 }
 
 // 라우터에서 studyId, examId 가져오기
@@ -159,6 +185,7 @@ function goNext() {
     currentIndex.value++
   }
 }
+
 function goPrev() {
   if (currentIndex.value > 0) {
     currentIndex.value--
@@ -170,15 +197,17 @@ function formatKoreanDateTime(isoString: string | null): string {
   if (!isoString) return ''
   const d = new Date(isoString)
   if (Number.isNaN(d.getTime())) return isoString
+
   const yyyy = d.getFullYear()
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   const hh = String(d.getHours()).padStart(2, '0')
   const mi = String(d.getMinutes()).padStart(2, '0')
+
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
 }
 
-// ✅ exam_detail 사용해서 시험 + 문제 가져오기
+// 시험 + 문제 가져오기
 async function fetchExamDetail() {
   try {
     loading.value = true
@@ -205,9 +234,8 @@ async function fetchExamDetail() {
     problems.value = exam.questions
       .sort((a, b) => a.order - b.order)
       .map((q) => {
-        // 현재 exam_detail 구조상 choices는 객관식 문제로 사용 가능
         const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
-        const type: ProblemType = hasChoices ? 'multiple' : 'short' // 필요하면 서술형으로 분리
+        const type: ProblemType = hasChoices ? 'multiple' : 'short'
 
         const problem: Problem = {
           id: q.id,
@@ -238,7 +266,8 @@ async function fetchExamDetail() {
 async function submitExam() {
   if (!currentProblem.value || problems.value.length === 0) return
 
-  const confirmMsg = '정말 시험을 제출할까요? 제출 후에는 답안을 수정할 수 없습니다.'
+  const confirmMsg =
+    '정말 시험을 제출할까요? 제출 후에는 답안을 수정할 수 없습니다.'
   const confirmed = window.confirm(confirmMsg)
   if (!confirmed) return
 
@@ -247,8 +276,6 @@ async function submitExam() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // TODO: 백엔드 submit API 스펙에 맞게 payload 조정 필요
-    // 지금은 { question_id: answerValue } 형태로 보냄
     await axios.post(
       `${API_BASE}/studies/${studyId.value}/exams/${examId.value}/submit/`,
       {
@@ -277,3 +304,49 @@ onMounted(() => {
   fetchExamDetail()
 })
 </script>
+
+<style scoped>
+.study-page-wrapper {
+  width: 100%;
+  max-width: 1300px; /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem; /* 항상 좌우 여백 유지 */
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .study-page-wrapper {
+    max-width: 1300px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* 상단 헤더 구분선 */
+.exam-header {
+  border-bottom: 1px solid var(--bs-border-color);
+  padding-bottom: 0.5rem;
+}
+
+/* 타이머 박스 */
+.timer-box {
+  min-width: 150px;
+}
+
+/* 오른쪽 사이드(문제 번호/제출 영역) */
+.exam-sidebar {
+  border-left: 1px solid var(--bs-border-color);
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 991.98px) {
+  .exam-sidebar {
+    border-left: none;
+    border-top: 1px solid var(--bs-border-color);
+    padding-left: 0;
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+  }
+}
+</style>
