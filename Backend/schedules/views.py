@@ -58,7 +58,6 @@ def study_schedule_create(request, study_id):
     # 디스코드 알림
     mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
     if mapping:
-        url = f"{settings.DISCORD_WEBHOOK_URL}new_schedule/"
 
         payload = {
             "channel_id": mapping.channel.id,
@@ -71,11 +70,6 @@ def study_schedule_create(request, study_id):
         }
 
         send_schedule_notification.delay(study_id, schedule.id)
-
-        # try:
-        #     requests.post(url, json=payload)
-        # except:
-        #     pass
 
         # reminder 생성
         if reminder_data:
