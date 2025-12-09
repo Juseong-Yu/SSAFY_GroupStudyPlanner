@@ -7,12 +7,11 @@
         <!-- 제목 영역 -->
         <div class="d-flex align-items-center justify-content-between mb-4 w-100">
           <h2 class="fw-bold mb-0">공지사항</h2>
-          <RouterLink
-            :to="`/studies/${studyId}/notice/create`"
-            class="btn btn-outline-primary"
-          >
-            +add
+          <RouterLink v-if="canManageNotices" :to="`/studies/${studyId}/notice/create`"
+            class="btn btn-light-outline btn-sm">
+            + 공지 생성
           </RouterLink>
+
         </div>
 
         <!-- 공지 목록 카드 -->
@@ -23,7 +22,7 @@
                 <thead class="table-light">
                   <tr>
                     <th>Title</th>
-                    <th class="text-end" style="width: 260px">작성자</th>
+                    <th class="text-end pe-4" style="width: 260px">작성자</th>
                   </tr>
                 </thead>
 
@@ -31,30 +30,20 @@
                   <tr v-for="row in pagedNotices" :key="row.id">
                     <!-- 제목 셀 (왼쪽 마진 + 디테일 페이지 링크) -->
                     <td class="py-3 title-cell">
-                      <RouterLink
-                        :to="{
-                          name: 'NoticeDetail',
-                          params: { id: studyId, noticeId: row.id },
-                        }"
-                        class="fw-semibold text-truncate title-link"
-                      >
+                      <RouterLink :to="{
+                        name: 'NoticeDetail',
+                        params: { id: studyId, noticeId: row.id },
+                      }" class="fw-semibold text-truncate title-link">
                         {{ row.title }}
                       </RouterLink>
                     </td>
 
                     <td class="py-3 text-end">
-                      <div
-                        class="d-inline-flex align-items-center gap-2 justify-content-end"
-                      >
-                        <img
-                          v-if="row.author.avatarUrl"
-                          :src="row.author.avatarUrl"
-                          alt="avatar"
-                          class="avatar"
-                          referrerpolicy="no-referrer"
-                        />
+                      <div class="d-inline-flex align-items-center gap-2 justify-content-end me-3">
+                        <img v-if="row.author.avatarUrl" :src="row.author.avatarUrl" alt="avatar" class="avatar"
+                          referrerpolicy="no-referrer" />
                         <div v-else class="avatar avatar-fallback">
-                          {{ initials(row.author.name) }}
+                          <i class="bi bi-person-fill text-secondary" aria-hidden="true"></i>
                         </div>
                         <div class="text-end">
                           <div class="small fw-semibold">
@@ -80,49 +69,39 @@
         </div>
 
         <!-- 페이지네이션 -->
-        <div
-          class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 mt-3 w-100"
-        >
+        <div v-if="totalPages > 0"
+          class="pagination-wrapper d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 mt-3 w-100">
           <div class="text-muted small">
-            Page {{ currentPage }} / {{ totalPages }} · Total {{ total }} items
+            총 <span class="fw-semibold">{{ total }}</span>개 ·
+            <span class="fw-semibold">{{ currentPage }}</span> / {{ totalPages }} 페이지
           </div>
 
-          <nav aria-label="pagination">
+          <nav aria-label="공지 페이지 이동">
             <ul class="pagination pagination-sm mb-0">
+              <!-- Prev -->
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button
-                  class="page-link"
-                  @click="goPrev"
-                  :disabled="currentPage === 1"
-                >
-                  Prev
+                <button class="page-link icon-btn" @click="goPrev" :disabled="currentPage === 1">
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i>
                 </button>
               </li>
 
-              <li
-                v-for="p in pageWindow"
-                :key="p"
-                class="page-item"
-                :class="{ active: p === currentPage }"
-              >
-                <button class="page-link" @click="goPage(p)">{{ p }}</button>
+              <!-- 페이지 번호 -->
+              <li v-for="p in pageWindow" :key="p" class="page-item" :class="{ active: p === currentPage }">
+                <button class="page-link" @click="goPage(p)">
+                  {{ p }}
+                </button>
               </li>
 
-              <li
-                class="page-item"
-                :class="{ disabled: currentPage === totalPages }"
-              >
-                <button
-                  class="page-link"
-                  @click="goNext"
-                  :disabled="currentPage === totalPages"
-                >
-                  Next
+              <!-- Next -->
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button class="page-link icon-btn" @click="goNext" :disabled="currentPage === totalPages">
+                  <i class="bi bi-chevron-right" aria-hidden="true"></i>
                 </button>
               </li>
             </ul>
           </nav>
         </div>
+
       </div>
     </div>
   </AppShell>
@@ -134,6 +113,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
+import { useStudyRoleStore } from '@/stores/studyRoleStore'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -165,6 +145,11 @@ type Row = {
 
 const route = useRoute()
 const studyId = route.params.id as string
+
+const studyRoleStore = useStudyRoleStore()
+
+// 공지 생성 권한 (leader 또는 admin)
+const canManageNotices = computed(() => studyRoleStore.isAdmin(studyId))
 
 // 실제 공지 데이터
 const notices = ref<Row[]>([])
@@ -258,31 +243,27 @@ onMounted(async () => {
 <style scoped>
 /* StudyPage / SchedulePage와 공통으로 쓰는 반응형 너비 */
 .study-page-wrapper {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1300px;
+  padding-left: 0.5rem;
+  /* 항상 좌우 여백 유지 */
+  padding-right: 0.5rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-@media (min-width: 992px) {
+@media (min-width: 768px) {
   .study-page-wrapper {
-    max-width: 1140px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .study-page-wrapper {
-    max-width: 1320px;
-  }
-}
-
-@media (min-width: 1400px) {
-  .study-page-wrapper {
-    max-width: 1440px;
+    max-width: 1300px;
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 }
 
 /* 카드 테두리 문제 해결 */
 .notice-card {
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   border: 1px solid #dee2e6;
 }
 
@@ -332,5 +313,38 @@ onMounted(async () => {
   padding-bottom: 0.75rem;
   padding-left: 24px;
   padding-right: 12px;
+}
+
+/* 버튼 스타일 */
+.btn-light-outline {
+  border: 1px solid #d0d7e2;
+  background-color: #ffffff;
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+}
+
+.btn-light-outline:hover {
+  background-color: #f1f5f9;
+  border-color: #c5cedb;
+}
+
+/* 페이지네이션 pill 느낌으로 커스텀 */
+.pagination .page-link {
+  border-radius: 6px !important;
+  border: none;
+  background: transparent;
+  color: #475569;
+  padding-inline: 0.6rem;
+}
+
+.pagination .page-link:hover {
+  background: #f1f5f9;
+}
+
+.pagination .page-item.active .page-link {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 600;
 }
 </style>

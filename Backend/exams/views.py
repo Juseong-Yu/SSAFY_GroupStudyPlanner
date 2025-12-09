@@ -16,13 +16,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 
-from studies.models import Study
+from studies.models import Study, StudyMembership
 from .models import Exam, ExamQuestion, ExamAIDraft, ExamResult
 
-
-# ====== GMS 설정 (settings.py 에서 가져오기) ======
-GMS_API_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
-GMS_KEY = 'S14P02AE06-7c0b7b86-468b-4efe-836e-3ff67dd5c373'
 
 
 # ====== 파일에서 텍스트 뽑는 유틸 ======
@@ -275,14 +271,15 @@ def exam_ai_generate(request, study_id: int):
         ],
     }
 
+        
     headers = {
+        "Authorization": f"Bearer {settings.GMS_KEY}",
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {GMS_KEY}",
     }
 
     # ---- GMS API 호출 ----
     try:
-        gms_res = requests.post(GMS_API_URL, headers=headers, json=payload, timeout=60)
+        gms_res = requests.post(settings.GMS_API_URL, headers=headers, json=payload, timeout=60)
     except requests.RequestException as e:
         return Response(
             {"error": "GMS API 요청 중 오류가 발생했습니다.", "detail": str(e)},
@@ -477,36 +474,60 @@ def exam_submit(request, study_id: int, exam_id: int):
     )
 
 
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def exam_my_result(request, study_id: int, exam_id: int):
     exam = get_object_or_404(Exam, pk=exam_id, study_id=study_id)
     study = exam.study
 
-    # 🔧 멤버인지 확인 (인스턴스.members 안 쓰고 ORM으로 검사)
-    if not Study.objects.filter(pk=study.id, members__id=request.user.id).exists():
+    # ✅ 스터디 멤버십 조회 (리더/admin/member + is_active 기준)
+    membership = StudyMembership.objects.filter(
+        study=study,
+        user=request.user,
+        is_active=True,
+    ).first()
+
+    is_member = membership is not None
+
+    if not is_member:
         return Response(
             {"detail": "이 시험 결과를 조회할 권한이 없습니다."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    is_leader = getattr(study, "leader_id", None) == request.user.id
+    # ✅ 스터디 내 역할 기준 권한 플래그
+    role = membership.role  # 'leader' | 'admin' | 'member'
+
+    is_leader = (role == "leader") or (getattr(study, "leader_id", None) == request.user.id)
+    is_admin = (role == "admin")
+    is_privileged = is_leader or is_admin  # 리더 + admin
+
     visibility = exam.visibility  # 'public' | 'score_only' | 'private'
 
-    try:
-        my_result = ExamResult.objects.get(exam=exam, user=request.user)
-    except ExamResult.DoesNotExist:
+    # ✅ 내 응시 결과: 리더/admin 은 없어도 전체 결과는 볼 수 있게 허용
+    my_result_obj = ExamResult.objects.filter(exam=exam, user=request.user).first()
+
+    # 일반 멤버인데 응시 결과가 없으면 → 응시 안 한 것
+    if not my_result_obj and not is_privileged:
         return Response(
             {"detail": "아직 이 시험을 응시하지 않았습니다."},
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    if (not is_leader) and visibility == "private":
+    # ✅ private 시험: 리더/admin만 접근 가능
+    if not is_privileged and visibility == "private":
         return Response(
             {"detail": "이 시험의 결과는 비공개입니다."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
+    # 문제 목록
     questions_qs = exam.questions.all().order_by("order")
     questions_data = [
         {
@@ -518,21 +539,25 @@ def exam_my_result(request, study_id: int, exam_id: int):
         for q in questions_qs
     ]
 
-    my_result_data = {
-        "id": my_result.id,
-        "user": {
-            "id": my_result.user.id,
-            "username": my_result.user.username,
-        },
-        "score": my_result.score,
-        "correct_count": my_result.correct_count,
-        "total_count": my_result.total_count,
-        "submitted_at": my_result.submitted_at,
-        "answers": my_result.answers,
-    }
+    # ✅ 내 결과는 있을 때만 내려보내고, 없으면 null
+    my_result_data = None
+    if my_result_obj:
+        my_result_data = {
+            "id": my_result_obj.id,
+            "user": {
+                "id": my_result_obj.user.id,
+                "username": my_result_obj.user.username,
+            },
+            "score": my_result_obj.score,
+            "correct_count": my_result_obj.correct_count,
+            "total_count": my_result_obj.total_count,
+            "submitted_at": my_result_obj.submitted_at,
+            "answers": my_result_obj.answers,
+        }
 
-    can_see_scoreboard = is_leader or visibility == "public"
-    can_see_others_detail = is_leader
+    # ✅ 리더/admin이면 항상 scoreboard + others_detail 권한 있음
+    can_see_scoreboard = is_privileged or visibility == "public"
+    can_see_others_detail = is_privileged
 
     scoreboard = []
     all_results_detail = []
@@ -578,7 +603,7 @@ def exam_my_result(request, study_id: int, exam_id: int):
 
     response_data = {
         "visibility": visibility,
-        "my_result": my_result_data,
+        "my_result": my_result_data,   # 리더/admin이 응시 안 했으면 null
         "questions": questions_data,
     }
 

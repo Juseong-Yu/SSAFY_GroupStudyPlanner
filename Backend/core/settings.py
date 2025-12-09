@@ -38,6 +38,9 @@ load_dotenv()
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 VUE_API_URL = os.getenv("VUE_API_URL")
 
+# GMS
+GMS_API_URL = os.getenv("GMS_API_URL")
+GMS_KEY = os.getenv("GMS_KEY")
 # Application definition
 
 INSTALLED_APPS = [

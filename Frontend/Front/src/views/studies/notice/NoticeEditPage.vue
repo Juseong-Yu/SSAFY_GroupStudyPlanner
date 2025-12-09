@@ -1,72 +1,78 @@
 <!-- src/views/studies/NoticeEditPage.vue -->
 <template>
   <AppShell>
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-xl-10 col-lg-11">
-          <!-- 헤더 -->
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div>
-              <h3 class="mb-0 fw-bold">공지사항 수정</h3>
-              <p class="text-muted small mb-0" v-if="noticeId">
-                notice #{{ noticeId }}
-              </p>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <RouterLink
-                :to="detailPath"
-                class="btn btn-outline-secondary"
-              >
-                취소
-              </RouterLink>
-              <button
-                class="btn btn-outline-primary"
-                :disabled="submitting || isLoading"
-                @click="submitNotice"
-              >
-                <span
-                  v-if="submitting"
-                  class="spinner-border spinner-border-sm me-2"
-                />
-                {{ submitting ? '수정 중...' : '수정하기' }}
-              </button>
-            </div>
-          </div>
+    <!-- ✅ NoticeCreatePage와 동일한 레이아웃 패턴 -->
+    <div class="container-fluid py-4 d-flex justify-content-center">
+      <div class="w-100 notice-create-wrapper">
+        <div class="row justify-content-center">
+          <div class="col-xl-10 col-lg-11">
+            <!-- 헤더 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h3 class="mb-0 fw-bold">공지사항 수정</h3>
+                <p class="text-muted small mb-0" v-if="noticeId">
+                  notice #{{ noticeId }}
+                </p>
+              </div>
 
-          <!-- 로딩 상태 -->
-          <div v-if="isLoading" class="text-center py-5 text-muted">
-            공지사항을 불러오는 중입니다...
-          </div>
+              <div class="d-flex align-items-center gap-2">
+                <RouterLink
+                  :to="detailPath"
+                  class="btn btn-light-outline btn-sm"
+                >
+                  취소
+                </RouterLink>
 
-          <!-- 실제 폼 -->
-          <template v-else>
-            <!-- 제목 -->
-            <div class="card shadow-sm border-0 mb-3">
-              <div class="card-body">
-                <input
-                  type="text"
-                  v-model.trim="title"
-                  class="form-control form-control-lg"
-                  placeholder="제목을 입력하세요"
-                />
+                <button
+                  class="btn btn-light-outline btn-sm btn-primary-outline"
+                  :disabled="submitting || isLoading"
+                  @click="submitNotice"
+                >
+                  <span
+                    v-if="submitting"
+                    class="spinner-border spinner-border-sm me-2"
+                  />
+                  {{ submitting ? '수정 중...' : '수정하기' }}
+                </button>
               </div>
             </div>
 
-            <!-- 마크다운 에디터 -->
-            <div class="card shadow-sm border-0">
-              <div class="card-body">
-                <MdEditor
-                  v-model="markdown"
-                  language="en-US"
-                  :preview="false"
-                  :no-upload-img="false"
-                  :toolbars-exclude="['save', 'github']"
-                  :style="{ height: '600px' }"
-                  @onUploadImg="handleUploadImg"
-                />
-              </div>
+            <!-- 로딩 상태 -->
+            <div v-if="isLoading" class="text-center py-5 text-muted">
+              공지사항을 불러오는 중입니다...
             </div>
-          </template>
+
+            <!-- 실제 폼 -->
+            <template v-else>
+              <!-- 제목 -->
+              <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                  <input
+                    type="text"
+                    v-model.trim="title"
+                    class="form-control form-control-lg"
+                    placeholder="제목을 입력하세요"
+                  />
+                </div>
+              </div>
+
+              <!-- 마크다운 에디터 -->
+              <div class="card shadow-sm border-0">
+                <div class="card-body">
+                  <MdEditor
+                    v-model="markdown"
+                    language="en-US"
+                    previewTheme="github"
+                    :preview="false"
+                    :no-upload-img="false"
+                    :toolbars-exclude="['save', 'github']"
+                    :style="{ height: '600px' }"
+                    @onUploadImg="handleUploadImg"
+                  />
+                </div>
+              </div>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -102,7 +108,7 @@ const detailPath = computed(() => {
   return `/studies/${studyId}/notice/${noticeId}`
 })
 
-/** 이미지 업로드 */
+/** 이미지 업로드 - NoticeCreatePage와 동일한 엔드포인트 사용 */
 const handleUploadImg = async (files: File[], callback: (urls: string[]) => void) => {
   try {
     await ensureCsrf()
@@ -112,14 +118,19 @@ const handleUploadImg = async (files: File[], callback: (urls: string[]) => void
     for (const file of files) {
       const form = new FormData()
       form.append('image', file)
-      // TODO: 실제 업로드 URL로 교체
-      const res = await axios.post('/api/uploads/images/', form, {
-        headers: {
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'multipart/form-data',
+
+      const res = await axios.post(
+        `${API_BASE}/studies/${studyId}/posts/upload_img/`,
+        form,
+        {
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true,
         },
-        withCredentials: true,
-      })
+      )
+
       const url = res.data?.url
       if (!url) throw new Error('Upload response has no url')
       urls.push(url)
@@ -147,14 +158,9 @@ const fetchNoticeDetail = async () => {
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
         withCredentials: true,
-      }
+      },
     )
 
-    // 백엔드 응답 형태 예시:
-    // {
-    //   id, title, content, created_at, updated_at,
-    //   author: {...}, study: {...}
-    // }
     title.value = data.title ?? ''
     markdown.value = data.content ?? ''
   } catch (error) {
@@ -199,7 +205,7 @@ const submitNotice = async () => {
           'X-CSRFToken': csrfToken,
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     alert('공지사항이 수정되었습니다!')
@@ -220,5 +226,62 @@ onMounted(() => {
 <style scoped>
 .card {
   border-radius: 1rem;
+}
+
+/* ✅ NoticeCreatePage와 동일한 래퍼 */
+.notice-create-wrapper {
+  width: 100%;
+  max-width: 1300px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 모바일에서는 padding 살짝 줄이기 */
+@media (max-width: 768px) {
+  .notice-create-wrapper {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* 기본 라이트 아웃라인 버튼 */
+.btn-light-outline {
+  border: 1px solid #d0d7e2;
+  background-color: #ffffff;
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+  padding: 0.375rem 0.75rem; /* btn-sm 크기와 유사 */
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* hover */
+.btn-light-outline:hover {
+  background-color: #f1f5f9;
+  border-color: #c5cedb;
+  color: #334155;
+}
+
+/* disabled */
+.btn-light-outline:disabled,
+.btn-light-outline.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 수정하기 버튼만 약한 파란 강조 */
+.btn-primary-outline {
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.btn-primary-outline:hover {
+  background-color: #eff6ff;
+  border-color: #60a5fa;
+  color: #1d4ed8;
 }
 </style>

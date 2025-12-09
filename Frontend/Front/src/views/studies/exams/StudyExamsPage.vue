@@ -1,17 +1,18 @@
 <!-- src/views/studies/exams/StudyExamsPage.vue -->
 <template>
   <AppShell>
+    <!-- ✅ 다른 스터디 페이지들과 동일한 레이아웃 패턴 적용 -->
     <div class="container-fluid py-4 d-flex justify-content-center">
-      <div class="w-100" style="max-width: 1000px">
+      <div class="w-100 study-page-wrapper">
         <!-- 상단 헤더 -->
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h2 class="fw-bold mb-0">시험 전체보기</h2>
 
           <!-- 리더만 시험 생성 버튼 표시 -->
           <button
-            v-if="isLeader"
+            v-if="isPrivileged"
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-light-outline btn-sm"
             @click="openCreateModal"
           >
             + 시험 생성
@@ -65,13 +66,40 @@
 
                 <!-- 오른쪽: 액션 버튼 -->
                 <div class="text-end">
-                  <button
-                    type="button"
-                    class="btn btn-outline-primary btn-sm"
-                    @click="handleExamClick(exam)"
-                  >
-                    {{ exam.has_taken ? '응시 내역 보기' : '시험 응시' }}
-                  </button>
+                  <!-- ✅ 리더 / admin: 시험 응시 + 결과 확인 -->
+                  <template v-if="isPrivileged">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <!-- 아직 응시 안 했으면: 시험 응시 버튼 노출 -->
+                      <button
+                        v-if="!exam.has_taken"
+                        type="button"
+                        class="btn btn-light-outline btn-sm"
+                        @click="handleExamClick(exam)"
+                      >
+                        시험 응시
+                      </button>
+
+                      <!-- 항상 노출: 결과 확인 (미리보기 / 내 결과 확인 공통) -->
+                      <button
+                        type="button"
+                        class="btn btn-primary-outline btn-sm"
+                        @click="openResultModal(exam)"
+                      >
+                        결과 확인
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- ✅ 일반 멤버: 기존 동작 유지 -->
+                  <template v-else>
+                    <button
+                      type="button"
+                      class="btn btn-primary-outline btn-sm"
+                      @click="handleExamClick(exam)"
+                    >
+                      {{ exam.has_taken ? '응시 내역 보기' : '시험 응시' }}
+                    </button>
+                  </template>
                 </div>
               </li>
             </ul>
@@ -87,7 +115,7 @@
       @close="showCreateModal = false"
     />
 
-    <!-- 응시 결과 모달 (응시한 시험에서 '응시 내역 보기' 클릭 시) -->
+    <!-- 응시 결과 모달 -->
     <ExamResultModal
       v-if="showResultModal"
       :visible="showResultModal"
@@ -97,11 +125,10 @@
       :can-see-own-detail="canSeeOwnDetail"
       :can-see-scoreboard="canSeeScoreboard"
       :can-see-others-detail="canSeeOthersDetail"
-      :is-leader="isLeader"
+      :is-leader="isPrivileged"
       :problems="selectedExamProblems"
       :exam-title="selectedExamTitle"
       @close="showResultModal = false"
-      @goList="showResultModal = false"
     />
   </AppShell>
 </template>
@@ -111,10 +138,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
-import ExamCreateModal from './ExamCreateModal.vue'
-import ExamResultModal from './ExamResultModal.vue'
+import ExamCreateModal from '@/views/studies/exams/components/ExamCreateModal.vue'
+import ExamResultModal from '@/views/studies/exams/components/ExamResultModal.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import { useStudyRoleStore } from '@/stores/studyRoleStore'
+import { useUserStore } from '@/stores/user' // ✅ admin 정보용 (프로젝트에 맞게 조정)
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
@@ -149,7 +177,16 @@ const showCreateModal = ref(false)
 
 // ===== 역할 (리더 여부) - Pinia =====
 const studyRoleStore = useStudyRoleStore()
+const userStore = useUserStore()
+
 const isLeader = computed(() => studyRoleStore.isLeader(String(studyId)))
+
+// ✅ 관리자 여부 (프로젝트 User 모델에 맞게 필드 조정 가능)
+const isAdmin = computed(() => studyRoleStore.isAdmin(String(studyId))
+)
+
+// ✅ 리더이거나 admin인 경우: 시험 응시 + 결과 확인 버튼 모두 노출
+const isPrivileged = computed(() => isLeader.value || isAdmin.value)
 
 // ===== 시험 결과 모달 관련 상태 =====
 const showResultModal = ref(false)
@@ -165,9 +202,9 @@ const myResult = ref<any | null>(null)
 const scoreboard = ref<any[]>([])
 const allResultsDetail = ref<any[]>([])
 
-// 권한 플래그 (리더 + visibility 기반)
+// 권한 플래그 (리더+admin + visibility 기반)
 const canSeeOwnDetail = computed(() => {
-  if (isLeader.value) return true
+  if (isPrivileged.value) return true
 
   if (examVisibility.value === 'public') return true
   if (examVisibility.value === 'score_only') return true
@@ -176,7 +213,7 @@ const canSeeOwnDetail = computed(() => {
 })
 
 const canSeeScoreboard = computed(() => {
-  if (isLeader.value) return true
+  if (isPrivileged.value) return true
 
   if (examVisibility.value === 'public') return true
   // score_only / private -> 멤버는 전체 점수표 X
@@ -184,8 +221,8 @@ const canSeeScoreboard = computed(() => {
 })
 
 const canSeeOthersDetail = computed(() => {
-  // 리더는 항상 다른 사람 상세 결과까지 볼 수 있음
-  return isLeader.value
+  // 리더 / admin 은 항상 다른 사람 상세 결과까지 볼 수 있음
+  return isPrivileged.value
 })
 
 // ===== 공통 유틸 =====
@@ -278,7 +315,7 @@ const openResultModal = async (exam: ExamListItem) => {
         },
       },
     )
-
+      console.log(res.data)
     const data = res.data as {
       visibility: VisibilityType
       my_result: any | null
@@ -307,9 +344,9 @@ const openResultModal = async (exam: ExamListItem) => {
       })) ?? []
 
     showResultModal.value = true
-  } catch (err) {
+  } catch (err : any) {
     console.error(err)
-    alert('시험 결과를 불러오는 중 오류가 발생했습니다.')
+    alert(err.response.data.detail)
   }
 }
 
@@ -317,3 +354,47 @@ onMounted(() => {
   fetchExams()
 })
 </script>
+
+<style scoped>
+.study-page-wrapper {
+  width: 100%;
+  max-width: 1300px;        /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem;     /* 항상 좌우 여백 유지 */
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .study-page-wrapper {
+    max-width: 1300px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+.btn-light-outline {
+  border: 1px solid #d0d7e2;
+  background-color: #ffffff;
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+}
+
+.btn-light-outline:hover {
+  background-color: #f1f5f9;
+  border-color: #c5cedb;
+}
+
+.btn-primary-outline {
+  color: #2563eb;
+  border-color: #93c5fd;
+  border-radius: 8px;
+}
+
+.btn-primary-outline:hover {
+  background-color: #eff6ff;
+  border-color: #60a5fa;
+  color: #1d4ed8;
+}
+</style>

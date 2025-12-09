@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+
 </script>
 
 <template>
@@ -7,6 +8,8 @@ import { RouterLink, RouterView } from 'vue-router'
 </template>
 
 <style scoped>
+
+
 header {
   line-height: 1.5;
   max-height: 100vh;
@@ -69,13 +72,21 @@ nav a:first-of-type {
   }
 }
 </style>
-<style>
+<style global>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+    --bs-font-sans-serif: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif !important;
+    font-family: var(--bs-font-sans-serif);
+}
+
+
 /* ✅ 전역 스타일 (scoped 제거) */
 html,
 body {
   height: 100%;
   margin: 0;
-  background-color: white; /* ← 원하는 배경색으로 변경 */
+  font-family: var(--bs-font-sans-serif);
 }
 
 /* ✅ #app도 포함시켜주는 게 안전 */
@@ -83,4 +94,5 @@ body {
   min-height: 100vh;
   background-color: #f7f9fc;
 }
+
 </style>

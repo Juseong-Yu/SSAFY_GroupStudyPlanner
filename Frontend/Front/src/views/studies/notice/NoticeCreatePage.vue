@@ -1,56 +1,42 @@
 <!-- src/views/studies/NoticeCreatePage.vue -->
 <template>
   <AppShell>
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-xl-10 col-lg-11">
-          <!-- 헤더 -->
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h3 class="mb-0 fw-bold">공지사항 작성</h3>
-            <div class="d-flex align-items-center gap-2">
-              <!-- <div class="form-check form-switch">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="publishSwitch"
-                  v-model="isPublished"
-                />
-                <label class="form-check-label" for="publishSwitch">
-                  {{ isPublished ? '공개' : '임시저장' }}
-                </label>
-              </div> -->
-              <RouterLink to="/studies" class="btn btn-outline-secondary">취소</RouterLink>
-              <button class="btn btn-outline-primary" :disabled="submitting" @click="submitNotice">
-                <span v-if="submitting" class="spinner-border spinner-border-sm me-2" />
-                {{ submitting ? '등록 중...' : '등록하기' }}
-              </button>
-            </div>
-          </div>
+    <!-- ✅ StudyPage / MainPage와 동일한 레이아웃 패턴 -->
+    <div class="container-fluid py-4 d-flex justify-content-center">
+      <div class="w-100 notice-create-wrapper">
+        <div class="row justify-content-center">
+          <div class="col-xl-10 col-lg-11">
+            <!-- 헤더 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h3 class="mb-0 fw-bold">공지사항 작성</h3>
+              <div class="d-flex align-items-center gap-2">
+                <RouterLink :to="`/studies/${studyId}/notice`" class="btn btn-light-outline btn-sm">
+                  취소
+                </RouterLink>
 
-          <!-- 제목 -->
-          <div class="card shadow-sm border-0 mb-3">
-            <div class="card-body">
-              <input
-                type="text"
-                v-model.trim="title"
-                class="form-control form-control-lg"
-                placeholder="제목을 입력하세요"
-              />
-            </div>
-          </div>
+                <button class="btn btn-light-outline btn-sm btn-primary-outline" :disabled="submitting"
+                  @click="submitNotice">
+                  <span v-if="submitting" class="spinner-border spinner-border-sm me-2" />
+                  {{ submitting ? '등록 중...' : '등록하기' }}
+                </button>
+              </div>
 
-          <!-- 마크다운 에디터 -->
-          <div class="card shadow-sm border-0">
-            <div class="card-body">
-              <MdEditor
-                v-model="markdown"
-                language="en-US"
-                :preview="false"
-                :no-upload-img="false"
-                :toolbars-exclude="['save', 'github']"
-                :style="{ height: '600px' }"
-                @onUploadImg="handleUploadImg"
-              />
+            </div>
+
+            <!-- 제목 -->
+            <div class="card shadow-sm border-0 mb-3">
+              <div class="card-body">
+                <input type="text" v-model.trim="title" class="form-control form-control-lg" placeholder="제목을 입력하세요" />
+              </div>
+            </div>
+
+            <!-- 마크다운 에디터 -->
+            <div class="card shadow-sm border-0">
+              <div class="card-body">
+                <MdEditor v-model="markdown" language="en-US" previewTheme="github" :preview="false"
+                  :no-upload-img="false" :toolbars-exclude="['save', 'github']" :style="{ height: '600px' }"
+                  @onUploadImg="handleUploadImg" />
+              </div>
             </div>
           </div>
         </div>
@@ -61,8 +47,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
@@ -111,11 +96,17 @@ const handleUploadImg = async (files: File[], callback: (urls: string[]) => void
     for (const file of files) {
       const form = new FormData()
       form.append('image', file)
-      // TODO: 실제 업로드 URL로 교체
-      const res = await axios.post(`${API_BASE}/studies/${studyId}/posts/upload_img/`, form, {
-        headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'multipart/form-data' },
-        withCredentials: true,
-      })
+      const res = await axios.post(
+        `${API_BASE}/studies/${studyId}/posts/upload_img/`,
+        form,
+        {
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true,
+        },
+      )
       const url = res.data?.url
       if (!url) throw new Error('Upload response has no url')
       urls.push(url)
@@ -138,19 +129,22 @@ const submitNotice = async () => {
     await ensureCsrf()
     const csrfToken = getCookie('csrftoken')
 
-    // ✅ URLSearchParams 사용
     const payload = {
       title: title.value.trim(),
       content: markdown.value.trim(),
     }
 
-    const response = await axios.post(`${API_BASE}/studies/${studyId}/posts/notice_create/`, payload, {
-      withCredentials: true,
-      headers: {
-        'X-CSRFToken': csrfToken,
-        'Content-Type': 'application/json',
+    const response = await axios.post(
+      `${API_BASE}/studies/${studyId}/posts/notice_create/`,
+      payload,
+      {
+        withCredentials: true,
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
 
     console.log('📢 공지 등록 완료:', response.data)
     alert('공지사항이 등록되었습니다!')
@@ -168,4 +162,62 @@ const submitNotice = async () => {
 .card {
   border-radius: 1rem;
 }
+
+/* ✅ StudyPage / NoticePage와 맞춘 레이아웃 래퍼 */
+.notice-create-wrapper {
+  width: 100%;
+  max-width: 1300px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 모바일에서는 padding 살짝 줄이기 */
+@media (max-width: 768px) {
+  .notice-create-wrapper {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* 기본 라이트 아웃라인 버튼 */
+.btn-light-outline {
+  border: 1px solid #d0d7e2;
+  background-color: #ffffff;
+  color: #475569;
+  border-radius: 8px;
+  transition: 0.2s ease;
+  padding: 0.375rem 0.75rem; /* btn-sm 크기와 유사 */
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* hover */
+.btn-light-outline:hover {
+  background-color: #f1f5f9;
+  border-color: #c5cedb;
+  color: #334155;
+}
+
+/* disabled */
+.btn-light-outline:disabled,
+.btn-light-outline.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 등록하기 버튼만 약한 파란 강조 */
+.btn-primary-outline {
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.btn-primary-outline:hover {
+  background-color: #eff6ff;
+  border-color: #60a5fa;
+  color: #1d4ed8;
+}
+
 </style>

@@ -5,34 +5,19 @@
       <!-- 왼쪽: 햄버거 버튼 + 로고 + 타이틀 -->
       <div class="d-flex align-items-center gap-2">
         <!-- 햄버거 버튼 -->
-        <button
-          class="btn btn-outline-secondary"
-          type="button"
-          aria-label="사이드바 열고 닫기"
-          :aria-expanded="ui.sidebarOpen ? 'true' : 'false'"
-          aria-controls="leftSidebar"
-          @click="ui.toggleSidebar"
-        >
+        <button class="topbar-hamburger" type="button" aria-label="사이드바 열고 닫기"
+          :aria-expanded="ui.sidebarOpen ? 'true' : 'false'" aria-controls="leftSidebar" @click="ui.toggleSidebar">
           <i class="bi" :class="ui.sidebarOpen ? 'bi-x-lg' : 'bi-list'"></i>
         </button>
 
         <!-- 🔥 로고 + 텍스트를 RouterLink로 감싸기 -->
-        <RouterLink
-          to="/main"
-          class="d-flex align-items-center gap-2 text-decoration-none"
-        >
+        <RouterLink to="/main" class="d-flex align-items-center gap-2 text-decoration-none">
           <!-- 로고 -->
-          <img
-            src="@/assets/logo.png"
-            alt="logo"
-            width="40"
-            height="40"
-            class="me-1"
-          />
+          <img src="@/assets/logo.png" alt="logo" width="40" height="40" class="me-1" />
 
           <!-- 타이틀 -->
           <span class="navbar-brand mb-0 h1 fs-5 fw-semibold text-dark">
-            Group Study Planner
+            Nestudy
           </span>
         </RouterLink>
       </div>
@@ -61,12 +46,49 @@ onBeforeUnmount(() => {
 <style scoped>
 .topbar {
   height: var(--topbar-height, 56px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 }
+
+/* 원형 햄버거 버튼 */
+.topbar-hamburger {
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  /* 원형 */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+/* hover 시 아주 은은하게 */
+.topbar-hamburger:hover {
+  background: rgba(148, 163, 184, 0.18);
+  /* slate-400 아주 연함 */
+}
+
+/* active (클릭 순간) */
+.topbar-hamburger:active {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+/* 아이콘 스타일 */
+.topbar-hamburger i {
+  font-size: 1.25rem;
+  color: #334155;
+  /* slate-700 */
+}
+
+
 
 /* 링크 스타일이 기본 bootstrap에 잡히지 않도록 */
 a {
   color: inherit;
 }
+
 a:hover {
   color: inherit;
   text-decoration: none;

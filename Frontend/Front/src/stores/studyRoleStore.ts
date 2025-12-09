@@ -5,7 +5,7 @@ import axios from 'axios'
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
-export type StudyRole = 'leader' | 'member' | 'guest'
+export type StudyRole = 'leader' | 'admin' | 'member'
 
 export interface StudyRoleInfo {
   studyId: number
@@ -37,6 +37,11 @@ export const useStudyRoleStore = defineStore('studyRole', () => {
   function isLeader(studyId: string | number): boolean {
     const info = getRoleInfo(studyId)
     return info?.role === 'leader'
+  }
+
+  function isAdmin(studyId: string | number): boolean {
+    const info = getRoleInfo(studyId)
+    return info?.role === 'leader' || info?.role === 'admin'
   }
 
   function getRole(studyId: string | number): StudyRole | null {
@@ -145,5 +150,6 @@ export const useStudyRoleStore = defineStore('studyRole', () => {
     resetStudyRole,
     resetAll,
     fetchMyRole,
+    isAdmin,
   }
 })

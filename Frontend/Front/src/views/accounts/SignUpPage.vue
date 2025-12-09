@@ -1,5 +1,5 @@
 <template>
-  <div class="container min-vh-100 py-5 d-flex align-items-center signup-page">
+  <div class="container min-vh-100 py-3 d-flex align-items-center signup-page">
     <!-- 흰색 카드 래퍼 -->
     <div class="auth-surface w-100 p-4 p-lg-5">
       <div class="row w-100 g-5">
@@ -99,15 +99,15 @@
                   class="form-control"
                   :class="{
                     'is-invalid':
-                      (!passwordsMatch && confirmPassword) || fieldError('conformPassword'),
+                      (!passwordsMatch && confirmPassword) || fieldError('password2'),
                   }"
                   placeholder="비밀번호 확인 입력"
                 />
                 <div class="invalid-feedback" v-if="!passwordsMatch && confirmPassword">
                   비밀번호가 일치하지 않습니다.
                 </div>
-                <div class="invalid-feedback" v-else-if="fieldError('conformPassword')">
-                  {{ fieldError('conformPassword') }}
+                <div class="invalid-feedback" v-else-if="fieldError('password2')">
+                  {{ fieldError('password2') }}
                 </div>
               </div>
 
@@ -322,14 +322,32 @@ const onSubmit = async () => {
   overflow-y: auto;
   background: #f6f8fb;
 }
+.title-text {
+  color: #0f172a;
+}
+
+.signup-page p {
+  color: #475569;
+}
+
+/* 이미지 투명도 */
+.login-image img {
+  opacity: 0.8;
+}
 
 /* 카드형 흰 배경 박스 */
 .auth-surface {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb; /* 슬레이트 200 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 20px;
+
+  min-height: calc(100vh - 3rem); /* 화면 기반 최소 높이 통일 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 내부 폼을 수직 중앙 정렬 */
 }
+
 
 .signup-form-wrapper {
   width: 100%;
@@ -425,18 +443,24 @@ const onSubmit = async () => {
 
 /* 버튼 스타일 */
 .btn-signup {
-  background-color: #ffffff;
-  color: #0d6efd;
-  border: 1px solid #0d6efd;
+  border: 1px solid #94a3b8;     /* slate-400 */
+  color: #334155;                /* slate-700 */
+  background-color: transparent;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
+
 .btn-signup:hover {
-  background-color: #e6f0ff;
-  border: 1px solid #0d6efd;
-  color: #0d6efd;
+  background-color: rgba(148, 163, 184, 0.08);
+  border-color: #64748b;
 }
+
+
 
 /* 소셜 로그인 버튼 */
 .btn-google {
