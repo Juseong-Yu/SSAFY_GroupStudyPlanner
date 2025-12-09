@@ -80,12 +80,15 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **빌드 도구**: Vite
 
 ### Backend
-- **Framework**: Django
+- **Framework**: Django 5.2
 - **API**: Django REST Framework (DRF)
-- **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
+- **Async Server**: Uvicorn (ASGI)
+- **Task Queue**: Celery (AMQP 기반)
 - **DB**: SQLite (개발용, 운영 시 교체 가능)
+- **Cache / Broker**: Redis
+- **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
 - **기타**
-  - Discord Webhook 연동 (`DiscordStudyMapping` 모델)
+  - Bot 연동: Discord Bot(별도 bot 디렉토리, aiohttp 기반)
 
 ### Infra / 기타 
 - Python venv
