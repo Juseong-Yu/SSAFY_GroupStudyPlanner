@@ -12,8 +12,8 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 | 유주성 | 신종혁 |
 | :---: | :---: |
 | Frontend & AI | Backend & Discord Integration |
-| <img src="https://avatars.githubusercontent.com/u/114473861?v=4" width="150px" /> | <img src="https://avatars.githubusercontent.com/u/깃허브ID?v=4" width="150px" /> |
-| - Vue3 + TS 기반 프론트엔드 개발<br />- 스터디/공지/일정/시험 UI 개발<br />- AI 문제 생성 기능 구현<br />- 전체 UX/UI 설계 및 컴포넌트 구조 설계 | - Django REST API 개발<br />- 스터디/공지/일정/시험 백엔드 로직 구현<br />- Discord Webhook 연동<br />- DB 모델 설계 및 서버 운영 |
+| <img src="https://github.com/Juseong-Yu.png" width="150px" /> | <img src="https://github.com/Rasit-NP.png" width="150px" /> |
+| - Vue3 + TS 기반 프론트엔드 개발<br />- AI 문제 생성 기능<br />- UI/UX 설계 | - Django REST API 개발<br />- Discord Webhook 연동<br />- 서버 및 DB 운영 |
 
 
 
