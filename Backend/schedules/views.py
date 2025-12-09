@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.conf import settings
 
 from datetime import timedelta
 
@@ -10,12 +11,11 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Schedule, StudySchedule, PersonalSchedule, Reminder
-from studies.models import Study, StudyMembership
 from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer, ReminderSerializer
+from .tasks import send_schedule_notification
+from studies.models import Study, StudyMembership
 from discord.models import DiscordStudyMapping
 
-from django.conf import settings
-import requests
 
 # Create your views here.
 
@@ -47,7 +47,7 @@ def study_schedule_create(request, study_id):
         return error_list(NOT_MEMBER)
     
     if membership.role not in ('leader', 'admin'):
-            return error_list(NOT_AUTHORIZED)
+        return error_list(NOT_AUTHORIZED)
 
     # schedule 생성
     schedule_serializer = ScheduleSerializer(data = request.data)
@@ -58,7 +58,6 @@ def study_schedule_create(request, study_id):
     # 디스코드 알림
     mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
     if mapping:
-        url = f"{settings.DISCORD_WEBHOOK_URL}new_schedule/"
 
         payload = {
             "channel_id": mapping.channel.id,
@@ -69,10 +68,8 @@ def study_schedule_create(request, study_id):
             "end_at": schedule_serializer.data["end_at"],
             "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
         }
-        try:
-            requests.post(url, json=payload)
-        except:
-            pass
+
+        send_schedule_notification.delay(study_id, schedule.id)
 
         # reminder 생성
         if reminder_data:
