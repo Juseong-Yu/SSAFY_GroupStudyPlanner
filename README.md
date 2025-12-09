@@ -1,4 +1,5 @@
-# Nestudy 📚  
+# Nestudy   <img width="40" height="40" alt="logo" src="https://github.com/user-attachments/assets/6b99bf7b-6315-4694-9669-bd918f274a7b" />
+
 > 그룹 스터디를 처음부터 끝까지 관리해주는 올인원 웹 서비스
 
 스터디 일정, 공지, 시험, 개인 스케줄까지 한 번에 관리할 수 있는 그룹 스터디 관리 서비스입니다.  
