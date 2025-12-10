@@ -14,7 +14,7 @@ from .models import Schedule, StudySchedule, PersonalSchedule, Reminder
 from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer, ReminderSerializer
 from .tasks import send_schedule_notification
 from studies.models import Study, StudyMembership
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 
 
 # Create your views here.

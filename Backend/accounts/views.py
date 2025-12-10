@@ -14,20 +14,20 @@ from django.middleware.csrf import get_token
 def csrf(request):
     return JsonResponse({"csrfToken": get_token(request)})
 
-# 로그인
-@require_POST
-def login(request):
-    form = AuthenticationForm(request, data=request.POST or None)
-    if form.is_valid():
-        auth_login(request, form.get_user())
-        return JsonResponse({"detail": "logged in"}, status=200)
-    return JsonResponse(form.errors, status=400)
+# # 로그인
+# @require_POST
+# def login(request):
+#     form = AuthenticationForm(request, data=request.POST or None)
+#     if form.is_valid():
+#         auth_login(request, form.get_user())
+#         return JsonResponse({"detail": "logged in"}, status=200)
+#     return JsonResponse(form.errors, status=400)
 
-# 로그아웃 (POST 권장)
-@require_POST
-def logout(request):
-    auth_logout(request)
-    return JsonResponse({"detail": "logged out"}, status=200)
+# # 로그아웃 (POST 권장)
+# @require_POST
+# def logout(request):
+#     auth_logout(request)
+#     return JsonResponse({"detail": "logged out"}, status=200)
 
 # 회원가입
 @require_POST
@@ -35,20 +35,18 @@ def signup(request):
     form = CustomUserCreationForm(request.POST or None)
     if form.is_valid():
         user = form.save()
-        # 자동 로그인까지 원하면:
-        # auth_login(request, user)
         return JsonResponse(
             {"id": user.id, "email": getattr(user, "email", ""), "username": getattr(user, "username", "")},
             status=201
         )
     return JsonResponse(form.errors, status=400)
 
-# 회원 탈퇴
-@require_POST
-@login_required
-def delete(request):
-    request.user.delete()
-    return JsonResponse({"detail": "deleted"}, status=200)
+# # 회원 탈퇴
+# @require_POST
+# @login_required
+# def delete(request):
+#     request.user.delete()
+#     return JsonResponse({"detail": "deleted"}, status=200)
 
 # 회원정보 수정
 @require_POST
@@ -89,21 +87,186 @@ def search(request):
 
     return JsonResponse(user_data, status=200)
 
-@login_required
-def check_password(request):
-    """
-    사용자가 입력한 비밀번호를 확인하고
-    맞으면 200 OK, 틀리면 400 반환
-    """
-    password = request.POST.get('password', '').strip()
-    user = request.user
+# @login_required
+# def check_password(request):
+#     """
+#     사용자가 입력한 비밀번호를 확인하고
+#     맞으면 200 OK, 틀리면 400 반환
+#     """
+#     password = request.POST.get('password', '').strip()
+#     user = request.user
 
-    if not password:
-        return JsonResponse({'error': '비밀번호를 입력해주세요.'}, status=400)
+#     if not password:
+#         return JsonResponse({'error': '비밀번호를 입력해주세요.'}, status=400)
     
-    # 비밀번호가 맞음
-    if user.check_password(password):
-        return JsonResponse({'message': 'ok'}, status=200)
+#     # 비밀번호가 맞음
+#     if user.check_password(password):
+#         return JsonResponse({'message': 'ok'}, status=200)
     
-    # 비밀번호가 틀림
-    return JsonResponse({'error': '비밀번호가 올바르지 않습니다.'}, status=400)
+#     # 비밀번호가 틀림
+#     return JsonResponse({'error': '비밀번호가 올바르지 않습니다.'}, status=400)
+
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import serializers
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh_token = serializer.validated_data['refresh']
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # token_blacklist 앱이 활성화되어 있어야 함
+        except Exception as e:
+            return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
+class ProtectedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"detail": "ok"})
+    
+import os
+import requests
+from django.conf import settings
+from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+
+User = get_user_model()
+
+class DiscordCallbackView(APIView):
+    """
+    **Discord OAuth Callback 처리**
+    프론트가 Discord authorization_code를 POST로 전달하면,
+    서버는 아래 단계를 수행한다.
+
+    1. Discord OAuth Token 교환
+    2. Access Token으로 사용자 정보 조회
+    3. DB에서 기존 사용자 조회 또는 신규 생성
+    4. JWT(access, refresh) 발급 후 반환
+    """
+
+    def post(self, request):
+        # -----------------------------------------------------------
+        # 0) 프론트에서 code가 전달되지 않은 경우
+        # -----------------------------------------------------------
+        code = request.data.get('code')
+        if not code:
+            return Response(
+                {'detail': 'Code not provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------------------
+        # 1) Discord OAuth2 Token 교환
+        # -----------------------------------------------------------
+        token_url = "https://discord.com/api/oauth2/token"
+
+        data = {
+            "client_id": os.environ.get('DISCORD_CLIENT_ID'),
+            "client_secret": os.environ.get('DISCORD_CLIENT_SECRET'),
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": os.environ.get('DISCORD_REDIRECT_URI'),  # 반드시 동일해야 함
+        }
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        token_resp = requests.post(token_url, data=data, headers=headers)
+
+        if token_resp.status_code != 200:
+            return Response(
+                {'detail': 'Token exchange failed', 'discord_response': token_resp.text},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token_json = token_resp.json()
+        access_token = token_json.get('access_token')
+
+        if not access_token:
+            return Response(
+                {'detail': 'No access token returned'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------------------
+        # 2) Discord 사용자 정보 조회
+        # -----------------------------------------------------------
+        user_info_url = "https://discord.com/api/users/@me"
+        user_info_resp = requests.get(
+            user_info_url,
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+        if user_info_resp.status_code != 200:
+            return Response(
+                {'detail': 'Failed to fetch user info', 'discord_response': user_info_resp.text},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user_info = user_info_resp.json()
+        # 예: {'id': '123', 'username': 'tester', 'avatar': 'xxxx', 'email': null }
+
+        discord_id = user_info.get('id')
+        username = user_info.get('username')
+        email = user_info.get('email')  # email은 scope에 따라 null일 수 있음
+
+        # -----------------------------------------------------------
+        # 2-1) 이메일이 없는 경우 처리
+        # 서버 정책: "email이 필요할 수 있음" → 기본값: email 필요!
+        # -----------------------------------------------------------
+        if not email:
+            return Response(
+                {'detail': 'Discord did not return email. Email scope must be enabled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------------------
+        # 3) 기존 사용자 조회 또는 신규 생성
+        # -----------------------------------------------------------
+        try:
+            user = User.objects.get(email=email)
+
+            # 기존 사용자라면 원하는 정책대로 디스코드 ID 저장, 업데이트 가능
+            # 예: user.discord_id = discord_id
+            #     user.save()
+
+        except User.DoesNotExist:
+            # 신규 생성
+            user = User.objects.create(
+                username=username,
+                email=email
+            )
+            user.set_unusable_password()
+            user.save()
+
+        # -----------------------------------------------------------
+        # 4) JWT 발급
+        # -----------------------------------------------------------
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'discord_id': discord_id,
+            'email': email,
+            'username': username,
+        })
