@@ -5,7 +5,7 @@ from celery import shared_task
 from .models import Notice
 from accounts.models import User
 from studies.models import Study
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 import logging
 
 logger = logging.getLogger(__name__)

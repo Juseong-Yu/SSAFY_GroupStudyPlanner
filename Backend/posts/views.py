@@ -11,7 +11,7 @@ from .models import Notice, Post, UploadedImage
 from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSerializer
 from .tasks import send_notice_notification
 from studies.models import Study, StudyMembership
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 
 from django.conf import settings
 import requests
