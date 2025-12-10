@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.discord',  # discord provider
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -67,11 +68,31 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+SITE_ID = 1
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     # 필요시 DEFAULT_PERMISSION_CLASSES 등 추가
+}
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # 로컬 로그인 유지
+    'allauth.account.auth_backends.AuthenticationBackend',  # allauth
+)
+
+# allauth 기본 설정 (이메일 인증 등 필요시)
+ACCOUNT_EMAIL_VERIFICATION = "none"  # 이메일 인증 불필요(요구사항)
+SOCIALACCOUNT_PROVIDERS = {
+    'discord': {
+        'SCOPE': ['identify', 'email'],  # 이메일도 요청
+        'APP': {
+            'client_id': os.environ.get('DISCORD_CLIENT_ID'),
+            'secret': os.environ.get('DISCORD_CLIENT_SECRET'),
+            'key': ''
+        }
+    }
 }
 
 from datetime import timedelta
