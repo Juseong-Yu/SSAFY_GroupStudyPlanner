@@ -6,32 +6,36 @@
         <!-- 상단 헤더 카드 -->
         <div class="card shadow-sm border-0 mb-3">
           <div class="card-body py-3">
-            <div
-              class="exam-header d-flex justify-content-between align-items-center flex-wrap gap-3"
-            >
+            <div class="exam-header d-flex justify-content-between align-items-center flex-wrap gap-3">
               <div>
                 <h2 class="fw-bold mb-1">
-                  시험 응시
-                  <span v-if="examTitle"> - {{ examTitle }}</span>
+                  <span v-if="examTitle">{{ examTitle }}</span>
                 </h2>
-                <p class="text-muted small mb-0">
-                  스터디 ID: {{ studyId }} / 시험 ID: {{ examId }}
-                </p>
-                <p v-if="examDueAtText" class="text-muted small mb-0">
-                  마감 시간: {{ examDueAtText }}
-                </p>
+
+                <!-- ⬇️ ID 라인 삭제하고, 메타 정보 줄 추가 -->
+                <div class="d-flex flex-wrap align-items-center gap-2 small text-muted mt-1">
+                  <span v-if="examDueAtText" class="badge exam-meta-badge">
+                    마감 · {{ examDueAtText }}
+                  </span>
+
+                  <span v-if="problems.length" class="text-muted">
+                    총 {{ problems.length }}문항
+                  </span>
+                </div>
               </div>
 
               <!-- 타이머 영역 -->
               <div class="timer-box text-end ms-auto">
                 <div class="text-muted small mb-1">남은 시간</div>
-                <div class="badge rounded-pill bg-primary text-white px-3 py-2 fs-6">
-                  {{ dummyTimeText }}
+                <div :class="['badge px-3 py-2 fs-6 timer-badge', timerClass]">
+                  {{ timeLeftText }}
                 </div>
+
               </div>
             </div>
           </div>
         </div>
+
 
         <!-- 본문 카드 (로딩/에러/문제 표시) -->
         <div class="card shadow-sm border-0">
@@ -56,33 +60,18 @@
             </div>
 
             <!-- 문제/번호 영역 -->
-            <div
-              v-else
-              class="row g-4 align-items-start"
-            >
+            <div v-else class="row g-4 align-items-start">
               <!-- 왼쪽: 문제 풀이 -->
               <div class="col-12 col-lg-9">
-                <ProblemView
-                  :problem="currentProblem"
-                  :currentIndex="currentIndex"
-                  :total="problems.length"
-                  v-model="answers[currentProblem.id]"
-                  @goNext="goNext"
-                  @goPrev="goPrev"
-                />
+                <ProblemView :problem="currentProblem" :currentIndex="currentIndex" :total="problems.length"
+                  v-model="answers[currentProblem.id]" @goNext="goNext" @goPrev="goPrev" />
               </div>
 
               <!-- 오른쪽: 문제 번호 + 제출 -->
               <div class="col-12 col-lg-3">
                 <div class="exam-sidebar">
-                  <QuestionList
-                    :problems="problems"
-                    :answers="answers"
-                    :currentIndex="currentIndex"
-                    :submitting="submitting"
-                    @select="selectProblem"
-                    @submitExam="submitExam"
-                  />
+                  <QuestionList :problems="problems" :answers="answers" :currentIndex="currentIndex"
+                    :submitting="submitting" @select="selectProblem" @submitExam="submitExam()" />
                 </div>
               </div>
             </div>
@@ -94,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -118,6 +107,7 @@ interface BackendExamDetail {
   title: string
   visibility: string
   due_at: string | null
+  // 필요하면 open_at도 여기 추가 가능
   created_at: string
   author: {
     id: number
@@ -146,7 +136,8 @@ const examId = computed(() => route.params.examId as string)
 
 // 시험 메타 정보
 const examTitle = ref<string>('')
-const examDueAtText = ref<string>('')
+const examDueAtText = ref<string>('')          // 화면용 포맷
+const examDueAtRaw = ref<string | null>(null)  // 타이머용 원본 ISO
 
 // 상태
 const loading = ref(true)
@@ -157,8 +148,31 @@ const problems = ref<Problem[]>([])
 const currentIndex = ref(0)
 const answers = ref<Record<number, string | number | null>>({})
 
-// 더미 타이머 텍스트 (나중에 실제 로직으로 교체 가능)
-const dummyTimeText = computed(() => '00:30:00')
+// ⭐ 타이머 상태
+const remainingMs = ref<number | null>(null)
+let timerId: number | null = null
+let autoSubmitted = false  // 자동 제출이 한 번만 실행되도록 플래그
+
+// 남은 시간 텍스트 (HH:MM:SS)
+const timeLeftText = computed(() => {
+  // 마감 시간 자체가 없으면 "제한 없음"
+  if (!examDueAtRaw.value) {
+    return '제한 없음'
+  }
+
+  if (remainingMs.value === null) {
+    return '--:--:--'
+  }
+
+  const ms = Math.max(0, remainingMs.value)
+  const totalSeconds = Math.floor(ms / 1000)
+
+  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
+  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
+  const s = String(totalSeconds % 60).padStart(2, '0')
+
+  return `${h}:${m}:${s}`
+})
 
 // 현재 문제
 const currentProblem = computed<Problem | null>(() => {
@@ -207,6 +221,66 @@ function formatKoreanDateTime(isoString: string | null): string {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
 }
 
+// 시간에 따라 색 변경
+const timerClass = computed(() => {
+  if (!examDueAtRaw.value || remainingMs.value === null) return ''
+
+  const secondsLeft = Math.floor(remainingMs.value / 1000)
+
+  // 30초 이하 → 빨간색 강조
+  if (secondsLeft <= 30) return 'timer-danger'
+
+  // 기본(중립)
+  return 'timer-neutral'
+})
+
+
+// ⭐ 타이머 시작
+function startTimer() {
+  if (!examDueAtRaw.value) return
+
+  // 혹시 기존 타이머 있으면 정리
+  if (timerId !== null) {
+    clearInterval(timerId)
+    timerId = null
+  }
+
+  const update = () => {
+    if (!examDueAtRaw.value) {
+      remainingMs.value = null
+      return
+    }
+
+    const now = Date.now()
+    const due = new Date(examDueAtRaw.value).getTime()
+    const diff = due - now
+
+    remainingMs.value = diff
+
+    // 시간이 다 되면 0으로 고정 + 타이머 종료 + 자동 제출
+    if (diff <= 0) {
+      remainingMs.value = 0
+      if (timerId !== null) {
+        clearInterval(timerId)
+        timerId = null
+      }
+
+      // 이미 자동 제출했거나, 제출 중이면 또 보내지 않기
+      if (!autoSubmitted && !submitting.value) {
+        autoSubmitted = true
+        // 약간의 여유를 주고 자동 제출 (네트워크/렌더 지연 대비)
+        setTimeout(() => {
+          submitExam(true)   // auto = true
+        }, 500)
+      }
+    }
+  }
+
+  // 즉시 한 번 계산하고, 1초마다 갱신
+  update()
+  timerId = window.setInterval(update, 1000)
+}
+
 // 시험 + 문제 가져오기
 async function fetchExamDetail() {
   try {
@@ -228,7 +302,12 @@ async function fetchExamDetail() {
 
     const exam = res.data
     examTitle.value = exam.title
+
+    examDueAtRaw.value = exam.due_at
     examDueAtText.value = formatKoreanDateTime(exam.due_at)
+
+    // 타이머 시작
+    startTimer()
 
     // 백엔드 questions -> 프론트 Problem[] 변환
     problems.value = exam.questions
@@ -263,13 +342,22 @@ async function fetchExamDetail() {
 }
 
 // 시험 제출
-async function submitExam() {
+async function submitExam(auto = false) {
   if (!currentProblem.value || problems.value.length === 0) return
 
-  const confirmMsg =
-    '정말 시험을 제출할까요? 제출 후에는 답안을 수정할 수 없습니다.'
-  const confirmed = window.confirm(confirmMsg)
-  if (!confirmed) return
+  // ⛔ 수동 제출일 때만 "시간 종료" 막기
+  if (!auto && examDueAtRaw.value && remainingMs.value !== null && remainingMs.value <= 0) {
+    alert('시험 시간이 이미 종료되었습니다.')
+    return
+  }
+
+  // ⛔ 수동 제출일 때만 confirm
+  if (!auto) {
+    const confirmMsg =
+      '정말 시험을 제출할까요? 제출 후에는 답안을 수정할 수 없습니다.'
+    const confirmed = window.confirm(confirmMsg)
+    if (!confirmed) return
+  }
 
   try {
     submitting.value = true
@@ -280,6 +368,7 @@ async function submitExam() {
       `${API_BASE}/studies/${studyId.value}/exams/${examId.value}/submit/`,
       {
         answers: answers.value,
+        auto,  // ✅ 자동 제출 여부 플래그 같이 전송
       },
       {
         withCredentials: true,
@@ -290,11 +379,20 @@ async function submitExam() {
       },
     )
 
-    alert('시험이 정상적으로 제출되었습니다.')
+    if (auto) {
+      alert('시험 시간이 종료되어 자동으로 제출되었습니다.')
+    } else {
+      alert('시험이 정상적으로 제출되었습니다.')
+    }
+
     router.push({ name: 'StudyExams', params: { studyId: studyId.value } })
   } catch (e) {
     console.error(e)
-    alert('시험 제출 중 오류가 발생했습니다.')
+    if (auto) {
+      alert('시험 시간 종료 시 자동 제출 중 오류가 발생했습니다.')
+    } else {
+      alert('시험 제출 중 오류가 발생했습니다.')
+    }
   } finally {
     submitting.value = false
   }
@@ -303,13 +401,22 @@ async function submitExam() {
 onMounted(() => {
   fetchExamDetail()
 })
+
+onUnmounted(() => {
+  if (timerId !== null) {
+    clearInterval(timerId)
+    timerId = null
+  }
+})
 </script>
 
 <style scoped>
 .study-page-wrapper {
   width: 100%;
-  max-width: 1300px; /* 전체 폭 중앙 정렬 */
-  padding-left: 1rem; /* 항상 좌우 여백 유지 */
+  max-width: 1300px;
+  /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem;
+  /* 항상 좌우 여백 유지 */
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
@@ -328,6 +435,18 @@ onMounted(() => {
   border-bottom: 1px solid var(--bs-border-color);
   padding-bottom: 0.5rem;
 }
+
+/* 메타 정보 배지 (마감 시간) */
+.exam-meta-badge {
+  background-color: #f3f4f6;
+  /* 연한 회색 */
+  color: #6b7280;
+  /* 중간 회색 텍스트 */
+  font-weight: 400;
+  border-radius: 9999px;
+  padding: 0.15rem 0.6rem;
+}
+
 
 /* 타이머 박스 */
 .timer-box {
@@ -349,4 +468,21 @@ onMounted(() => {
     margin-top: 1.25rem;
   }
 }
+
+/* 기본 중립 스타일 */
+.timer-badge.timer-neutral {
+  background-color: #f3f4f6; /* 연한 회색 */
+  color: #374151;           /* 진회색 */
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 30초 이하 → 빨간색 경고 */
+.timer-badge.timer-danger {
+  background-color: #fee2e2; /* 연한 빨간 배경 */
+  color: #b91c1c;            /* 진한 빨간 텍스트 */
+  font-weight: 700;
+}
+
 </style>

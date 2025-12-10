@@ -1,3 +1,4 @@
+<!-- src/views/studies/exams/components/ExamCreateModal.vue (예시 경로) -->
 <template>
   <!-- 백드롭 -->
   <div class="modal-backdrop fade show"></div>
@@ -74,12 +75,27 @@
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">마감 일시</label>
+              <label class="form-label">시작 일시 (선택)</label>
+              <input
+                v-model="startDate"
+                type="datetime-local"
+                class="form-control"
+              />
+              <div class="form-text">
+                비워두면 생성 직후부터 응시할 수 있습니다.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">마감 일시 (선택)</label>
               <input
                 v-model="dueDate"
                 type="datetime-local"
                 class="form-control"
               />
+              <div class="form-text">
+                비워두면 마감 시간 제한 없이 응시할 수 있습니다.
+              </div>
             </div>
           </div>
 
@@ -169,7 +185,10 @@ const mode = ref<'manual' | 'ai'>('manual')
 const title = ref('')
 const questionCount = ref<number>(5)
 const visibility = ref<'public' | 'score_only' | 'private'>('public')
-const dueDate = ref<string | null>(null)
+
+// ✅ 시작/마감 일시는 datetime-local과 맞춰 string으로 관리
+const startDate = ref<string>('') // "2025-12-10T13:00"
+const dueDate = ref<string>('')   // ""
 
 const aiText = ref('')
 const file = ref<File | null>(null)
@@ -198,6 +217,17 @@ const validate = () => {
     errorMessage.value = '문제 수는 1개 이상이어야 합니다.'
     return false
   }
+
+  // ✅ 시작/마감 둘 다 있으면 관계 검증
+  if (startDate.value && dueDate.value) {
+    const start = new Date(startDate.value).getTime()
+    const due = new Date(dueDate.value).getTime()
+    if (start >= due) {
+      errorMessage.value = '시작 일시는 마감 일시보다 이전이어야 합니다.'
+      return false
+    }
+  }
+
   errorMessage.value = ''
   return true
 }
@@ -208,13 +238,14 @@ const onSubmit = async () => {
   // 1) 직접 생성 모드: 바로 에디터 페이지로 라우팅
   if (mode.value === 'manual') {
     router.push({
-      name: 'ExamCreate',
+      name: 'ExamCreate', // 👉 라우터 name이 ExamCreatePage와 맞아야 함
       params: { studyId: props.studyId },
       query: {
         mode: 'manual',
         questionCount: questionCount.value,
         visibility: visibility.value,
-        dueDate: dueDate.value ?? '',
+        openDate: startDate.value || '',
+        dueDate: dueDate.value || '',
         title: title.value.trim(),
       },
     })
@@ -226,15 +257,21 @@ const onSubmit = async () => {
   try {
     isSubmitting.value = true
     await ensureCsrf()
-    const csrftoken = getCookie('csrftoken')
+    const csrftoken = getCookie('csrftoken') || ''
 
     const formData = new FormData()
     formData.append('title', title.value.trim())
     formData.append('question_count', String(questionCount.value))
     formData.append('visibility', visibility.value)
+
+    // ✅ 시작/마감 시간을 서버와 맞는 ISO 형식으로 전송
+    if (startDate.value) {
+      formData.append('start_at', new Date(startDate.value).toISOString())
+    }
     if (dueDate.value) {
       formData.append('due_at', new Date(dueDate.value).toISOString())
     }
+
     if (aiText.value.trim()) {
       formData.append('context_text', aiText.value.trim())
     }
@@ -249,7 +286,6 @@ const onSubmit = async () => {
         withCredentials: true,
         headers: {
           'X-CSRFToken': csrftoken,
-          // Content-Type은 FormData 쓰면 브라우저가 자동 설정
         },
       },
     )
@@ -262,6 +298,11 @@ const onSubmit = async () => {
       query: {
         mode: 'ai',
         draftId,
+        questionCount: questionCount.value,
+        visibility: visibility.value,
+        openDate: startDate.value || '',
+        dueDate: dueDate.value || '',
+        title: title.value.trim(),
       },
     })
     emit('close')
@@ -275,5 +316,5 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-
+/* 필요시 모달 커스텀 스타일 추가 가능 */
 </style>

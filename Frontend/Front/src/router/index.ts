@@ -129,6 +129,7 @@ const router = createRouter({
         visibility:
           (route.query.visibility as 'public' | 'score_only' | 'private') ||
           'public',
+        openDate: (route.query.openDate as string) || null,
         dueDate: (route.query.dueDate as string) || null,
         draftId: route.query.draftId ? Number(route.query.draftId) : null,
       }),
