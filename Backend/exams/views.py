@@ -6,6 +6,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
+
 from rest_framework.decorators import (
     api_view,
     permission_classes,
@@ -18,7 +19,6 @@ from rest_framework import status
 
 from studies.models import Study, StudyMembership
 from .models import Exam, ExamQuestion, ExamAIDraft, ExamResult
-
 
 
 # ====== 파일에서 텍스트 뽑는 유틸 ======
@@ -75,7 +75,6 @@ def exam_collection(request, study_id: int):
             user=request.user,
         )
 
-        # exam_id 집합만 사용 (점수는 안 씀)
         taken_exam_ids = set(user_results.values_list("exam_id", flat=True))
 
         data = []
@@ -85,10 +84,11 @@ def exam_collection(request, study_id: int):
                     "id": exam.id,
                     "title": exam.title,
                     "visibility": exam.visibility,
+                    # ✅ 시작 시간/마감 시간 둘 다 내려줌
+                    "start_at": exam.start_at,
                     "due_at": exam.due_at,
                     "created_at": exam.created_at,
                     "question_count": exam.questions.count(),
-                    # ✅ 내가 응시했는지 여부만 내려줌
                     "has_taken": exam.id in taken_exam_ids,
                 }
             )
@@ -105,7 +105,10 @@ def exam_collection(request, study_id: int):
         )
 
     visibility = body.get("visibility") or Exam.VISIBILITY_PUBLIC
-    due_at = body.get("due_at") or None  # ISO 문자열이면 그대로 넣어도 Django가 대부분 파싱해줌
+
+    # ✅ 프론트에서 ISO 문자열로 넘겨준다고 가정
+    start_at = body.get("start_at") or None
+    due_at = body.get("due_at") or None  # ISO 문자열이면 Django가 대부분 파싱해줌
 
     questions = body.get("questions") or []
     if not isinstance(questions, list) or len(questions) == 0:
@@ -142,6 +145,7 @@ def exam_collection(request, study_id: int):
         author=request.user,
         title=title,
         visibility=visibility,
+        start_at=start_at,
         due_at=due_at,
     )
 
@@ -155,9 +159,6 @@ def exam_collection(request, study_id: int):
             correct_index=int(q.get("correct_index")),
         )
 
-    # 필요하면 ai_draft_id 도 같이 저장해서 추적 가능
-    # ai_draft_id = body.get("ai_draft_id")
-
     return Response({"id": exam.id}, status=status.HTTP_201_CREATED)
 
 
@@ -167,13 +168,51 @@ def exam_collection(request, study_id: int):
 def exam_detail(request, study_id: int, exam_id: int):
     """
     GET /studies/<study_id>/exams/<exam_id>/
+    - 리더/관리자: 시간 제약 없이 시험 내용 확인 가능
+    - 일반 멤버: start_at 이후 ~ due_at 이전에만 입장 가능
     """
     exam = get_object_or_404(Exam, pk=exam_id, study_id=study_id)
+    study = exam.study
+
+    # ✅ 스터디 멤버십 조회
+    membership = StudyMembership.objects.filter(
+        study=study,
+        user=request.user,
+        is_active=True,
+    ).first()
+
+    if not membership:
+        return Response(
+            {"detail": "이 시험에 접근할 권한이 없습니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    role = membership.role  # 'leader' | 'admin' | 'member'
+
+    is_leader = (role == "leader") or (getattr(study, "leader_id", None) == request.user.id)
+    is_admin = (role == "admin")
+    is_privileged = is_leader or is_admin  # 리더/관리자는 시간 제약 없이 미리보기 허용
+
+    now = timezone.now()
+
+    # ✅ 시작/마감 시간 제약 적용
+    if exam.start_at and now < exam.start_at:
+        return Response(
+            {"detail": "아직 시험 시작 시간이 아닙니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if exam.due_at and now > exam.due_at:
+        return Response(
+            {"detail": "시험 시간이 이미 종료되었습니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     data = {
         "id": exam.id,
         "title": exam.title,
         "visibility": exam.visibility,
+        "start_at": exam.start_at,
         "due_at": exam.due_at,
         "created_at": exam.created_at,
         "author": {
@@ -207,6 +246,7 @@ def exam_ai_generate(request, study_id: int):
       - title
       - question_count
       - visibility (선택)
+      - start_at (선택, ISO 문자열)
       - due_at (선택, ISO 문자열)
       - context_text (선택)
       - context_file (선택, txt / docx 등)
@@ -215,6 +255,7 @@ def exam_ai_generate(request, study_id: int):
 
     title = (request.data.get("title") or "").strip()
     visibility = request.data.get("visibility")
+    start_at = request.data.get("start_at")
     due_at = request.data.get("due_at")
 
     raw_qc = request.data.get("question_count") or "5"
@@ -271,7 +312,6 @@ def exam_ai_generate(request, study_id: int):
         ],
     }
 
-        
     headers = {
         "Authorization": f"Bearer {settings.GMS_KEY}",
         "Content-Type": "application/json",
@@ -279,7 +319,12 @@ def exam_ai_generate(request, study_id: int):
 
     # ---- GMS API 호출 ----
     try:
-        gms_res = requests.post(settings.GMS_API_URL, headers=headers, json=payload, timeout=60)
+        gms_res = requests.post(
+            settings.GMS_API_URL,
+            headers=headers,
+            json=payload,
+            timeout=60,
+        )
     except requests.RequestException as e:
         return Response(
             {"error": "GMS API 요청 중 오류가 발생했습니다.", "detail": str(e)},
@@ -341,6 +386,7 @@ def exam_ai_generate(request, study_id: int):
         "questions": questions_for_payload,
         "meta": {
             "visibility": visibility,
+            "start_at": start_at,
             "due_at": due_at,
             "question_count": question_count,
         },
@@ -373,7 +419,8 @@ def exam_ai_draft_detail(request, study_id: int, draft_id: int):
     )
     return Response(draft.payload, status=status.HTTP_200_OK)
 
-# ====== 5. 문제 제출 상세 (POST) ======
+
+# ====== 5. 시험 제출 (POST) ======
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def exam_submit(request, study_id: int, exam_id: int):
@@ -381,10 +428,21 @@ def exam_submit(request, study_id: int, exam_id: int):
     POST /studies/<study_id>/exams/<exam_id>/submit/
     """
     exam = get_object_or_404(Exam, pk=exam_id, study_id=study_id)
-
-    # 🔧 스터디 참여자인지 검사 - 인스턴스.members 대신 ORM 필터 사용
+    auto = request.data.get("auto") is True or request.data.get("auto") == True
+    # 🔧 스터디 참여자인지 검사
     if not Study.objects.filter(pk=exam.study_id, members__id=request.user.id).exists():
-        return Response({"detail": "이 시험에 응시할 권한이 없습니다."}, status=403)
+        return Response(
+            {"detail": "이 시험에 응시할 권한이 없습니다."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # ✅ 마감 시간 체크: 끝나는 시간 이후에는 제출도 불가
+    if exam.due_at and timezone.now() > exam.due_at:
+        if not auto:
+            return Response(
+                {"detail": "시험 시간이 종료되어 제출할 수 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     answers = request.data.get("answers")
     if not isinstance(answers, dict):
@@ -474,12 +532,7 @@ def exam_submit(request, study_id: int, exam_id: int):
     )
 
 
-from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-
+# ====== 6. 내 시험 결과 + scoreboard (GET) ======
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def exam_my_result(request, study_id: int, exam_id: int):

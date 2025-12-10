@@ -1,3 +1,4 @@
+<!-- src/views/studies/exams/ExamCreatePage.vue -->
 <template>
   <AppShell>
     <!-- 바깥 컨테이너: 전체 가운데 정렬 -->
@@ -27,7 +28,7 @@
             <!-- 시험 메타 정보 카드 -->
             <div class="card mb-4 shadow-sm">
               <div class="card-body small">
-                <!-- 윗줄: 스터디 / 공개 범위 / 마감 -->
+                <!-- 윗줄: 스터디 / 공개 범위 / 시작 / 마감 -->
                 <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
                   <!-- 스터디 정보 -->
                   <div class="d-flex align-items-center gap-2">
@@ -50,14 +51,24 @@
                     </select>
                   </div>
 
-                  <!-- 마감 일시 (읽기 전용) -->
-                  <div
-                    v-if="dueDate"
-                    class="d-flex flex-column"
-                    style="min-width: 180px"
-                  >
-                    <span class="form-label small mb-1">마감 일시</span>
-                    <span class="fw-semibold">{{ formattedDueDate }}</span>
+                  <!-- 시작 일시 (수정 가능) -->
+                  <div class="d-flex flex-column" style="min-width: 220px">
+                    <label class="form-label small mb-1">시작 일시</label>
+                    <input
+                      v-model="openAtInput"
+                      type="datetime-local"
+                      class="form-control form-control-sm"
+                    />
+                  </div>
+
+                  <!-- 마감 일시 (수정 가능) -->
+                  <div class="d-flex flex-column" style="min-width: 220px">
+                    <label class="form-label small mb-1">마감 일시</label>
+                    <input
+                      v-model="dueAtInput"
+                      type="datetime-local"
+                      class="form-control form-control-sm"
+                    />
                   </div>
                 </div>
 
@@ -276,7 +287,8 @@ interface Props {
   mode: 'manual' | 'ai'
   questionCount: number
   visibility: 'public' | 'score_only' | 'private'
-  dueDate: string | null
+  dueDate: string | null          // datetime-local or ISO
+  openDate: string | null         // datetime-local or ISO
   draftId: number | null
 }
 
@@ -302,6 +314,11 @@ let localIdCounter = 1
 // 공개 범위: props에서 초기값 받고 수정 가능
 const selectedVisibility = ref<Props['visibility']>(props.visibility)
 
+// datetime-local용 로컬 문자열 (YYYY-MM-DDTHH:MM)
+const openAtInput = ref<string>('')
+const dueAtInput = ref<string>('')
+
+// 설명 텍스트
 const headerSubtitle = computed(() => {
   if (props.mode === 'ai') {
     return 'AI가 생성한 4지선다 문제를 검수하고 수정할 수 있습니다.'
@@ -309,10 +326,30 @@ const headerSubtitle = computed(() => {
   return '4지선다 객관식 문제를 직접 작성합니다.'
 })
 
-const formattedDueDate = computed(() => {
-  if (!props.dueDate) return ''
-  return props.dueDate.replace('T', ' ')
-})
+/**
+ * 문자열(ISO 또는 datetime-local)을 datetime-local input 포맷(YYYY-MM-DDTHH:MM)으로 변환
+ */
+const toLocalInputValue = (value: string | null): string => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+/**
+ * datetime-local 문자열을 ISO 문자열로 변환
+ */
+const toIsoOrNull = (localValue: string): string | null => {
+  if (!localValue) return null
+  const d = new Date(localValue)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString()
+}
 
 // 4지선다 기본 문제 생성
 const createEmptyQuestion = (): Question => ({
@@ -403,6 +440,10 @@ const loadAiDraft = async () => {
 }
 
 const initQuestions = async () => {
+  // 시작/마감 일시 초기값 설정
+  openAtInput.value = toLocalInputValue(props.openDate)
+  dueAtInput.value = toLocalInputValue(props.dueDate)
+
   if (props.mode === 'ai' && props.draftId) {
     await loadAiDraft()
   } else {
@@ -439,6 +480,31 @@ const validate = () => {
     errorMessage.value = '시험 제목을 입력해주세요.'
     return false
   }
+
+  // ✅ 시작 / 마감은 "선택"이므로 필수 체크 제거
+  let openDate: Date | null = null
+  let dueDate: Date | null = null
+
+  if (openAtInput.value) {
+    const d = new Date(openAtInput.value)
+    if (!Number.isNaN(d.getTime())) {
+      openDate = d
+    }
+  }
+
+  if (dueAtInput.value) {
+    const d = new Date(dueAtInput.value)
+    if (!Number.isNaN(d.getTime())) {
+      dueDate = d
+    }
+  }
+
+  // ✅ 둘 다 있을 때만 순서 검증
+  if (openDate && dueDate && dueDate <= openDate) {
+    errorMessage.value = '마감 일시는 시작 일시보다 뒤여야 합니다.'
+    return false
+  }
+
   if (questions.value.length === 0) {
     errorMessage.value = '최소 1개 이상의 문제가 필요합니다.'
     return false
@@ -476,6 +542,7 @@ const validate = () => {
   return true
 }
 
+
 // ========================
 // ⭐ 시험 생성 제출
 // ========================
@@ -490,9 +557,8 @@ const submitExam = async () => {
     const payload = {
       title: title.value.trim(),
       visibility: selectedVisibility.value,
-      due_at: props.dueDate
-        ? new Date(props.dueDate).toISOString()
-        : null,
+      start_at: toIsoOrNull(openAtInput.value),
+      due_at: toIsoOrNull(dueAtInput.value),
       questions: questions.value.map(q => ({
         text: q.text,
         choices: q.choices,
@@ -503,7 +569,6 @@ const submitExam = async () => {
     }
 
     await axios.post(
-      // ⬇️ 여기도 exams → exam 으로 수정
       `${API_BASE}/studies/${props.studyId}/exams/`,
       payload,
       {
@@ -531,7 +596,6 @@ onMounted(() => {
   initQuestions()
 })
 </script>
-
 
 <style scoped>
 /* StudyPage / SchedulePage와 동일한 반응형 너비 */

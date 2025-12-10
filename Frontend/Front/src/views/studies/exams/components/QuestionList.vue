@@ -20,7 +20,12 @@
       >
         <div class="d-flex justify-content-between align-items-center">
           <span>{{ p.number }}번</span>
-          <small v-if="answers[p.id]" class="text-success fw-semibold">
+
+          <!-- ✅ 0도 포함해서 “답변 완료” 처리 -->
+          <small
+            v-if="isAnswered(p.id)"
+            class="text-success fw-semibold"
+          >
             답변 완료
           </small>
           <small v-else class="text-muted">
@@ -61,21 +66,27 @@ const props = defineProps<{
   submitting: boolean
 }>()
 
+// ✅ "답변 있음" 판단 함수
+function isAnswered(problemId: number) {
+  const v = props.answers[problemId]
+  // 숫자 0도, 빈 문자열은 제외하고 “진짜 아무것도 안 쓴 상태”만 미답으로 봄
+  return v !== null && v !== undefined && v !== ''
+}
+
 function buttonClass(problemId: number, idx: number) {
   // 현재 문제
   if (idx === props.currentIndex) {
     return 'btn-current-question'
   }
 
-  // 답변 완료 문제
-  if (props.answers[problemId]) {
+  // ✅ 답변 완료 문제
+  if (isAnswered(problemId)) {
     return 'btn-outline-success'
   }
 
   // 아직 안 푼 문제 → 테두리 없음 + hover만 회색
   return 'btn-plain'
 }
-
 </script>
 
 <style scoped>
@@ -154,6 +165,4 @@ button.btn {
   border-color: #bfdbfe;
   box-shadow: none;
 }
-
-
 </style>
