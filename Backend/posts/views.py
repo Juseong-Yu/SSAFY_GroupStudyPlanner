@@ -54,7 +54,7 @@ def notice_create(request, study_id):
         if serializer.is_valid():
 
             notice = serializer.save(author = request.user, study = study)
-            mapping = DiscordStudyMapping.objects.get(study=study_id)
+            mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
             if mapping:
 
                 payload = {
