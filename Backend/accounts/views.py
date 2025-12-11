@@ -11,30 +11,35 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .serializers import RegisterSerializer
 
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({"csrfToken": get_token(request)})
 
 # 회원가입
-@require_POST
-def signup(request):
-    form = CustomUserCreationForm(request.POST or None)
-    if form.is_valid():
-        user = form.save()
-        return JsonResponse(
-            {"id": user.id, "email": getattr(user, "email", ""), "username": getattr(user, "username", "")},
-            status=201
-        )
-    return JsonResponse(form.errors, status=400)
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
 
-# # 회원 탈퇴
-# @require_POST
-# @login_required
-# def delete(request):
-#     request.user.delete()
-#     return JsonResponse({"detail": "deleted"}, status=200)
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response({
+            "id": user.id,
+            "email": user.email,
+            "username": user.username,
+            "profile_img": request.build_absolute_uri(user.profile_img.url) if user.profile_img else None
+        }, status=status.HTTP_201_CREATED)
 
 # 회원정보 수정
 @require_POST
@@ -102,12 +107,7 @@ from .serializers import MyTokenObtainPairSerializer
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import serializers
+
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
