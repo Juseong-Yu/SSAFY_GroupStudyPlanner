@@ -2,6 +2,7 @@
   <div class="container min-vh-100 py-3 d-flex align-items-center login-page">
     <!-- 🔶 중앙 카드 래퍼 (auth-surface) -->
     <div class="auth-surface w-100 p-3 p-lg-4">
+
       <div class="row w-100 g-5">
         <!-- 왼쪽 이미지 -->
         <div class="col-lg-6 login-image d-none d-lg-flex justify-content-center align-items-center">
@@ -98,9 +99,7 @@
                   id="rememberMe"
                   v-model="rememberMe"
                 />
-                <label class="form-check-label" for="rememberMe">
-                  Remember me
-                </label>
+                <label class="form-check-label" for="rememberMe">Remember me</label>
               </div>
 
               <!-- 서버 공통 에러 -->
@@ -122,25 +121,26 @@
 
             <p class="text-center mt-3">
               아직 회원가입 안하셨나요?
-              <RouterLink to="/signup" class="link-primary fw-semibold">
-                SIGN UP
-              </RouterLink>
+              <RouterLink to="/signup" class="link-primary fw-semibold">SIGN UP</RouterLink>
             </p>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
+import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import { fetchAllStores } from '@/stores/fetchAllStores'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
+import { fetchAllStores } from '@/stores/fetchAllStores.ts'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 const router = useRouter()
-const auth = useAuthStore()
 
 const email = ref('')
 const password = ref('')
@@ -148,45 +148,57 @@ const rememberMe = ref(false)
 const showPassword = ref(false)
 const loading = ref(false)
 
-const serverErrors = ref<Record<string, string | undefined>>({})
+const serverErrors = ref({})
 const nonFieldError = ref('')
 
-const canSubmit = computed(() => !!email.value && !!password.value && !loading.value)
+const canSubmit = computed(() => email.value && password.value && !loading.value)
 
-const fieldError = (field: 'email' | 'password') => serverErrors.value[field] || ''
+const fieldError = (field) => serverErrors.value[field] || ''
 
 const resetErrors = () => {
   serverErrors.value = {}
   nonFieldError.value = ''
 }
 
-const onSocial = (provider: 'google' | 'kakao') => {
+const onSocial = (provider) => {
   console.log('social login:', provider)
 }
 
 const onSubmit = async () => {
   if (!canSubmit.value || loading.value) return
-
   resetErrors()
   loading.value = true
 
   try {
-    // 🔐 여기서 authStore.login 사용
-    await auth.login(email.value.trim(), password.value)
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
 
-    await fetchAllStores()
+    const params = new URLSearchParams()
+    params.set('username', email.value.trim())
+    params.set('password', password.value)
+
+    await axios.post(`${API_BASE}/api/token/`, params, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+    // 2) 🔥 로그인 후 사용자 정보 강제로 새로 불러오기
+    fetchAllStores()
+
     router.push('/main')
-  } catch (err: any) {
-    const data = err?.response?.data
-    if (data) {
-      const mapped: Record<string, string> = {}
+  } catch (err) {
+    if (err.response?.data) {
+      const data = err.response.data
+      const mapped = {}
 
-      ;['email', 'password', 'non_field_errors', 'detail'].forEach((k) => {
+      ;['username', 'password', 'non_field_errors', 'detail'].forEach((k) => {
         if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
       })
 
       serverErrors.value = {
-        email: mapped.email,
+        username: mapped.username,
         password: mapped.password,
       }
 
@@ -200,7 +212,6 @@ const onSubmit = async () => {
   }
 }
 </script>
-
 
 <style scoped>
 /* 전체 배경 */
@@ -218,10 +229,10 @@ const onSubmit = async () => {
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
 
-  min-height: calc(100vh - 3rem);
+  min-height: calc(100vh - 3rem); /* 화면 기반 최소 높이 통일 */
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: center; /* 내부 폼을 수직 중앙 정렬 */
 }
 
 /* 내용 영역 */
