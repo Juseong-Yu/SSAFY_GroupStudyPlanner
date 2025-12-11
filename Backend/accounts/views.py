@@ -71,13 +71,15 @@ def password(request):
     return JsonResponse(form.errors, status=400)
 
 # 회원정보 조회
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def search(request):
     """
     로그인된 사용자의 회원 정보를 반환
     반환 데이터: username, email, profile_img
     """
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "로그인이 필요합니다."}, status=401)
     user = request.user
     user_data = {
         "username": user.username,
