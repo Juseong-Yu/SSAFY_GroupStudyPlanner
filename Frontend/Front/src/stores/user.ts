@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const TTL_MS = 5 * 60 * 1000 // 5분 캐시 유지
 
 export const useUserStore = defineStore('user', () => {
-  // ✅ 상태
+  // ✅ 상태 d
   const profile = ref({
     email: '',
     nickname: '',
@@ -18,7 +18,7 @@ export const useUserStore = defineStore('user', () => {
   const error = ref('')
   const lastFetched = ref<number | null>(null)
   let inFlight: Promise<void> | null = null
-
+  
   // ✅ 신선도 확인
   const isFresh = () => lastFetched.value && Date.now() - lastFetched.value < TTL_MS
 
