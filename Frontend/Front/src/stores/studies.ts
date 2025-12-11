@@ -100,7 +100,7 @@ function parseAndSet(payload: unknown) {
       await ensureCsrf()
       const csrftoken = getCookie('csrftoken')
 
-      const { data } = await axios.get(`${API_BASE}/studies/study_list/`, {
+      const { data } = await axios.get(`${API_BASE}/api/study_list/`, {
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken ?? '' },
       })
