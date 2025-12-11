@@ -10,24 +10,12 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({"csrfToken": get_token(request)})
-
-# # 로그인
-# @require_POST
-# def login(request):
-#     form = AuthenticationForm(request, data=request.POST or None)
-#     if form.is_valid():
-#         auth_login(request, form.get_user())
-#         return JsonResponse({"detail": "logged in"}, status=200)
-#     return JsonResponse(form.errors, status=400)
-
-# # 로그아웃 (POST 권장)
-# @require_POST
-# def logout(request):
-#     auth_logout(request)
-#     return JsonResponse({"detail": "logged out"}, status=200)
 
 # 회원가입
 @require_POST
@@ -50,7 +38,7 @@ def signup(request):
 
 # 회원정보 수정
 @require_POST
-@login_required
+@permission_classes([IsAuthenticated])
 def update(request):
     form = CustomUserChangeForm(request.POST or None, request.FILES or None, instance=request.user)
     if form.is_valid():
@@ -61,7 +49,7 @@ def update(request):
 
 # 비밀번호 변경
 @require_POST
-@login_required
+@permission_classes([IsAuthenticated])
 def password(request):
     form = PasswordChangeForm(request.user, request.POST or None)
     if form.is_valid():
@@ -71,8 +59,7 @@ def password(request):
     return JsonResponse(form.errors, status=400)
 
 # 회원정보 조회
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search(request):
