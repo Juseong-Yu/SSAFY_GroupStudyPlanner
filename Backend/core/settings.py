@@ -98,7 +98,7 @@ SOCIALACCOUNT_PROVIDERS = {
 from datetime import timedelta
 SIMPLE_JWT = {
     # 기본값: ACCESS 5분, REFRESH 1일. 필요시 조정.
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     # 보안 권장: 리프레시 토큰 회전 및 블랙리스트 사용
     'ROTATE_REFRESH_TOKENS': True,
