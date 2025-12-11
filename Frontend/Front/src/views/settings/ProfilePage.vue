@@ -194,7 +194,7 @@ const onConfirmPassword = async () => {
     params.set('password', String(password.value).trim())
 
     const res = await client.post(
-      `${API_BASE}/accounts/check_password/`,
+      `${API_BASE}/api/check_password/`,
       params,
       {
         withCredentials: true,
@@ -227,7 +227,7 @@ const loadProfile = async () => {
     loading.value = true
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    const { data } = await client.get(`${API_BASE}/accounts/search/`, {
+    const { data } = await client.get(`${API_BASE}/api/search/`, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken },
     })
