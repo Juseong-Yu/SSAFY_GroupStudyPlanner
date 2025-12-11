@@ -18,4 +18,10 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     path('some-protected-endpoint/', ProtectedView.as_view()),
     path("auth/discord/callback/", DiscordCallbackView.as_view(), name="discord_callback"),
+
+    path("connect_discord/", views.connect_discord, name="connect_discord"),
+    path("discord_callback/", views.discord_callback, name="discord_callback"),
+    path("login_with_discord/", views.login_with_discord, name="login_with_discord"),
+    path("discord_login_callback/", views.discord_login_callback, name="discord_login_callback"),
+    
 ]
