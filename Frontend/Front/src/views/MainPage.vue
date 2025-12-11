@@ -130,7 +130,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AppShell from '@/layouts/AppShell.vue'
-import axios from 'axios'
+import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
 import type { EventInput, EventClickArg } from '@fullcalendar/core'
@@ -215,7 +215,7 @@ const loadSchedules = async () => {
     eventsMap.clear()
     detailError.value = ''
 
-    const allRes = await axios.get<Array<{ type: ScheduleType; data: CombinedData }>>(
+    const allRes = await client.get<Array<{ type: ScheduleType; data: CombinedData }>>(
       `${API_BASE}/schedules/schedule_list/`,
       {
         withCredentials: true,
@@ -357,7 +357,7 @@ const onSubmitCreate = async () => {
 
     if (isEditing.value && editingId.value !== null) {
       // ✅ 개인 일정 수정
-      await axios.put(
+      await client.put(
         `${API_BASE}/schedules/${editingId.value}/personal_schedule_detail/`,
         payload,
         {
@@ -370,7 +370,7 @@ const onSubmitCreate = async () => {
       )
     } else {
       // ✅ 개인 일정 생성
-      await axios.post(`${API_BASE}/schedules/personal_schedule_create/`, payload, {
+      await client.post(`${API_BASE}/schedules/personal_schedule_create/`, payload, {
         withCredentials: true,
         headers: {
           'X-CSRFToken': csrftoken || '',
@@ -428,7 +428,7 @@ const handleDeleteSchedule = async (id: number) => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.delete(`${API_BASE}/schedules/${id}/personal_schedule_detail/`, {
+    await client.delete(`${API_BASE}/schedules/${id}/personal_schedule_detail/`, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken || '',

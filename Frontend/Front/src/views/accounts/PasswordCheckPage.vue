@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import client from '@/api/client'
 import { useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
@@ -55,7 +55,7 @@ const onSubmit = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const response = await axios.post(
+    const response = await client.post(
       `${API_BASE}/accounts/password-check/`,
       { password: password.value },
       {

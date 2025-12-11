@@ -1,7 +1,7 @@
 // src/stores/studyRoleStore.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import client from '@/api/client'
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
@@ -76,7 +76,7 @@ export const useStudyRoleStore = defineStore('studyRole', () => {
       await ensureCsrf()
       const csrftoken = getCookie('csrftoken')
 
-      const res = await axios.get(
+      const res = await client.get(
         `${API_BASE}/studies/${key}/get_my_role/`,
         {
           withCredentials: true,
