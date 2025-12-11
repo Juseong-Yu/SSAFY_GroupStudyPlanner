@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 
@@ -96,7 +96,7 @@ const handleUploadImg = async (files: File[], callback: (urls: string[]) => void
     for (const file of files) {
       const form = new FormData()
       form.append('image', file)
-      const res = await axios.post(
+      const res = await client.post(
         `${API_BASE}/studies/${studyId}/posts/upload_img/`,
         form,
         {
@@ -134,7 +134,7 @@ const submitNotice = async () => {
       content: markdown.value.trim(),
     }
 
-    const response = await axios.post(
+    const response = await client.post(
       `${API_BASE}/studies/${studyId}/posts/notice_create/`,
       payload,
       {

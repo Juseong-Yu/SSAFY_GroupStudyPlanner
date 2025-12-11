@@ -110,7 +110,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 import { useStudyRoleStore } from '@/stores/studyRoleStore'
@@ -213,7 +213,7 @@ onMounted(async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await axios.get<NoticeFromAPI[]>(
+    const res = await client.get<NoticeFromAPI[]>(
       `${API_BASE}/studies/${studyId}/posts/notice_list/`,
       {
         withCredentials: true,
