@@ -152,11 +152,11 @@
 
 <script setup>
 /**
- * ✅ axios를 사용하는 페이지에서는 반드시 CSRF 유틸 import 필요
+ * ✅ client를 사용하는 페이지에서는 반드시 CSRF 유틸 import 필요
  */
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import client from '@/api/client'
 import { useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import { useUserStore } from '@/stores/user'
@@ -192,7 +192,7 @@ const loadProfile = async () => {
 
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    const { data } = await axios.get(`${API_BASE}/accounts/search/`, {
+    const { data } = await client.get(`${API_BASE}/accounts/search/`, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken },
     })
@@ -279,7 +279,7 @@ const onSubmit = async () => {
     }
     if (avatarFile.value) fd.append('profile_img', avatarFile.value)
 
-    await axios.post(`${API_BASE}/accounts/update/`, fd, {
+    await client.post(`${API_BASE}/accounts/update/`, fd, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken }, // FormData는 자동 Content-Type
     })
