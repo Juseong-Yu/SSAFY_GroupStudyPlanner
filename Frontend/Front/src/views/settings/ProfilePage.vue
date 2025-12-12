@@ -191,16 +191,20 @@ const onConfirmPassword = async () => {
     const csrftoken = getCookie('csrftoken')
 
     const params = new URLSearchParams()
+    const payload = {
+      password: password.value.trim(),
+    
+    }
     params.set('password', String(password.value).trim())
 
     const res = await client.post(
       `${API_BASE}/api/check_password/`,
-      params,
+      payload,
       {
         withCredentials: true,
         headers: {
           'X-CSRFToken': csrftoken,
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
       }
     )
