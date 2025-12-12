@@ -54,3 +54,27 @@ class PasswordVerifySerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("비밀번호를 입력하세요")
         return value
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("현재 비밀번호가 일치하지 않습니다.")
+        return value
+
+    def validate(self, data):
+        if data["new_password"] != data["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "비밀번호가 일치하지 않습니다."})
+        # Django의 비밀번호 정책(Validator) 사용
+        validate_password(data["new_password"], self.context['request'].user)
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+        return user

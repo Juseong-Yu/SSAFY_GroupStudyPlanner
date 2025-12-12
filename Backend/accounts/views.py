@@ -15,11 +15,16 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer, PasswordVerifySerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, PasswordVerifySerializer, PasswordChangeSerializer
+
+import urllib.parse
+
+from django.conf import settings
 
 @ensure_csrf_cookie
 def csrf(request):
@@ -42,17 +47,25 @@ class RegisterView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 # 회원정보 수정
-@require_POST
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update(request):
     form = CustomUserChangeForm(request.POST or None, request.FILES or None, instance=request.user)
     if form.is_valid():
         user = form.save()
-        print(form.errors)
         return JsonResponse({"detail": "updated"}, status=200)
     return JsonResponse(form.errors, status=400)
 
 # 비밀번호 변경
+api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def password_change(request):
+    serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    # JWT: 비밀번호 변경 후 기존 토큰(특히 refresh token)을 무력화하려면 블랙리스트/토큰 회전 필요
+    return Response({"detail": "비밀번호가 변경되었습니다."}, status=status.HTTP_200_OK)
+
 @require_POST
 @permission_classes([IsAuthenticated])
 def password(request):
@@ -64,7 +77,6 @@ def password(request):
     return JsonResponse(form.errors, status=400)
 
 # 회원정보 조회
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search(request):
@@ -91,29 +103,6 @@ def verify_password(request):
     is_valid = request.user.check_password(password)
 
     return Response({"valid": is_valid}, status=status.HTTP_200_OK)
-
-# @login_required
-# def check_password(request):
-#     """
-#     사용자가 입력한 비밀번호를 확인하고
-#     맞으면 200 OK, 틀리면 400 반환
-#     """
-#     password = request.POST.get('password', '').strip()
-#     user = request.user
-
-#     if not password:
-#         return JsonResponse({'error': '비밀번호를 입력해주세요.'}, status=400)
-    
-#     # 비밀번호가 맞음
-#     if user.check_password(password):
-#         return JsonResponse({'message': 'ok'}, status=200)
-    
-#     # 비밀번호가 틀림
-#     return JsonResponse({'error': '비밀번호가 올바르지 않습니다.'}, status=400)
-
-
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -268,12 +257,6 @@ class DiscordCallbackView(APIView):
             'email': email,
             'username': username,
         })
-
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-import urllib.parse
-
-from django.conf import settings
 
 DISCORD_CLIENT_ID = settings.DISCORD_CLIENT_ID
 DISCORD_CLIENT_SECRET = settings.DISCORD_CLIENT_SECRET
