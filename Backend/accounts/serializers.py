@@ -46,3 +46,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+class PasswordVerifySerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        if not value:
+            raise serializers.ValidationError("비밀번호를 입력하세요")
+        return value

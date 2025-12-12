@@ -12,7 +12,7 @@ urlpatterns = [
     # path('delete/', views.delete, name='delete'),
     path('password/', views.password, name='password'),
     path('search/', views.search, name='search'),
-    # path('check_password/', views.check_password, name='check_password'),
+    path('check_password/', views.verify_password, name='check_password'),
     path('signup/', RegisterView.as_view(), name="signup"),
     path('logout/', LogoutView.as_view()),
     path('some-protected-endpoint/', ProtectedView.as_view()),

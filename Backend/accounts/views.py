@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, PasswordVerifySerializer
 
 @ensure_csrf_cookie
 def csrf(request):
@@ -80,6 +80,17 @@ def search(request):
     }
 
     return JsonResponse(user_data, status=200)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_password(request):
+    serializer = PasswordVerifySerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    password = serializer.validated_data['password']
+    is_valid = request.user.check_password(password)
+
+    return Response({"valid": is_valid}, status=status.HTTP_200_OK)
 
 # @login_required
 # def check_password(request):
@@ -258,7 +269,6 @@ class DiscordCallbackView(APIView):
             'username': username,
         })
 
-from rest_framework import api_view, permissions_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import urllib.parse
@@ -274,7 +284,7 @@ DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
 DISCORD_USER_URL = "https://discord.com/api/users/@me"
 
 @api_view(['GET'])
-@permissions_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def connect_discord(request):
     """
     디스코드 연동 시작
@@ -289,7 +299,7 @@ def connect_discord(request):
     return Response({"auth_url": url})
 
 @api_view(['GET'])
-@permissions_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def discord_callback(request):
     """
     디스코드 콜백에서 사용자 계정과 연결
