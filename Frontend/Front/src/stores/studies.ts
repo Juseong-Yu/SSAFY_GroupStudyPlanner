@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import router from '@/router'
 
@@ -100,7 +101,7 @@ function parseAndSet(payload: unknown) {
       await ensureCsrf()
       const csrftoken = getCookie('csrftoken')
 
-      const { data } = await axios.get(`${API_BASE}/api/study_list/`, {
+      const { data } = await client.get(`${API_BASE}/studies/study_list/`, {
         withCredentials: true,
         headers: { 'X-CSRFToken': csrftoken ?? '' },
       })

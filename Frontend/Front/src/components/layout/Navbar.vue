@@ -335,7 +335,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import { useUiStore } from '@/stores/ui.ts'
 import { useUserStore } from '@/stores/user.ts'
 import { useStudiesStore } from '@/stores/studies.ts'
@@ -472,7 +472,7 @@ const submitCreate = async () => {
       name: create.value.form.title.trim(),
     }
 
-    await axios.post(`${API_BASE}/studies/study/`, payload, {
+    await client.post(`${API_BASE}/studies/study/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
@@ -509,7 +509,7 @@ const submitJoin = async () => {
       id: join.value.code.trim(),
     }
 
-    await axios.post(`${API_BASE}/studies/join/`, payload, {
+    await client.post(`${API_BASE}/studies/join/`, payload, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,

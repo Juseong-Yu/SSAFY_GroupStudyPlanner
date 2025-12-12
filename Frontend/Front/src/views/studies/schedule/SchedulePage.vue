@@ -347,7 +347,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { useRoute } from "vue-router"
-import axios from "axios"
+import client from '@/api/client'
 import AppShell from "@/layouts/AppShell.vue"
 import { ensureCsrf, getCookie } from "@/utils/csrf_cors"
 
@@ -629,7 +629,7 @@ const pastSchedules = computed<ScheduleItem[]>(() => {
 const fetchSchedules = async () => {
   try {
     isLoading.value = true
-    const res = await axios.get<ScheduleItem[]>(
+    const res = await client.get<ScheduleItem[]>(
       `${API_BASE}/studies/${studyId}/schedules/study_schedule_list/`,
       {
         withCredentials: true,
@@ -648,7 +648,7 @@ const onClickDelete = async (id: number) => {
     await ensureCsrf()
     const csrftoken = getCookie("csrftoken")
 
-    await axios.delete(
+    await client.delete(
       `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
@@ -673,7 +673,7 @@ const openDetailModal = async (id: number) => {
   detail.value = null
 
   try {
-    const res = await axios.get<ScheduleDetailResponse>(
+    const res = await client.get<ScheduleDetailResponse>(
       `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
@@ -851,7 +851,7 @@ const onSubmitCreate = async () => {
 
     if (isEditing.value && editingId.value !== null) {
       // 수정
-      await axios.put(
+      await client.put(
         `${API_BASE}/studies/${studyId}/schedules/${editingId.value}/study_schedule_detail/`,
         payload,
         {
@@ -864,7 +864,7 @@ const onSubmitCreate = async () => {
       )
     } else {
       // 생성
-      await axios.post(
+      await client.post(
         `${API_BASE}/studies/${studyId}/schedules/study_schedule_create/`,
         payload,
         {

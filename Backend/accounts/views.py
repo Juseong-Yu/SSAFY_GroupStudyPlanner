@@ -15,11 +15,16 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, PasswordVerifySerializer, PasswordChangeSerializer
+
+import urllib.parse
+
+from django.conf import settings
 
 @ensure_csrf_cookie
 def csrf(request):
@@ -42,17 +47,25 @@ class RegisterView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 # 회원정보 수정
-@require_POST
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update(request):
     form = CustomUserChangeForm(request.POST or None, request.FILES or None, instance=request.user)
     if form.is_valid():
         user = form.save()
-        print(form.errors)
         return JsonResponse({"detail": "updated"}, status=200)
     return JsonResponse(form.errors, status=400)
 
 # 비밀번호 변경
+api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def password_change(request):
+    serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    # JWT: 비밀번호 변경 후 기존 토큰(특히 refresh token)을 무력화하려면 블랙리스트/토큰 회전 필요
+    return Response({"detail": "비밀번호가 변경되었습니다."}, status=status.HTTP_200_OK)
+
 @require_POST
 @permission_classes([IsAuthenticated])
 def password(request):
@@ -64,7 +77,6 @@ def password(request):
     return JsonResponse(form.errors, status=400)
 
 # 회원정보 조회
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search(request):
@@ -81,28 +93,16 @@ def search(request):
 
     return JsonResponse(user_data, status=200)
 
-# @login_required
-# def check_password(request):
-#     """
-#     사용자가 입력한 비밀번호를 확인하고
-#     맞으면 200 OK, 틀리면 400 반환
-#     """
-#     password = request.POST.get('password', '').strip()
-#     user = request.user
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_password(request):
+    serializer = PasswordVerifySerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
-#     if not password:
-#         return JsonResponse({'error': '비밀번호를 입력해주세요.'}, status=400)
-    
-#     # 비밀번호가 맞음
-#     if user.check_password(password):
-#         return JsonResponse({'message': 'ok'}, status=200)
-    
-#     # 비밀번호가 틀림
-#     return JsonResponse({'error': '비밀번호가 올바르지 않습니다.'}, status=400)
+    password = serializer.validated_data['password']
+    is_valid = request.user.check_password(password)
 
-
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
+    return Response({"valid": is_valid}, status=status.HTTP_200_OK)
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -135,9 +135,7 @@ class ProtectedView(APIView):
 import os
 import requests
 from django.conf import settings
-from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -259,3 +257,150 @@ class DiscordCallbackView(APIView):
             'email': email,
             'username': username,
         })
+
+DISCORD_CLIENT_ID = settings.DISCORD_CLIENT_ID
+DISCORD_CLIENT_SECRET = settings.DISCORD_CLIENT_SECRET
+DISCORD_REDIRECT_URI = settings.DISCORD_REDIRECT_URI
+DISCORD_REDIRECT_URI_FOR_LOGIN = settings.DISCORD_REDIRECT_URI_FOR_LOGIN
+DISCORD_OAUTH_URL = "https://discord.com/api/oauth2/authorize"
+DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
+DISCORD_USER_URL = "https://discord.com/api/users/@me"
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def connect_discord(request):
+    """
+    디스코드 연동 시작
+    """
+    params = {
+        "client_id": DISCORD_CLIENT_ID,
+        "redirect_uri": DISCORD_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "identify email"
+    }
+    url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
+    return Response({"auth_url": url})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def discord_callback(request):
+    """
+    디스코드 콜백에서 사용자 계정과 연결
+    """
+    code = request.GET.get("code")
+    if not code:
+        return Response({"error": "Code missing"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 1. 토큰 교환
+    data = {
+        "client_id": DISCORD_CLIENT_ID,
+        "client_secret": DISCORD_CLIENT_SECRET,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": DISCORD_REDIRECT_URI,
+    }
+    token_res = requests.post(DISCORD_TOKEN_URL, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+    token_json = token_res.json()
+
+    access_token = token_json.get("access_token")
+    refresh_token = token_json.get("refresh_token")
+
+    # 2. Discord 유저 정보 조회
+    user_res = requests.get(
+        DISCORD_USER_URL,
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    discord_user = user_res.json()
+
+    # 3. 현재 로그인한 계정과 연결
+    user = request.user
+    user.discord_id = discord_user["id"]
+    user.discord_refresh_token = refresh_token
+    user.save()
+
+    return Response({"detail": "Discord successfully connected"})
+
+@api_view(['GET'])
+def login_with_discord(request):
+    params = {
+        "client_id": DISCORD_CLIENT_ID,
+        "redirect_url": DISCORD_REDIRECT_URI_FOR_LOGIN,
+        "response_type": "code",
+        "scope": "identify email"
+    }
+    url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
+    return Response({"auth_url": url})
+
+@api_view(['GET'])
+def discord_login_callback(request):
+    """
+    Discord 로그인용 callback.
+    - Discord가 redirect (GET) 으로 보내온 ?code= 을 수신.
+    - code -> 토큰 교환 -> /users/@me 로 사용자 정보 조회.
+    - 조회한 discord_id 로 이미 연동된 User를 찾음.
+    - 존재하면 JWT(access, refresh) 발급하여 반환.
+    - 연동된 사용자가 없으면 400 (연동 필요).
+    """
+    code = request.GET.get("code")
+    if not code:
+        return Response({"detail": "code query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 1) 토큰 교환: authorization_code -> access_token
+    #    반드시 redirect_uri가 Discord 개발자 포털에 등록된 값과 동일해야 함
+    token_data = {
+        'client_id': DISCORD_CLIENT_ID,
+        'client_secret': DISCORD_CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': DISCORD_REDIRECT_URI
+    }
+
+    # x-www-form-urlencoded 로 전송
+    try:
+        token_resp = requests.post(DISCORD_TOKEN_URL, data=token_data, headers={'Content-Type': 'application/x-www-form-urlencoded'}, timeout=10)
+    except requests.RequestException as e:
+        return Response({'detail': 'Failed to reach Discord token endpoint', 'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+    if token_resp.status_code != 200:
+        # Discord가 반환한 에러 메시지 포함
+        return Response({'detail': 'Token exchange failed', 'discord_response': token_resp.text}, status=status.HTTP_400_BAD_REQUEST)
+
+    token_json = token_resp.json()
+    access_token = token_json.get('access_token')
+    if not access_token:
+        return Response({'detail': 'No access token returned by Discord', 'discord_response': token_json}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 2) 사용자 정보 조회 (/users/@me)
+    try:
+        user_info_resp = requests.get(DISCORD_USER_URL, headers={'Authorization': f'Bearer {access_token}'}, timeout=10)
+    except requests.RequestException as e:
+        return Response({'detail': 'Failed to reach Discord user endpoint', 'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+    if user_info_resp.status_code != 200:
+        return Response({'detail': 'Failed to fetch user info from Discord', 'discord_response': user_info_resp.text}, status=status.HTTP_400_BAD_REQUEST)
+
+    # discord_user 예시: { "id": "123", "username": "name", "discriminator": "0001", "email": "user@example.com", ... }
+    discord_user = user_info_resp.json()
+
+    discord_id = discord_user.get('id')
+    if not discord_id:
+        return Response({'detail': 'Discord response missing user id', 'discord_response': discord_user}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 3) 이미 연동된 계정 찾기: discord_id 로 User 검색
+    try:
+        user = User.objects.get(discord_id=discord_id)
+    except User.DoesNotExist:
+        # 연동된 계정이 없으면 클라이언트가 계정 연동을 유도하도록 400 반환
+        return Response({'detail': 'No linked account for this Discord user. Link Discord in account settings first.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 4) JWT 발급 (SimpleJWT 사용)
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
+        'user': {
+            'id': user.pk,
+            'email': user.email,
+            'username': getattr(user, 'username', None),
+        }
+    })

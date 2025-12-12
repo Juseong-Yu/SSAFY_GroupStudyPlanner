@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 
 import AppShell from '@/layouts/AppShell.vue'
 import QuestionList from '@/views/studies/exams/components/QuestionList.vue'
@@ -216,7 +216,7 @@ async function fetchExamDetail() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await axios.get<BackendExamDetail>(
+    const res = await client.get<BackendExamDetail>(
       `${API_BASE}/studies/${studyId.value}/exams/${examId.value}/`,
       {
         withCredentials: true,
@@ -276,7 +276,7 @@ async function submitExam() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.post(
+    await client.post(
       `${API_BASE}/studies/${studyId.value}/exams/${examId.value}/submit/`,
       {
         answers: answers.value,

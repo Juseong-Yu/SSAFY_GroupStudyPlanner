@@ -37,6 +37,10 @@ import os
 load_dotenv()
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 VUE_API_URL = os.getenv("VUE_API_URL")
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
+DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
+DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
+DISCORD_REDIRECT_URI_FOR_LOGIN = os.getenv("DISCORD_REDIRECT_URI_FOR_LOGIN")
 
 # GMS
 GMS_API_URL = os.getenv("GMS_API_URL")
@@ -98,7 +102,7 @@ SOCIALACCOUNT_PROVIDERS = {
 from datetime import timedelta
 SIMPLE_JWT = {
     # 기본값: ACCESS 5분, REFRESH 1일. 필요시 조정.
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     # 보안 권장: 리프레시 토큰 회전 및 블랙리스트 사용
     'ROTATE_REFRESH_TOKENS': True,
