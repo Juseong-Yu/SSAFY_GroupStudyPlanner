@@ -218,7 +218,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
 import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
 import ScheduleDetailModal from '@/components/ScheduleDetailModal.vue'
@@ -430,7 +430,7 @@ async function fetchStudy() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const { data } = await axios.get(`${API_BASE}/studies/${studyId.value}/`, {
+    const { data } = await client.get(`${API_BASE}/studies/${studyId.value}/`, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken || '',
@@ -451,7 +451,7 @@ async function fetchSchedules() {
   try {
     await ensureCsrf()
 
-    const { data } = await axios.get<StudyScheduleItem[]>(
+    const { data } = await client.get<StudyScheduleItem[]>(
       `${API_BASE}/studies/${studyId.value}/schedules/study_schedule_list/`,
       {
         withCredentials: true,
@@ -496,7 +496,7 @@ async function fetchNotices() {
   try {
     await ensureCsrf()
 
-    const { data } = await axios.get<ApiNotice[]>(
+    const { data } = await client.get<ApiNotice[]>(
       `${API_BASE}/studies/${studyId.value}/posts/notice_list/`,
       {
         withCredentials: true,
@@ -526,7 +526,7 @@ async function fetchExams() {
   try {
     await ensureCsrf()
 
-    const { data } = await axios.get<any[]>(
+    const { data } = await client.get<any[]>(
       `${API_BASE}/studies/${studyId.value}/exams/`,
       {
         withCredentials: true,
@@ -555,7 +555,7 @@ async function fetchMembers() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const { data } = await axios.get<any[]>(
+    const { data } = await client.get<any[]>(
       `${API_BASE}/studies/${studyId.value}/member_list/`,
       {
         withCredentials: true,
@@ -676,7 +676,7 @@ async function openDetailModal(id: number) {
 
   try {
     await ensureCsrf()
-    const { data } = await axios.get<ScheduleDetailApi>(
+    const { data } = await client.get<ScheduleDetailApi>(
       `${API_BASE}/studies/${studyId.value}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
@@ -731,7 +731,7 @@ async function handleDetailDelete(id: number) {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.delete(
+    await client.delete(
       `${API_BASE}/studies/${studyId.value}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
@@ -795,7 +795,7 @@ async function handleLeaveStudy() {
     const csrftoken = getCookie('csrftoken')
 
     // 🔥 실제 "나가기" 엔드포인트로 수정 필요
-    await axios.post(
+    await client.post(
       `${API_BASE}/studies/leave/`,
       {
         id: studyId.value,
@@ -828,7 +828,7 @@ async function handleDissolveStudy() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.delete(
+    await client.delete(
       `${API_BASE}/studies/${studyId.value}/study_delete/`,
       {
         withCredentials: true,
@@ -855,7 +855,7 @@ async function handleKickMember(memberId: number) {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.put(
+    await client.put(
       `${API_BASE}/studies/${studyId.value}/${memberId}/expel_member/`,
       {},
       {
@@ -880,7 +880,7 @@ async function handleChangeRole(memberId: number, role: StudyRole) {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await axios.put(
+    await client.put(
       `${API_BASE}/studies/${studyId.value}/change_role/`,
       {
         target_id: memberId,

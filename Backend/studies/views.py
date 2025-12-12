@@ -2,7 +2,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -27,8 +28,8 @@ def error_list(code):
 
 # 스터디 생성
 @csrf_exempt
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def study(request):
     if request.method == 'POST':
         serializer = StudySerializer(data=request.data)
@@ -48,8 +49,8 @@ def study(request):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 단일 스터디 조회
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def study_detail(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id=study_id)
@@ -62,8 +63,8 @@ def study_detail(request, study_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 # 스터디 가입
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def join(request):
     study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
@@ -87,8 +88,8 @@ def join(request):
         return Response({'message': '스터디에 가입되었습니다.'}, status=status.HTTP_201_CREATED)
 
 # 스터디 탈퇴
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def leave(request):
     study_id = request.data.get('id')
     study = get_object_or_404(Study, id=study_id)
@@ -107,8 +108,8 @@ def leave(request):
         return Response({'error': '이미 탈퇴한 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
 # 소속 스터디 조회
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def study_list(request):
     """
     로그인한 사용자가 속한 스터디 목록을 JSON으로 반환하는 함수
@@ -122,8 +123,8 @@ def study_list(request):
     serializer = StudyMembershipSerializer(memberships, many=True)
     return Response({"studies": serializer.data}, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_my_role(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id=study_id)
@@ -138,8 +139,8 @@ def get_my_role(request, study_id):
     serializer = StudyRoleSerializer(membership)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def member_list(request, study_id):
     """
     스터디 멤버면 누구나 조회 가능
@@ -160,8 +161,8 @@ def member_list(request, study_id):
     )
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def expel_member(request, study_id, user_id):
     """
     스터디 멤버 추방
@@ -190,8 +191,8 @@ def expel_member(request, study_id, user_id):
     target_membership.save()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-@login_required
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def change_role(request, study_id):
     """
     멤버 역할 변경
@@ -227,8 +228,8 @@ def change_role(request, study_id):
     serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def study_delete(request, study_id):
     """
     스터디 해산

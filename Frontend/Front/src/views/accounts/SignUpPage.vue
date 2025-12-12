@@ -281,10 +281,10 @@ const onSubmit = async () => {
     const params = new URLSearchParams()
     params.append('username', username.value)
     params.append('email', email.value)
-    params.append('password1', password.value)
-    params.append('password2', confirmPassword.value)
+    params.append('password', password.value)
+    params.append('password_confirm', confirmPassword.value)
 
-    await axios.post(`${API_BASE}/accounts/signup/`, params, {
+    await axios.post(`${API_BASE}/api/signup/`, params, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
