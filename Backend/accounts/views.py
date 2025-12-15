@@ -279,7 +279,6 @@ def connect_discord(request):
         "scope": "identify email"
     }
     url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
-    print(url)
     return Response({"auth_url": url})
 
 @api_view(['GET'])
