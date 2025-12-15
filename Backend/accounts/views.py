@@ -282,12 +282,12 @@ def connect_discord(request):
     return Response({"auth_url": url})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def discord_callback(request):
     """
     디스코드 콜백에서 사용자 계정과 연결
     """
-    code = request.GET.get("code")
+    code = request.query_params.get("code")
     if not code:
         return Response({"error": "Code missing"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -299,9 +299,20 @@ def discord_callback(request):
         "code": code,
         "redirect_uri": DISCORD_REDIRECT_URI,
     }
-    token_res = requests.post(DISCORD_TOKEN_URL, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
-    token_json = token_res.json()
 
+    token_res = requests.post(
+        DISCORD_TOKEN_URL,
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+
+    if token_res.status_code != 200:
+        return Response(
+            {"detail": "Token exchange failed", "discord_response": token_res.text},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    token_json = token_res.json()
     access_token = token_json.get("access_token")
     refresh_token = token_json.get("refresh_token")
 
@@ -310,9 +321,27 @@ def discord_callback(request):
         DISCORD_USER_URL,
         headers={"Authorization": f"Bearer {access_token}"}
     )
+    if user_res.status_code != 200:
+        return Response(
+            {"detail": "Failed to fetch Discord user", "discord_response": user_res.text},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
     discord_user = user_res.json()
 
+    if "id" not in discord_user:
+        return Response(
+            {"detail": "Invalid Discord user response", "discord_response": discord_user},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     # 3. 현재 로그인한 계정과 연결
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "User must be logged in to link Discord"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    
     user = request.user
     user.discord_id = discord_user["id"]
     user.discord_refresh_token = refresh_token

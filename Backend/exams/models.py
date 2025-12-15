@@ -1,9 +1,9 @@
 # exams/models.py
 from django.db import models
 from django.conf import settings
+from django.utils import timezone  # ✅ 추가 (아래 메서드들에서 사용)
 
-# 너 프로젝트의 Study 모델 경로에 맞게 수정해줘
-from studies.models import Study  # 예시
+from studies.models import Study
 
 
 class Exam(models.Model):
@@ -28,7 +28,21 @@ class Exam(models.Model):
         choices=VISIBILITY_CHOICES,
         default=VISIBILITY_PUBLIC,
     )
-    due_at = models.DateTimeField(null=True, blank=True)
+
+    # ✅ 새로 추가: 시험 시작 시간 (없으면 바로 응시 가능)
+    start_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='시험 입장 가능 시작 시각 (비워두면 바로 응시 가능)'
+    )
+
+    # ✅ 기존 필드: 시험 끝나는 시간(마감 시간)
+    # 네가 말한 "끝나는 시간" == 여기 due_at 으로 사용
+    due_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='시험 응시 마감 시각 (비워두면 시간 제한 없음)'
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -44,6 +58,63 @@ class Exam(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.study_id})'
+
+    # --------------------------
+    # ⬇ 편하게 쓰라고 상태/타이머용 헬퍼 메서드들
+    # --------------------------
+
+    def can_enter_now(self, now=None) -> bool:
+        """
+        지금 시점에 시험 입장이 가능한지 여부.
+        - start_at이 있고 아직 그 전이면 False
+        - due_at이 있고 이미 지났으면 False
+        """
+        if now is None:
+            now = timezone.now()
+
+        # 시작 전이면 입장 불가
+        if self.start_at and now < self.start_at:
+            return False
+
+        # 마감 이후면 입장 불가
+        if self.due_at and now > self.due_at:
+            return False
+
+        return True
+
+    def get_status(self, now=None) -> str:
+        """
+        시험 상태 문자열 리턴:
+        - 'scheduled' : 시작 전 (start_at > now)
+        - 'ongoing'   : 진행 중 (입장 가능)
+        - 'ended'     : 마감 이후
+        """
+        if now is None:
+            now = timezone.now()
+
+        if self.due_at and now > self.due_at:
+            return 'ended'
+
+        if self.start_at and now < self.start_at:
+            return 'scheduled'
+
+        return 'ongoing'
+
+    def get_remaining_seconds(self, now=None):
+        """
+        마감 시각(due_at)이 있을 때 남은 시간(초)을 리턴.
+        - due_at이 없으면 None
+        - 이미 지났으면 0
+        """
+        if self.due_at is None:
+            return None
+
+        if now is None:
+            now = timezone.now()
+
+        diff = (self.due_at - now).total_seconds()
+        return max(0, int(diff))
+
 
 
 class ExamQuestion(models.Model):
