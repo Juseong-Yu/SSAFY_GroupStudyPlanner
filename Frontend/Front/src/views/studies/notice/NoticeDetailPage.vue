@@ -103,7 +103,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import { MdPreview } from 'md-editor-v3'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
@@ -167,7 +167,7 @@ const onDelete = async () => {
   const csrftoken = getCookie('csrftoken')
 
   try {
-    await axios.delete(
+    await client.delete(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
         withCredentials: true,
@@ -201,7 +201,7 @@ onMounted(async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await axios.get(
+    const res = await client.get(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
         withCredentials: true,

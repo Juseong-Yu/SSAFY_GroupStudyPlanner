@@ -4,7 +4,7 @@ from django.utils import timezone
 from celery import shared_task
 from .models import Reminder, Schedule
 from studies.models import Study
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 import logging
 
 logger = logging.getLogger(__name__)

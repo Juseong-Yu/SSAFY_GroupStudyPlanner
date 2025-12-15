@@ -6,7 +6,8 @@ from django.conf import settings
 
 from datetime import timedelta
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -14,7 +15,7 @@ from .models import Schedule, StudySchedule, PersonalSchedule, Reminder
 from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer, ReminderSerializer
 from .tasks import send_schedule_notification
 from studies.models import Study, StudyMembership
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 
 
 # Create your views here.
@@ -32,8 +33,8 @@ def error_list(code):
                         status=status.HTTP_403_FORBIDDEN,
                         json_dumps_params={"ensure_ascii": False})
 
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def study_schedule_create(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id = study_id)
@@ -93,8 +94,8 @@ def study_schedule_create(request, study_id):
     )
     return Response(StudyScheduleSerializer(study_schedule).data, status=status.HTTP_201_CREATED)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def study_schedule_list(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id = study_id)
@@ -110,8 +111,8 @@ def study_schedule_list(request, study_id):
     schedules = StudySchedule.objects.filter(study_id=study_id)
     return Response(StudyScheduleSerializer(schedules, many=True).data, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def study_schedule_detail(request, study_id, schedule_id):
 
     user = request.user
@@ -176,8 +177,8 @@ def study_schedule_detail(request, study_id, schedule_id):
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def personal_schedule_create(request):
     user = request.user
 
@@ -191,16 +192,16 @@ def personal_schedule_create(request):
     )
     return Response(PersonalScheduleSerializer(personal_schedule).data, status=status.HTTP_201_CREATED)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def personal_schedule_list(request):
     user = request.user
 
     schedules = PersonalSchedule.objects.filter(user = user)
     return Response(PersonalScheduleSerializer(schedules, many=True).data, status=status.HTTP_200_OK)
 
-@login_required
 @api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def personal_schedule_detail(request, schedule_id):
     user = request.user
 
@@ -228,8 +229,8 @@ def personal_schedule_detail(request, schedule_id):
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def schedule_list(request):
     user = request.user
 

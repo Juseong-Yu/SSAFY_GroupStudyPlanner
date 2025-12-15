@@ -152,11 +152,11 @@
 
 <script setup>
 /**
- * ✅ axios를 사용하는 페이지에서는 반드시 CSRF 유틸 import 필요
+ * ✅ client를 사용하는 페이지에서는 반드시 CSRF 유틸 import 필요
  */
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import client from '@/api/client'
 import { useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import { useUserStore } from '@/stores/user'
@@ -192,7 +192,7 @@ const loadProfile = async () => {
 
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    const { data } = await axios.get(`${API_BASE}/accounts/search/`, {
+    const { data } = await client.get(`${API_BASE}/accounts/search/`, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken },
     })
@@ -261,6 +261,8 @@ const clearAvatarPreview = () => {
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+
 const onSubmit = async () => {
   submitError.value = ''
   if (!validatePasswords()) return
@@ -268,21 +270,35 @@ const onSubmit = async () => {
   try {
     submitting.value = true
     await ensureCsrf()
-    const csrftoken = getCookie('csrftoken')
+    const csrftoken = getCookie('csrftoken') || ''
 
+    // 1) 프로필 업데이트 (FormData)
     const fd = new FormData()
     fd.append('email', form.value.email)
-    fd.append('username', form.value.nickname) // ✅ 백엔드 username=nickname 일치
-    if (password1.value && password2.value) {
-      fd.append('password1', password1.value)
-      fd.append('password2', password2.value)
-    }
+    fd.append('username', form.value.nickname)
     if (avatarFile.value) fd.append('profile_img', avatarFile.value)
 
-    await axios.post(`${API_BASE}/accounts/update/`, fd, {
+    await client.patch(`${API_BASE}/api/update/`, fd, {
       withCredentials: true,
-      headers: { 'X-CSRFToken': csrftoken }, // FormData는 자동 Content-Type
+      headers: { 'X-CSRFToken': csrftoken },
     })
+
+    // 2) 비밀번호 변경 (JSON) - 비밀번호 입력이 있는 경우만
+    if (password1.value && password2.value) {
+      await client.post(
+        `${API_BASE}/api/password/`,
+        {
+          // 백엔드가 요구하면 current_password도 같이 보내야 함
+          // current_password: currentPassword.value,
+          password: password1.value,
+          new_password: password2.value,
+        },
+        {
+          withCredentials: true,
+          headers: { 'X-CSRFToken': csrftoken },
+        },
+      )
+    }
 
     saved.value = true
     password1.value = ''
@@ -290,7 +306,7 @@ const onSubmit = async () => {
     await loadProfile()
     await user.reset()
     router.push('/settings/profile')
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
     const data = err?.response?.data
     if (data && typeof data === 'object') {
@@ -304,6 +320,7 @@ const onSubmit = async () => {
     submitting.value = false
   }
 }
+
 
 const onCancel = () => {
   router.back()

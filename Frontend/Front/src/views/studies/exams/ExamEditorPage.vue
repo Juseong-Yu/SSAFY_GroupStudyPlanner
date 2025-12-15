@@ -276,7 +276,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import AppShell from '@/layouts/AppShell.vue'
 
@@ -396,7 +396,7 @@ const loadAiDraft = async () => {
   if (!props.draftId) return
 
   try {
-    const res = await axios.get(
+    const res = await client.get(
       `${API_BASE}/studies/${props.studyId}/exams/ai-draft/${props.draftId}/`,
       {
         withCredentials: true,
@@ -568,7 +568,8 @@ const submitExam = async () => {
       ai_draft_id: props.draftId,
     }
 
-    await axios.post(
+    await client.post(
+      // ⬇️ 여기도 exams → exam 으로 수정
       `${API_BASE}/studies/${props.studyId}/exams/`,
       payload,
       {

@@ -2,7 +2,8 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +12,7 @@ from .models import Notice, Post, UploadedImage
 from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSerializer
 from .tasks import send_notice_notification
 from studies.models import Study, StudyMembership
-from discord.models import DiscordStudyMapping
+from discord_bot.models import DiscordStudyMapping
 
 from django.conf import settings
 import requests
@@ -31,8 +32,8 @@ def error_list(code):
                         status=status.HTTP_403_FORBIDDEN,
                         json_dumps_params={"ensure_ascii": False})
 
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def notice_create(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id=study_id)
@@ -53,7 +54,7 @@ def notice_create(request, study_id):
         if serializer.is_valid():
 
             notice = serializer.save(author = request.user, study = study)
-            mapping = DiscordStudyMapping.objects.get(study=study_id)
+            mapping = DiscordStudyMapping.objects.filter(study=study_id).first()
             if mapping:
 
                 payload = {
@@ -70,8 +71,8 @@ def notice_create(request, study_id):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@login_required
 @api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def notice_detail(request, study_id, notice_id):
 
     user = request.user
@@ -109,8 +110,8 @@ def notice_detail(request, study_id, notice_id):
         notice.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@login_required
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def notice_list(request, study_id):
     user = request.user
     study = get_object_or_404(Study, id=study_id)
@@ -126,8 +127,8 @@ def notice_list(request, study_id):
     serializer = NoticeListSerializer(posts, many=True)
     return Response(serializer.data)
 
-@login_required
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def uploaded_image(request, study_id):
     """

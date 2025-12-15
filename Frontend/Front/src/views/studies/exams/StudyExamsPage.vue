@@ -163,7 +163,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
 import ExamCreateModal from '@/views/studies/exams/components/ExamCreateModal.vue'
 import ExamResultModal from '@/views/studies/exams/components/ExamResultModal.vue'
@@ -337,7 +337,7 @@ const fetchExams = async () => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await axios.get(`${API_BASE}/studies/${studyId}/exams/`, {
+    const res = await client.get(`${API_BASE}/studies/${studyId}/exams/`, {
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrftoken,
@@ -411,7 +411,9 @@ const openResultModal = async (exam: ExamListItem) => {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await axios.get(
+    // 백엔드에 /my_result/ 같은 엔드포인트 구현 가정
+    // 예: GET /studies/<study_id>/exams/<exam_id>/my_result/
+    const res = await client.get(
       `${API_BASE}/studies/${studyId}/exams/${exam.id}/my_result/`,
       {
         withCredentials: true,

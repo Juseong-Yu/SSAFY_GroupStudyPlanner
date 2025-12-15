@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import { MdEditor } from 'md-editor-v3'
@@ -119,7 +119,7 @@ const handleUploadImg = async (files: File[], callback: (urls: string[]) => void
       const form = new FormData()
       form.append('image', file)
 
-      const res = await axios.post(
+      const res = await client.post(
         `${API_BASE}/studies/${studyId}/posts/upload_img/`,
         form,
         {
@@ -154,7 +154,7 @@ const fetchNoticeDetail = async () => {
     isLoading.value = true
     await ensureCsrf()
 
-    const { data } = await axios.get(
+    const { data } = await client.get(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       {
         withCredentials: true,
@@ -196,7 +196,7 @@ const submitNotice = async () => {
       content: markdown.value.trim(),
     }
 
-    await axios.put(
+    await client.put(
       `${API_BASE}/studies/${studyId}/posts/notice_detail/${noticeId}/`,
       payload,
       {

@@ -144,7 +144,7 @@
 <script setup>
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
 import { useRouter } from 'vue-router'
 import * as bootstrap from 'bootstrap'
@@ -191,16 +191,20 @@ const onConfirmPassword = async () => {
     const csrftoken = getCookie('csrftoken')
 
     const params = new URLSearchParams()
+    const payload = {
+      password: password.value.trim(),
+    
+    }
     params.set('password', String(password.value).trim())
 
-    const res = await axios.post(
-      `${API_BASE}/accounts/check_password/`,
-      params,
+    const res = await client.post(
+      `${API_BASE}/api/check_password/`,
+      payload,
       {
         withCredentials: true,
         headers: {
           'X-CSRFToken': csrftoken,
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
       }
     )
@@ -227,7 +231,7 @@ const loadProfile = async () => {
     loading.value = true
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    const { data } = await axios.get(`${API_BASE}/accounts/search/`, {
+    const { data } = await client.get(`${API_BASE}/api/search/`, {
       withCredentials: true,
       headers: { 'X-CSRFToken': csrftoken },
     })

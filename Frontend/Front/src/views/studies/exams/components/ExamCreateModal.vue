@@ -164,7 +164,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
@@ -279,7 +279,7 @@ const onSubmit = async () => {
       formData.append('context_file', file.value)
     }
 
-    const res = await axios.post(
+    const res = await client.post(
       `${API_BASE}/studies/${props.studyId}/exams/ai-generate/`,
       formData,
       {
