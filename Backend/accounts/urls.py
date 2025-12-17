@@ -21,6 +21,6 @@ urlpatterns = [
     path("connect_discord/", views.connect_discord, name="connect_discord"),
     path("auth/discord/callback/", views.discord_callback, name="discord_callback"),
     path("login_with_discord/", views.login_with_discord, name="login_with_discord"),
-    path("discord_login_callback/", views.discord_login_callback, name="discord_login_callback"),
+    path("auth/discord/login/callback/", views.discord_login_callback, name="discord_login_callback"),
     
 ]
