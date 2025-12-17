@@ -353,7 +353,7 @@ def discord_callback(request):
 def login_with_discord(request):
     params = {
         "client_id": DISCORD_CLIENT_ID,
-        "redirect_url": DISCORD_REDIRECT_URI_FOR_LOGIN,
+        "redirect_uri": DISCORD_REDIRECT_URI_FOR_LOGIN,
         "response_type": "code",
         "scope": "identify email"
     }
@@ -370,7 +370,7 @@ def discord_login_callback(request):
     - 존재하면 JWT(access, refresh) 발급하여 반환.
     - 연동된 사용자가 없으면 400 (연동 필요).
     """
-    code = request.GET.get("code")
+    code = request.query_params.get("code")
     if not code:
         return Response({"detail": "code query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
 
