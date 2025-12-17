@@ -156,6 +156,7 @@ import { computed, onMounted, ref } from 'vue'
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
 import axios from 'axios'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import client from '@/api/client'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
 const googleLogoSrc = '/icons/web_neutral_rd_na@3x.png'
@@ -181,12 +182,12 @@ async function api<T>(
   await ensureCsrf()
   const csrftoken = getCookie('csrftoken')
 
-  return axios.request<T>({
+  return client.request<T>({
     method,
     url: `${API_BASE}${url}`,
     data,
     withCredentials: true,
-    headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+    headers: csrftoken ? { 'X-CSRFToken': csrftoken,  } : undefined,
   })
 }
 
@@ -235,8 +236,9 @@ async function fetchDiscordConnection() {
 async function startDiscordConnect() {
   discordLoading.value = true
   try {
-    const res = await api<{ authorize_url: string }>('get', '/api/discord/authorize-url/')
-    window.location.href = res.data.authorize_url
+    const res = await api<{ auth_url: string }>('get', '/api/connect_discord/')
+    window.location.href = res.data.auth_url
+    console.log(res)
   } catch (e) {
     console.error(e)
     discordStatus.value = 'unknown'
