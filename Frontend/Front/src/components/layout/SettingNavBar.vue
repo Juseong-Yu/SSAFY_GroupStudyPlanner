@@ -15,7 +15,7 @@
     </div>
 
     <!-- 메뉴 -->
-    <div class="menu-section flex-grow-1 mt-3">
+    <div class="menu-section grow mt-3">
       <ul class="list-unstyled mb-0">
         <li class="mb-2">
           <RouterLink
@@ -28,11 +28,11 @@
         </li>
         <li>
           <RouterLink
-            to="/accounts/password-check"
+            to="/settings/connect"
             class="nav-item-link d-flex align-items-center px-3 py-2 text-decoration-none text-dark"
           >
-            <i class="bi bi-gear me-2"></i>
-            설정
+            <i class="bi bi-plug-fill me-2"></i>
+            외부 서비스 연동
           </RouterLink>
         </li>
       </ul>
@@ -60,8 +60,9 @@
 /* RouterLink 활성화 색상 */
 .router-link-active {
   font-weight: 600;
-  color: #0d6efd !important;
+  color: #495057;
 }
+
 
 /* ✅ 오른쪽 상단 홈 버튼 */
 .home-btn {
