@@ -4,7 +4,7 @@
     <SettingNavBar />
 
     <div class="flex-grow-1 bg-white p-5">
-      <div class="container" style="max-width: 800px">
+      <div class="container" style="max-width: 1000px">
         <h3 class="fw-bold mb-4">회원정보</h3>
 
         <div class="card shadow-sm">
