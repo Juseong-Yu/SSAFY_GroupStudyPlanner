@@ -16,13 +16,17 @@
         <!-- 오른쪽 회원가입 폼 -->
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="signup-form-wrapper">
-            <h3 class="fw-bold mb-3 title-text">당신의 목표를 함께 이뤄줄<br />스터디 파트너</h3>
+            <h3 class="fw-bold mb-3 title-text">
+              당신의 목표를 함께 이뤄줄<br />스터디 파트너
+            </h3>
             <p class="text-muted">집중을 위한 출석 관리<br />목표 달성을 돕는 일정 알림</p>
 
-            <!-- 소셜 로그인 버튼 -->
+            <!-- 소셜 버튼 -->
             <div class="d-flex gap-2 mb-3">
               <button
+                type="button"
                 class="btn btn-google w-50 d-flex align-items-center justify-content-center gap-2"
+                @click="onSocial('google')"
               >
                 <img
                   src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -32,11 +36,14 @@
                 />
                 Sign Up with Google
               </button>
+
               <button
-                class="btn btn-kakao w-50 d-flex align-items-center justify-content-center gap-2"
+                type="button"
+                class="btn btn-discord w-50 d-flex align-items-center justify-content-center gap-2"
+                @click="onSocial('discord')"
               >
-                <img src="@/assets/kakao_icon.png" alt="Kakao" width="20" height="20" />
-                Sign Up with Kakao
+                <i class="bi bi-discord fs-5"></i>
+                Sign Up with Discord
               </button>
             </div>
 
@@ -98,8 +105,7 @@
                   type="password"
                   class="form-control"
                   :class="{
-                    'is-invalid':
-                      (!passwordsMatch && confirmPassword) || fieldError('password2'),
+                    'is-invalid': (!passwordsMatch && confirmPassword) || fieldError('password2'),
                   }"
                   placeholder="비밀번호 확인 입력"
                 />
@@ -160,41 +166,35 @@
       <div class="modal-content border-0 shadow">
         <div class="modal-header">
           <h5 class="modal-title fw-bold">서비스 이용약관</h5>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
         </div>
         <div class="modal-body">
           <div class="terms-content" v-html="termsHtml"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
-            확인
-          </button>
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">확인</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import axios from 'axios'
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors.ts'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import termsMd from '@/legal/terms_ko.md?raw'
 import { marked } from 'marked'
+import { useAuthStore } from '@/stores/authStore'
 
-// 마크다운 옵션 (AI 느낌 제거용)
 marked.setOptions({ mangle: false, headerIds: false })
 const termsHtml = ref(marked.parse(termsMd))
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
 const router = useRouter()
+const auth = useAuthStore()
 
 const username = ref('')
 const email = ref('')
@@ -203,12 +203,36 @@ const confirmPassword = ref('')
 const agree = ref(false)
 const loading = ref(false)
 
-const serverErrors = ref({})
+const serverErrors = ref<Record<string, string>>({})
 const nonFieldError = ref('')
 const passwordError = ref('')
 
-// ✅ 비밀번호 유효성 검증
-const validatePassword = (value) => {
+type SocialProvider = 'google' | 'discord'
+const onSocial = async (provider: SocialProvider) => {
+  try {
+    if (provider === 'google') {
+      console.warn('Google OAuth endpoint not wired yet')
+      return
+    }
+
+    // ✅ 디스코드 "로그인 링크 반환" 엔드포인트
+    const { data } = await axios.get<{ auth_url: string }>(
+      `${API_BASE}/api/login_with_discord/`,
+      { withCredentials: true },
+    )
+
+    if (!data?.auth_url) throw new Error('auth_url missing')
+
+    // ✅ 디스코드 인증 페이지로 이동
+    window.location.assign(data.auth_url)
+  } catch (err) {
+    console.error('[discord social login start] failed', err)
+    // 필요하면 UI 에러로 연결
+    // nonFieldError.value = '디스코드 로그인 시작에 실패했습니다.'
+  }
+}
+
+const validatePassword = (value: string) => {
   passwordError.value = ''
 
   if (value.length < 8) {
@@ -257,10 +281,7 @@ const canSubmit = computed(() => {
   )
 })
 
-const fieldError = (field) => {
-  if (!serverErrors.value) return ''
-  return serverErrors.value[field] || ''
-}
+const fieldError = (field: string) => serverErrors.value?.[field] || ''
 
 const resetErrors = () => {
   serverErrors.value = {}
@@ -270,7 +291,6 @@ const resetErrors = () => {
 const onSubmit = async () => {
   if (!canSubmit.value) return
   resetErrors()
-
   if (!validatePassword(password.value)) return
 
   loading.value = true
@@ -284,32 +304,32 @@ const onSubmit = async () => {
     params.append('password', password.value)
     params.append('password_confirm', confirmPassword.value)
 
+    // ✅ 1) 회원가입
     await axios.post(`${API_BASE}/api/signup/`, params, {
       withCredentials: true,
       headers: {
-        'X-CSRFToken': csrftoken,
+        ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     })
 
-    router.push('/login')
-  } catch (err) {
+    // ✅ 2) 회원가입 직후: 로그인 로직과 동일한 API(/api/token/)로 바로 로그인
+    await auth.login(email.value, password.value)
+
+    // ✅ 3) 성공 후 이동
+    router.replace('/main')
+  } catch (err: any) {
     console.error('Signup error:', err)
-    if (err.response) {
-      const data = err.response.data
-      if (typeof data === 'object') {
-        for (const [key, value] of Object.entries(data)) {
-          if (key === 'non_field_errors' || key === 'detail') {
-            nonFieldError.value = Array.isArray(value) ? value.join(', ') : value
-          } else {
-            serverErrors.value[key] = Array.isArray(value) ? value.join(', ') : value
-          }
-        }
-      } else {
-        nonFieldError.value = '회원가입 중 오류가 발생했습니다.'
+    const data = err?.response?.data
+
+    if (data && typeof data === 'object') {
+      for (const [key, value] of Object.entries(data as Record<string, any>)) {
+        const msg = Array.isArray(value) ? value.join(', ') : String(value)
+        if (key === 'non_field_errors' || key === 'detail') nonFieldError.value = msg
+        else serverErrors.value[key] = msg
       }
     } else {
-      nonFieldError.value = '서버와의 통신 중 문제가 발생했습니다.'
+      nonFieldError.value = '회원가입 중 오류가 발생했습니다.'
     }
   } finally {
     loading.value = false
@@ -331,23 +351,21 @@ const onSubmit = async () => {
 }
 
 /* 이미지 투명도 */
-.login-image img {
+.signup-image img {
   opacity: 0.8;
 }
 
 /* 카드형 흰 배경 박스 */
 .auth-surface {
   background: #ffffff;
-  border: 1px solid #e5e7eb; /* 슬레이트 200 */
+  border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   border-radius: 20px;
-
-  min-height: calc(100vh - 3rem); /* 화면 기반 최소 높이 통일 */
+  min-height: calc(100vh - 3rem);
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 내부 폼을 수직 중앙 정렬 */
+  justify-content: center;
 }
-
 
 .signup-form-wrapper {
   width: 100%;
@@ -369,9 +387,8 @@ const onSubmit = async () => {
 
 /* 약관 본문 */
 .terms-content {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', 'Apple SD Gothic Neo',
-    'Malgun Gothic', 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR',
+    'Apple SD Gothic Neo', 'Malgun Gothic', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.92rem;
   line-height: 1.65;
   color: #2b2f36;
@@ -379,112 +396,42 @@ const onSubmit = async () => {
   margin: 0 auto;
 }
 
-.terms-content h1,
-.terms-content h2,
-.terms-content h3,
-.terms-content h4 {
-  font-weight: 600;
-  letter-spacing: 0.1px;
-  color: #1f2328;
-  margin: 1rem 0 0.5rem;
-}
-
-.terms-content h1 {
-  font-size: 1.05rem;
-}
-.terms-content h2 {
-  font-size: 1.02rem;
-}
-.terms-content h3 {
-  font-size: 1rem;
-}
-.terms-content h4 {
-  font-size: 0.98rem;
-}
-
-.terms-content p,
-.terms-content ul,
-.terms-content ol {
-  margin: 0.5rem 0;
-}
-
-.terms-content ul,
-.terms-content ol {
-  padding-left: 1.1rem;
-}
-.terms-content li + li {
-  margin-top: 0.25rem;
-}
-
-.terms-content hr {
-  border: none;
-  border-top: 1px solid #eceff3;
-  margin: 0.9rem 0;
-}
-
-.terms-content a {
-  color: #0d6efd;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.terms-content a:hover {
-  color: #0a58ca;
-}
-
-/* 모달 */
-.modal-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #24292f;
-}
-.modal-body {
-  padding: 1.25rem 1.25rem 1rem;
-}
-
 /* 버튼 스타일 */
 .btn-signup {
-  border: 1px solid #94a3b8;     /* slate-400 */
-  color: #334155;                /* slate-700 */
+  border: 1px solid #94a3b8;
+  color: #334155;
   background-color: transparent;
   border-radius: 999px;
   padding: 0.6rem 1rem;
   font-weight: 600;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-
 .btn-signup:hover {
   background-color: rgba(148, 163, 184, 0.08);
   border-color: #64748b;
 }
 
-
-
-/* 소셜 로그인 버튼 */
+/* 소셜 버튼 */
 .btn-google {
   background-color: #ffffff;
   color: #444444;
   border: 1px solid #dddddd;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 .btn-google:hover {
   background-color: #f5f5f5;
 }
 
-.btn-kakao {
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #fee500;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+/* ✅ Discord */
+.btn-discord {
+  background-color: #5865f2; /* Discord blurple */
+  color: #ffffff;
+  border: 1px solid #5865f2;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.btn-kakao:hover {
-  background-color: #fee500;
-  color: #000000;
+.btn-discord:hover {
+  background-color: #4752c4;
+  border-color: #4752c4;
+  color: #ffffff;
 }
 </style>

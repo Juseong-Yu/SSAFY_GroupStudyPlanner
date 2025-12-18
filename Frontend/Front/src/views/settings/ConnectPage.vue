@@ -26,7 +26,7 @@
                   <div class="d-flex align-items-center gap-2">
                     <h5 class="mb-0 fw-bold">Discord</h5>
 
-                    <!-- ✅ 상태 배지: 연동 중 / 연동 안 됨 / 확인 불가 / 연동됨 -->
+                    <!-- ✅ 상태 배지 -->
                     <span class="badge" :class="discordStatusBadgeClass">
                       {{ discordStatusLabel }}
                     </span>
@@ -35,10 +35,10 @@
               </div>
 
               <div class="d-flex gap-2">
-                <!-- ✅ Discord: 브랜드 컬러 버튼 -->
+                <!-- ✅ 연결 -->
                 <button
                   v-if="!isDiscordConnected"
-                  class="btn discord-btn d-flex align-items-center gap-2 "
+                  class="btn discord-btn d-flex align-items-center gap-2"
                   type="button"
                   :disabled="discordLoading"
                   @click="startDiscordConnect"
@@ -48,6 +48,7 @@
                   {{ discordLoading ? '연결 중...' : '디스코드 연결' }}
                 </button>
 
+                <!-- ✅ 해제 -->
                 <button
                   v-else
                   class="btn btn-outline-danger d-flex align-items-center gap-2"
@@ -129,7 +130,7 @@
           </div>
         </div>
 
-        <!-- ✅ 저장 성공 토스트 (disconnect 성공에도 재사용 가능) -->
+        <!-- ✅ 저장 성공 토스트 -->
         <div
           v-if="saved"
           class="toast align-items-center text-bg-success show position-fixed bottom-0 end-0 m-4"
@@ -154,48 +155,32 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import SettingNavBar from '@/components/layout/SettingNavBar.vue'
-import axios from 'axios'
-import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import client from '@/api/client'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
-const googleLogoSrc = '/icons/web_neutral_rd_na@3x.png'
+/* =========================
+ * 공통 타입
+ * ========================= */
+type LinkStatus = 'loading' | 'connected' | 'disconnected' | 'unknown'
 
-/** 공통 타입 */
-type OAuthConnection = {
+/** ✅ 서버 스펙: { discord: true/false } */
+type OAuthStatusResponse = {
+  discord: boolean
+}
+
+/** ✅ Google은 기존 스펙 유지(코드에 이미 connected를 쓰고 있어서 타입 정의 필요) */
+type GoogleConnectionResponse = {
   connected: boolean
   username?: string
   email?: string
 }
 
-/** ✅ 상태 타입: 연동 중 / 연동 안 됨 / 확인 불가 / 연동됨 */
-type LinkStatus = 'loading' | 'connected' | 'disconnected' | 'unknown'
-
 const saved = ref(false)
 
-/** ✅ CSRF 포함 공통 요청 헬퍼 */
-async function api<T>(
-  method: 'get' | 'post' | 'put' | 'patch' | 'delete',
-  url: string,
-  data?: any,
-) {
-  await ensureCsrf()
-  const csrftoken = getCookie('csrftoken')
-
-  return client.request<T>({
-    method,
-    url: `${API_BASE}${url}`,
-    data,
-    withCredentials: true,
-    headers: csrftoken ? { 'X-CSRFToken': csrftoken,  } : undefined,
-  })
-}
-
 /* =========================
- * Discord (로그인 연동만)
+ * Discord
  * ========================= */
 const discordLoading = ref(false)
-const discordConnection = ref<OAuthConnection | null>(null)
 const discordStatus = ref<LinkStatus>('loading')
 
 const isDiscordConnected = computed(() => discordStatus.value === 'connected')
@@ -208,7 +193,6 @@ const discordStatusLabel = computed(() => {
       return '연동됨'
     case 'disconnected':
       return '연동 안 됨'
-    case 'unknown':
     default:
       return '확인 불가'
   }
@@ -224,9 +208,8 @@ const discordStatusBadgeClass = computed(() => ({
 async function fetchDiscordConnection() {
   discordStatus.value = 'loading'
   try {
-    const res = await api<OAuthConnection>('get', '/api/discord/connection/')
-    discordConnection.value = res.data
-    discordStatus.value = res.data.connected ? 'connected' : 'disconnected'
+    const res = await client.get<OAuthStatusResponse>('/api/get_connected_oauth/')
+    discordStatus.value = res.data.discord ? 'connected' : 'disconnected'
   } catch (e) {
     console.error(e)
     discordStatus.value = 'unknown'
@@ -236,9 +219,14 @@ async function fetchDiscordConnection() {
 async function startDiscordConnect() {
   discordLoading.value = true
   try {
-    const res = await api<{ auth_url: string }>('get', '/api/connect_discord/')
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    const res = await client.get<{ auth_url: string }>('/api/connect_discord/', {
+      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {},
+    })
+
     window.location.href = res.data.auth_url
-    console.log(res)
   } catch (e) {
     console.error(e)
     discordStatus.value = 'unknown'
@@ -250,9 +238,19 @@ async function startDiscordConnect() {
 async function disconnectDiscord() {
   discordLoading.value = true
   saved.value = false
+
   try {
-    await api('post', '/api/discord/disconnect/')
-    discordConnection.value = { connected: false }
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await client.post(
+      '/api/discord/disconnect/',
+      {},
+      {
+        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {},
+      },
+    )
+
     discordStatus.value = 'disconnected'
     saved.value = true
   } catch (e) {
@@ -266,8 +264,9 @@ async function disconnectDiscord() {
 /* =========================
  * Google (유지)
  * ========================= */
+const googleLogoSrc = '/icons/web_neutral_rd_na@3x.png'
 const googleLoading = ref(false)
-const googleConnection = ref<OAuthConnection | null>(null)
+const googleConnection = ref<GoogleConnectionResponse | null>(null)
 const googleStatus = ref<LinkStatus>('loading')
 
 const isGoogleConnected = computed(() => googleStatus.value === 'connected')
@@ -280,7 +279,6 @@ const googleStatusLabel = computed(() => {
       return '연동됨'
     case 'disconnected':
       return '연동 안 됨'
-    case 'unknown':
     default:
       return '확인 불가'
   }
@@ -296,7 +294,7 @@ const googleStatusBadgeClass = computed(() => ({
 async function fetchGoogleConnection() {
   googleStatus.value = 'loading'
   try {
-    const res = await api<OAuthConnection>('get', '/api/google/connection/')
+    const res = await client.get<GoogleConnectionResponse>('/api/google/connection/')
     googleConnection.value = res.data
     googleStatus.value = res.data.connected ? 'connected' : 'disconnected'
   } catch (e) {
@@ -308,7 +306,13 @@ async function fetchGoogleConnection() {
 async function startGoogleConnect() {
   googleLoading.value = true
   try {
-    const res = await api<{ auth_url: string }>('get', '/api/google/authorize-url/')
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    const res = await client.get<{ auth_url: string }>('/api/google/authorize-url/', {
+      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {},
+    })
+
     window.location.href = res.data.auth_url
   } catch (e) {
     console.error(e)
@@ -321,8 +325,19 @@ async function startGoogleConnect() {
 async function disconnectGoogle() {
   googleLoading.value = true
   saved.value = false
+
   try {
-    await api('post', '/api/google/disconnect/')
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    await client.post(
+      '/api/google/disconnect/',
+      {},
+      {
+        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {},
+      },
+    )
+
     googleConnection.value = { connected: false }
     googleStatus.value = 'disconnected'
     saved.value = true

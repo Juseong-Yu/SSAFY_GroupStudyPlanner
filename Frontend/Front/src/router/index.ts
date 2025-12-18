@@ -69,6 +69,11 @@ const router = createRouter({
       name: 'DiscordCallback',
       component: () => import('@/views/auth/DiscordCallbackView.vue'),
     },
+    {
+      path: '/api/auth/discord/login/callback', // ✅ 추천
+      name: 'DiscordLog',
+      component: () => import('@/views/auth/DiscordLoginView.vue'),
+    },
 
 
     // ===== 스터디 관련 라우트들 (모두 role 필요) =====

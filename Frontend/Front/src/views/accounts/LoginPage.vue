@@ -1,10 +1,12 @@
 <template>
   <div class="container min-vh-100 py-3 d-flex align-items-center login-page">
-    <!-- 🔶 중앙 카드 래퍼 (auth-surface) -->
+    <!-- 🔶 중앙 카드 래퍼 -->
     <div class="auth-surface w-100 p-3 p-lg-4">
       <div class="row w-100 g-5">
         <!-- 왼쪽 이미지 -->
-        <div class="col-lg-6 login-image d-none d-lg-flex justify-content-center align-items-center">
+        <div
+          class="col-lg-6 login-image d-none d-lg-flex justify-content-center align-items-center"
+        >
           <img
             src="@/assets/login.png"
             alt="로그인 이미지"
@@ -16,9 +18,11 @@
         <!-- 오른쪽 로그인 폼 -->
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="login-form-wrapper">
-            <h3 class="fw-bold mb-3 title-text">다시 오신 것을 환영합니다!</h3>
+            <h3 class="fw-bold mb-3 title-text">
+              다시 오신 것을 환영합니다!
+            </h3>
 
-            <!-- 소셜 로그인 버튼 -->
+            <!-- 소셜 로그인 -->
             <div class="d-flex gap-2 mb-4">
               <button
                 class="btn btn-google w-50 d-flex align-items-center justify-content-center gap-2"
@@ -34,16 +38,11 @@
               </button>
 
               <button
-                class="btn btn-kakao w-50 d-flex align-items-center justify-content-center gap-2"
-                @click="onSocial('kakao')"
+                class="btn btn-discord w-50 d-flex align-items-center justify-content-center gap-2"
+                @click="onSocial('discord')"
               >
-                <img
-                  src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/kakaotalk.svg"
-                  alt="Kakao"
-                  width="20"
-                  height="20"
-                />
-                Log In with Kakao
+                <i class="bi bi-discord fs-5"></i>
+                Log In with Discord
               </button>
             </div>
 
@@ -79,13 +78,22 @@
                     type="button"
                     class="btn btn-link btn-eye-absolute"
                     @click="showPassword = !showPassword"
-                    :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 보기'"
+                    :aria-label="
+                      showPassword ? '비밀번호 숨기기' : '비밀번호 보기'
+                    "
                     tabindex="-1"
                   >
-                    <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <i
+                      :class="
+                        showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'
+                      "
+                    ></i>
                   </button>
                 </div>
-                <div class="invalid-feedback d-block" v-if="fieldError('password')">
+                <div
+                  class="invalid-feedback d-block"
+                  v-if="fieldError('password')"
+                >
                   {{ fieldError('password') }}
                 </div>
               </div>
@@ -103,13 +111,21 @@
                 </label>
               </div>
 
-              <!-- 서버 공통 에러 -->
-              <div class="alert alert-danger py-2" v-if="nonFieldError" role="alert">
+              <!-- 서버 에러 -->
+              <div
+                class="alert alert-danger py-2"
+                v-if="nonFieldError"
+                role="alert"
+              >
                 {{ nonFieldError }}
               </div>
 
               <!-- 로그인 버튼 -->
-              <button type="submit" class="btn btn-login w-100" :disabled="!canSubmit || loading">
+              <button
+                type="submit"
+                class="btn btn-login w-100"
+                :disabled="!canSubmit || loading"
+              >
                 <span
                   v-if="loading"
                   class="spinner-border spinner-border-sm me-2"
@@ -121,7 +137,7 @@
             </form>
 
             <p class="text-center mt-3">
-              아직 회원가입 안하셨나요?
+              아직 회원가입 안 하셨나요?
               <RouterLink to="/signup" class="link-primary fw-semibold">
                 SIGN UP
               </RouterLink>
@@ -138,6 +154,13 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { fetchAllStores } from '@/stores/fetchAllStores'
+import axios from 'axios'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
+
+type SocialProvider = 'google' | 'discord'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -151,17 +174,40 @@ const loading = ref(false)
 const serverErrors = ref<Record<string, string | undefined>>({})
 const nonFieldError = ref('')
 
-const canSubmit = computed(() => !!email.value && !!password.value && !loading.value)
+const canSubmit = computed(
+  () => !!email.value && !!password.value && !loading.value,
+)
 
-const fieldError = (field: 'email' | 'password') => serverErrors.value[field] || ''
+const fieldError = (field: 'email' | 'password') =>
+  serverErrors.value[field] || ''
 
 const resetErrors = () => {
   serverErrors.value = {}
   nonFieldError.value = ''
 }
 
-const onSocial = (provider: 'google' | 'kakao') => {
-  console.log('social login:', provider)
+const onSocial = async (provider: SocialProvider) => {
+  try {
+    if (provider === 'google') {
+      console.warn('Google OAuth endpoint not wired yet')
+      return
+    }
+
+    // ✅ 디스코드 "로그인 링크 반환" 엔드포인트
+    const { data } = await axios.get<{ auth_url: string }>(
+      `${API_BASE}/api/login_with_discord/`,
+      { withCredentials: true },
+    )
+
+    if (!data?.auth_url) throw new Error('auth_url missing')
+
+    // ✅ 디스코드 인증 페이지로 이동
+    window.location.assign(data.auth_url)
+  } catch (err) {
+    console.error('[discord social login start] failed', err)
+    // 필요하면 UI 에러로 연결
+    // nonFieldError.value = '디스코드 로그인 시작에 실패했습니다.'
+  }
 }
 
 const onSubmit = async () => {
@@ -171,9 +217,7 @@ const onSubmit = async () => {
   loading.value = true
 
   try {
-    // 🔐 여기서 authStore.login 사용
     await auth.login(email.value.trim(), password.value)
-
     await fetchAllStores()
     router.push('/main')
   } catch (err: any) {
@@ -182,7 +226,8 @@ const onSubmit = async () => {
       const mapped: Record<string, string> = {}
 
       ;['email', 'password', 'non_field_errors', 'detail'].forEach((k) => {
-        if (data[k]) mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
+        if (data[k])
+          mapped[k] = Array.isArray(data[k]) ? data[k][0] : String(data[k])
       })
 
       serverErrors.value = {
@@ -191,7 +236,9 @@ const onSubmit = async () => {
       }
 
       nonFieldError.value =
-        mapped.non_field_errors || mapped.detail || '로그인에 실패했습니다.'
+        mapped.non_field_errors ||
+        mapped.detail ||
+        '로그인에 실패했습니다.'
     } else {
       nonFieldError.value = '네트워크 오류가 발생했습니다.'
     }
@@ -201,36 +248,28 @@ const onSubmit = async () => {
 }
 </script>
 
-
 <style scoped>
-/* 전체 배경 */
 .login-page {
   background: #f6f8fb;
   overflow-y: auto;
 }
 
-/* 중앙 흰색 카드 */
 .auth-surface {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   border-radius: 20px;
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
-
   min-height: calc(100vh - 3rem);
   display: flex;
-  flex-direction: column;
   justify-content: center;
 }
 
-/* 내용 영역 */
 .login-form-wrapper {
   width: 100%;
   max-width: 560px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: auto;
 }
+
 @media (min-width: 992px) {
   .login-form-wrapper {
     max-width: 640px;
@@ -238,7 +277,6 @@ const onSubmit = async () => {
   }
 }
 
-/* 이미지 투명도 */
 .login-image img {
   opacity: 0.8;
 }
@@ -247,7 +285,6 @@ const onSubmit = async () => {
   color: #0f172a;
 }
 
-/* 비밀번호 입력칸 */
 .pw-wrap .form-control {
   padding-right: 2.75rem;
 }
@@ -257,20 +294,18 @@ const onSubmit = async () => {
   top: 50%;
   right: 0.625rem;
   transform: translateY(-50%);
-  height: 2.375rem;
   width: 2.375rem;
+  height: 2.375rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #6c757d;
-  padding: 0;
-  text-decoration: none;
 }
+
 .btn-eye-absolute:hover {
   color: #0d6efd;
 }
 
-/* 로그인 버튼 - 중성 톤 */
 .btn-login {
   border: 1px solid #94a3b8;
   color: #334155;
@@ -278,34 +313,35 @@ const onSubmit = async () => {
   border-radius: 999px;
   padding: 0.6rem 1rem;
   font-weight: 600;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
 }
+
 .btn-login:hover {
   background-color: rgba(148, 163, 184, 0.08);
   border-color: #64748b;
 }
 
-/* 소셜 로그인 버튼 */
+/* Google */
 .btn-google {
   background-color: #ffffff;
-  color: #444444;
-  border: 1px solid #dddddd;
+  color: #444;
+  border: 1px solid #ddd;
 }
+
 .btn-google:hover {
   background-color: #f5f5f5;
 }
 
-.btn-kakao {
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #fee500;
+/* Discord */
+.btn-discord {
+  background-color: #5865f2;
+  color: #ffffff;
+  border: 1px solid #5865f2;
 }
-.btn-kakao:hover {
-  background-color: #fee500;
-  color: #000000;
+
+.btn-discord:hover {
+  background-color: #4752c4;
+  border-color: #4752c4;
+  color: #ffffff;
 }
 
 @media (max-width: 992px) {
