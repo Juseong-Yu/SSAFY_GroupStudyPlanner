@@ -30,6 +30,7 @@ class DiscordStudyMapping(models.Model):
     스터디-디스코드 채널 매핑
     """
     study = models.OneToOneField(Study, primary_key=True, on_delete=models.CASCADE)
+    guild = models.ForeignKey(DiscordGuild, null=True, blank=True, on_delete=models.CASCADE)
     channel = models.ForeignKey(DiscordChannel, null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:

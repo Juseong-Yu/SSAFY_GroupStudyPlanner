@@ -91,133 +91,146 @@ def channel_schedule_list(request):
         result.append(res)
     return Response(result, status=status.HTTP_200_OK)
 
-import requests
 from django.conf import settings
+from urllib.parse import urlencode
+import requests
 
-class DiscordOAuthCallbackView(APIView):
+class DiscordBotInviteView(APIView):
     """
-    디스코드 OAuth 콜백
-    - 디스코드 계정과 웹 계정의 discord_id 일치 여부 검증
-    - 사용자가 속한 Guild 목록 반환
+    Discord 봇 초대 OAuth URL 반환
     """
-
-    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        code = request.query_params.get("code")
-        if not code:
-            return Response({"detail": "Authorization code missing"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        token_res = requests.post(
-            "https://discord.com/api/oauth2/token",
-            data = {
-                "client_id": settings.DISCORD_CLIENT_ID,
-                "client_secret": settings.DISCORD_CLIENT_SECRET,
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": settings.DISCORD_REDIRECT_URI,
-            },
-            headers = {"Content-Type": "application/x-www-form-urlencoded"},
-        )
-
-        if token_res.status_code != 200:
-            return Response({"detail": "Token exchange failed"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        access_token = token_res.json().get("access_token")
-
-        user_res = request.get(
-            "https://discord.com/api/users/@me",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-
-        discord_user = user_res.json()
-        discord_user_id = discord_user.get("id")
-
-        if str(request.user.discord_id) != str(discord_user_id):
-            return Response(
-                {"detail": "Discord account mismatch"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        guilds_res = requests.get(
-            "https://discord.com/api/users/@me/guilds",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-
-        return Response({
-            "guilds": guilds_res.json()
-        })
-
-class DiscordGuildChannelListView(APIView):
-    """
-    특정 Guild의 채널 목록 조회
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, guild_id):
-        headers = {
-            "Authorization": f"Bot {settings.DISCORD_BOT_TOKEN}"
+        params = {
+            "client_id": settings.DISCORD_CLIENT_ID,
+            "redirect_uri": settings.DISCORD_REDIRECT_URI_CONNECT_STUDY,
+            # "response_type": "code",
+            "scope": "bot",
+            "permissions": settings.DISCORD_PERMISSIONS,
         }
 
-        res = requests.get(
-            f"https://discord.com/api/guilds/{guild_id}/channels",
-            headers=headers
+        url = f"{settings.DISCORD_OAUTH_URL}?{urlencode(params)}"
+        return Response({"url": url})
+
+class DiscordBotCallbackView(APIView):
+    """
+    봇 초대 완료 후 callback
+    - guild_id는 query parameter로 전달됨
+    """
+
+    def get(self, request, study_id):
+        guild_id = request.query_params.get("guild_id")
+
+        if not guild_id:
+            return Response({"detail": "guild_id가 전달되지 않았습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 서버 정보 조회
+        guild_res = requests.get(
+            f"https://discord.com/api/guilds/{guild_id}",
+            headers = {
+                "Authorization": f"Bot {settings.DISCORD_BOT_TOKEN}"
+            }
         )
 
-        if res.status_code != 200:
-            return Response({"detail": "Failed to fetch channels"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        channels = [
-            c for c in res.json()
-            if c.get("type") == 0
-        ]
+        if guild_res.status_code != 200:
+            return Response(
+                {"detail": "Bot is not invited or lacks permission"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        guild_data = guild_res.json()
+        icon = guild_data.get("icon")
+        icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon}.png" if icon else None
 
-        return Response(channels)
-
-class ConnectStudyDiscordChannelView(APIView):
-    """
-    스터디 관리자 디스코드 채널 연동
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, study_id):
-        study = get_object_or_404(Study, id=study_id)
-
-        if study.leader != request.user:
-            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-        
-        guild_id = int(request.data.get("guild_id"))
-        guild_name = request.data.get("guild_name")
-        guild_icon = request.data.get("icon_url")
-
-        channel_id = int(request.data.get("channel_id"))
-        channel_name = request.data.get("channel_name")
-
-        guild, _ = DiscordGuild.objects.update_or_crete(
+        guild, _ = DiscordGuild.objects.update_or_create(
             id = guild_id,
             defaults = {
-                "name": guild_name,
-                "icon_url": guild_icon,
+                "name": guild_data.get("name"),
+                "icon_url": icon_url,
                 "is_active": True,
             }
         )
-
-        channel, _ = DiscordChannel.objects.update_or_create(
-            id = channel_id,
-            defaults={
-                "guild": guild,
-                "name": channel_name,
-                "is_active": True,
-            }
-        )
-
-        DiscordStudyMapping.objects.update_or_create(
+        
+        study = get_object_or_404(Study, id=study_id)
+        mapping, _ = DiscordStudyMapping.objects.update_or_create(
             study=study,
             defaults={
+                "guild": guild,
+                "channel": None
+            }
+        )
+
+        return Response({"detail": "successfully invited"}, status=status.HTTP_200_OK)
+
+class FetchGuildChannel(APIView):
+
+    # 서버 채널 목록 조회
+    def get(self, request, study_id, guild_id):
+        channel_res = requests.get(
+            f"https://discord.com/api/guilds/{guild_id}/channels",
+            headers = {
+                "Authorization": f"Bot {settings.DISCORD_BOT_TOKEN}"
+            }
+        )
+
+        if channel_res.status_code != 200:
+            return Response(
+                {"detail": "Failed to fetch channels"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        guild = get_object_or_404(DiscordGuild, id=guild_id)
+        mapping = get_object_or_404(
+            DiscordStudyMapping,
+            study_id=study_id,
+            guild=guild
+        )
+
+        channel_list = []
+        for ch in channel_res.json():
+            if ch["type"] == 0:
+                channel, _ = DiscordChannel.objects.update_or_create(
+                    id = ch["id"],
+                    guild=guild,
+                    defaults = {
+                        "name": ch.get("name"),
+                        "is_active": True,
+                    }
+                )
+                channel_list.append({
+                    "id": channel.id,
+                    "name": channel.name,
+                })
+        
+        return Response({
+            "guild": {
+                "id": guild.id,
+                "name": guild.name,
+            },
+            "channels": channel_list,
+        })
+
+class DiscordStudyChannelConnectView(APIView):
+    """
+    선택한 Discord 채널을 스터디와 연결
+    """
+
+    def post(self, request, study_id):
+        channel_id = request.data.get("channel_id")
+
+        if not channel_id:
+            return Response({"detail": "channel_id가 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        study = Study.objects.get(id=study_id)
+        channel = DiscordChannel.objects.get(id=channel_id)
+
+        DiscordStudyMapping.objects.update_or_create(
+            study = study,
+            defaults = {
                 "channel": channel
             }
         )
 
-        return Response({"detail": "Discord channel connected successfully"})
+        return Response({
+            "detail": "successfully connected"
+        }, status=status.HTTP_200_OK)
