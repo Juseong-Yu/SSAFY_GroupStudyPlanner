@@ -15,6 +15,8 @@ import SchedulePage from '@/views/studies/schedule/SchedulePage.vue'
 import StudyExamsPage from '@/views/studies/exams/StudyExamsPage.vue'
 import ExamEditorPage from '@/views/studies/exams/ExamEditorPage.vue'
 import ExamTakePage from '@/views/studies/exams/ExamTakePage.vue'
+import ConnectPage from '@/views/settings/ConnectPage.vue'
+
 
 // 🔥 스터디 역할 스토어
 import { useStudyRoleStore } from '@/stores/studyRoleStore'
@@ -57,6 +59,17 @@ const router = createRouter({
       name: 'ProfileUpdate',
       component: ProfileUpdatePage,
     },
+    {
+      path: '/settings/connect',
+      name: 'Connect',
+      component: ConnectPage,
+    },
+    {
+      path: '/api/auth/discord/callback', // ✅ 추천
+      name: 'DiscordCallback',
+      component: () => import('@/views/auth/DiscordCallbackView.vue'),
+    },
+
 
     // ===== 스터디 관련 라우트들 (모두 role 필요) =====
     {
