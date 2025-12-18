@@ -281,7 +281,7 @@ def connect_discord(request):
     url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
     return Response({"auth_url": url})
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([AllowAny])
 def discord_callback(request):
     """
@@ -381,7 +381,7 @@ def discord_login_callback(request):
         'client_secret': DISCORD_CLIENT_SECRET,
         'grant_type': 'authorization_code',
         'code': code,
-        'redirect_uri': DISCORD_REDIRECT_URI
+        'redirect_uri': DISCORD_REDIRECT_URI_FOR_LOGIN
     }
 
     # x-www-form-urlencoded 로 전송
