@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import ProtectedView, LogoutView, DiscordCallbackView, RegisterView
+from .views import ProtectedView, LogoutView, RegisterView
 
 app_name = 'accounts'
 
