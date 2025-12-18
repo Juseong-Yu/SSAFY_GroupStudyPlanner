@@ -433,3 +433,14 @@ def discord_login_callback(request):
             'username': getattr(user, 'username', None),
         }
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_connected_oauth(request):
+    user = request.user
+    data = {}
+    if (user.discord_id):
+        data["discord"] = True
+    else:
+        data["discord"] = False
+    return Response(data, status=status.HTTP_200_OK)
