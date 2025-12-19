@@ -82,7 +82,7 @@ const router = createRouter({
     {
     path: '/discord/connect',
     name: 'DiscordConnect',
-    component: () => import('@/views/DiscordConnectView.vue'),
+    component: () => import('@/views/auth/DiscordConnectView.vue'),
     },
 
     // ===== 스터디 관련 라우트들 (모두 role 필요) =====

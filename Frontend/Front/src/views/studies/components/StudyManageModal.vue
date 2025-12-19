@@ -377,6 +377,19 @@ const discordSaveStatus = ref<DiscordSaveStatus>('idle')
 const discordError = ref('')
 const discordChannelsError = ref('')
 
+/* ---------------- ✅ pending studyId 저장 (sessionStorage) ---------------- */
+const DISCORD_PENDING_KEY = 'nestudy-discord-pending'
+
+type PendingDiscord = {
+  studyId: number
+  createdAt: number
+}
+
+function saveDiscordPending(studyId: number) {
+  const pending: PendingDiscord = { studyId, createdAt: Date.now() }
+  sessionStorage.setItem(DISCORD_PENDING_KEY, JSON.stringify(pending))
+}
+
 // 1) 연결된 서버 조회: GET /studies/<study_id>/discord/server/
 async function fetchDiscordGuild() {
   discordError.value = ''
@@ -447,6 +460,9 @@ async function startDiscordServerConnect() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
+    // ✅ (추가) 디스코드 초대 시작 시점에 현재 스터디 id를 sessionStorage에 저장
+    saveDiscordPending(props.studyId)
+
     // ✅ 여기만 바뀜: 스터디 id 포함된 invite 엔드포인트
     const res = await client.get<{ url: string }>(
       `${API_BASE}/studies/${props.studyId}/discord/bot/invite/`,
@@ -455,7 +471,6 @@ async function startDiscordServerConnect() {
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
       },
     )
-
     window.location.href = res.data.url
   } catch (e: any) {
     console.error(e)
