@@ -18,10 +18,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
+    discord_id = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "password_confirm")
+        fields = ("id", "username", "email", "password", "password_confirm", "discord_id")
     
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -41,9 +42,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("password_confirm")
         password = validated_data.pop("password")
+        discord_id = validated_data.pop("discord_id", None)
 
         user = User(**validated_data)
         user.set_password(password)
+
+        if discord_id:
+            user.discord_id = discord_id
+
         user.save()
         return user
 
