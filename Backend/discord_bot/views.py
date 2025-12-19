@@ -119,8 +119,7 @@ class DiscordBotCallbackView(APIView):
     """
 
     def get(self, request, study_id):
-        guild_id = request.query_params.get("guild_id")
-
+        guild_id = request.query_params.get("guild_id") 
         if not guild_id:
             return Response({"detail": "guild_id가 전달되지 않았습니다."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -137,7 +136,8 @@ class DiscordBotCallbackView(APIView):
                 {"detail": "Bot is not invited or lacks permission"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
+
         guild_data = guild_res.json()
         icon = guild_data.get("icon")
         icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon}.png" if icon else None

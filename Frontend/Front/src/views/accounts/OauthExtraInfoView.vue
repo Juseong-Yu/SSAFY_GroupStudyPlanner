@@ -4,9 +4,11 @@
     <div class="auth-surface w-100 p-4 p-lg-5">
       <div class="row w-100 g-5">
         <!-- 왼쪽 이미지 (원하면 유지) -->
-        <div class="col-lg-6 signup-image d-flex justify-content-center align-items-center">
+        <div
+          class="col-lg-6 signup-image d-flex justify-content-center align-items-center"
+        >
           <img
-            src="@/assets/signup.png"
+            src="@/assets/oauth.png"
             alt="추가정보 입력"
             class="img-fluid"
             style="max-width: 80%"
@@ -19,7 +21,9 @@
             <h3 class="fw-bold mb-3 title-text">
               소셜 로그인 완료!<br />추가정보만 입력하면 끝
             </h3>
-            <p class="text-muted">스터디 참여를 위해 닉네임/약관 동의가 필요해요.</p>
+            <p class="text-muted">
+              스터디 참여를 위해 닉네임/약관 동의가 필요해요.
+            </p>
 
             <!-- OAuth 프리필 카드 -->
             <div class="card border-0 shadow-sm mb-3" v-if="prefillLoaded">
@@ -107,7 +111,10 @@
                   class="btn btn-link p-0 text-decoration-none"
                   @click="showPassword = !showPassword"
                 >
-                  <i class="bi" :class="showPassword ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                  <i
+                    class="bi"
+                    :class="showPassword ? 'bi-chevron-up' : 'bi-chevron-down'"
+                  ></i>
                   <span class="ms-1">비밀번호도 설정하기 (선택)</span>
                 </button>
                 <div class="text-muted small mt-1">
@@ -125,7 +132,9 @@
                     :class="{ 'is-invalid': passwordError || fieldError('password') }"
                     placeholder="비밀번호 입력"
                   />
-                  <div class="invalid-feedback" v-if="passwordError">{{ passwordError }}</div>
+                  <div class="invalid-feedback" v-if="passwordError">
+                    {{ passwordError }}
+                  </div>
                   <div class="invalid-feedback" v-else-if="fieldError('password')">
                     {{ fieldError('password') }}
                   </div>
@@ -147,7 +156,10 @@
                   <div class="invalid-feedback" v-if="form.password_confirm && !passwordsMatch">
                     비밀번호가 일치하지 않습니다.
                   </div>
-                  <div class="invalid-feedback" v-else-if="fieldError('password_confirm')">
+                  <div
+                    class="invalid-feedback"
+                    v-else-if="fieldError('password_confirm')"
+                  >
                     {{ fieldError('password_confirm') }}
                   </div>
                 </div>
@@ -155,7 +167,12 @@
 
               <!-- 약관 -->
               <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="terms" v-model="form.agree" />
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="terms"
+                  v-model="form.agree"
+                />
                 <label class="form-check-label" for="terms">
                   I accept the
                   <button
@@ -173,31 +190,30 @@
                 {{ nonFieldError }}
               </div>
 
-              <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit || loading">
+              <!-- ✅ 버튼 1개: 가입 완료 -->
+              <button
+                type="submit"
+                class="btn btn-login w-100"
+                :disabled="!canSubmit || loading"
+              >
                 <span v-if="loading" class="spinner-border spinner-border-sm me-2" />
                 가입 완료
               </button>
 
-              <button
-                type="button"
-                class="btn btn-outline-secondary w-100 mt-2"
-                :disabled="loading"
-                @click="goLogin"
-              >
-                로그인 페이지로
-              </button>
+              <!-- ✅ 링크 형태: 로그인 페이지로 돌아가기 -->
+              <div class="text-center mt-3">
+                <router-link to="/login" class="login-back-link">
+                  이미 계정이 있나요? 로그인으로 돌아가기
+                </router-link>
+              </div>
             </form>
-
-            <p class="text-center mt-3 small text-muted">
-              소셜 로그인 제공자: <span class="fw-semibold">{{ providerLabel }}</span>
-            </p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 약관 모달(너희 프로젝트 기존거 있으면 그대로 가져다 쓰면 됨) -->
+    <!-- ✅ 약관 모달 -->
   <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content border-0 shadow">
@@ -206,9 +222,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
         </div>
         <div class="modal-body">
-          <p class="text-muted mb-0">
-            (여기에 약관 내용을 넣거나, md/HTML로 렌더링해서 보여주면 됨)
-          </p>
+          <div class="terms-content" v-html="termsHtml"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -224,7 +238,11 @@ import axios from 'axios'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import termsMd from '@/legal/terms_ko.md?raw'
+import { marked } from 'marked'
 
+marked.setOptions({ mangle: false, headerIds: false })
+const termsHtml = ref(marked.parse(termsMd))
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
 const route = useRoute()
 const router = useRouter()
@@ -310,7 +328,10 @@ const validatePassword = () => {
 
 const passwordsMatch = computed(() => {
   if (!showPassword.value) return true
-  return form.value.password_confirm === '' || form.value.password === form.value.password_confirm
+  return (
+    form.value.password_confirm === '' ||
+    form.value.password === form.value.password_confirm
+  )
 })
 
 const canSubmit = computed(() => {
@@ -328,11 +349,6 @@ const canSubmit = computed(() => {
 /**
  * ✅ 프리필 로드
  * GET /api/oauth/prefill/
- * 응답 예시:
- * {
- *  provider, provider_user_id, email, display_name, avatar_url,
- *  needs_extra_info: true/false
- * }
  */
 const loadPrefill = async () => {
   resetErrors()
@@ -345,9 +361,9 @@ const loadPrefill = async () => {
     prefill.value = data
     prefillLoaded.value = true
 
-    // ✅ 이미 추가정보가 필요 없으면 바로 메인으로
+    // ✅ 이미 추가정보가 필요 없으면 로그인 페이지로
     if (data.needs_extra_info === false) {
-      router.replace('/main')
+      router.replace('/login')
       return
     }
 
@@ -366,12 +382,9 @@ const loadPrefill = async () => {
 
 onMounted(loadPrefill)
 
-const goLogin = () => router.push('/login')
-
 /**
  * ✅ 가입 완료
  * POST /api/oauth/complete_signup/
- * payload 예시: { email, username, agree, password?, password_confirm? }
  */
 const onSubmit = async () => {
   if (!canSubmit.value) return
@@ -403,7 +416,8 @@ const onSubmit = async () => {
       },
     })
 
-    router.replace('/main')
+    // ✅ 가입 완료 후 로그인 페이지로 이동
+    router.replace('/login')
   } catch (err: any) {
     console.error('[oauth complete] failed', err)
     const data = err?.response?.data
@@ -427,6 +441,7 @@ const onSubmit = async () => {
   overflow-y: auto;
   background: #f6f8fb;
 }
+
 .auth-surface {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -437,24 +452,55 @@ const onSubmit = async () => {
   flex-direction: column;
   justify-content: center;
 }
+
 .signup-form-wrapper {
   width: 100%;
   max-width: 560px;
   margin-left: auto;
   margin-right: auto;
 }
+
 @media (min-width: 992px) {
   .signup-form-wrapper {
     max-width: 640px;
     margin-left: 2rem;
   }
 }
+
 @media (max-width: 992px) {
   .signup-image {
     display: none !important;
   }
 }
+
 .title-text {
   color: #0f172a;
+}
+
+/* ✅ 요청한 버튼 스타일 */
+.btn-login {
+  border: 1px solid #94a3b8;
+  color: #334155;
+  background-color: transparent;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+}
+
+.btn-login:hover {
+  background-color: rgba(148, 163, 184, 0.08);
+  border-color: #64748b;
+}
+
+/* ✅ 링크처럼 보이는 로그인 이동 */
+.login-back-link {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.login-back-link:hover {
+  text-decoration: underline;
+  color: #334155;
 }
 </style>
