@@ -73,7 +73,7 @@
             </div>
           </div>
 
-          <!-- ✅ 1.5) Discord 설정 -->
+          <!-- ✅ Discord 설정 -->
           <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="fw-semibold mb-0">Discord 설정</h6>
@@ -86,9 +86,7 @@
               {{ discordError }}
             </div>
 
-            <!-- ✅ 모달 톤(라이트)과 자연스럽게 -->
             <div class="border rounded p-3 bg-light-subtle">
-              <!-- 연결된 서버명 + 서버 변경 버튼 -->
               <div class="text-muted small mb-2">연결된 서버명</div>
 
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -156,7 +154,7 @@
             </div>
           </div>
 
-          <!-- 2) (리더 전용) 멤버 관리 -->
+          <!-- (리더 전용) 멤버 관리 ... (원래 코드 유지) -->
           <div v-if="isLeader" class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="fw-semibold mb-0">스터디 멤버 관리</h6>
@@ -293,14 +291,39 @@ interface StudyMember {
 
 type DiscordSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
-// ✅ 선택지 A: 스터디에 저장된 서버/채널을 백엔드가 제공
-interface StudyDiscordServer {
-  guild_id: string
-  guild_name: string
-  channel_id?: string | null
+/** ✅ GET /studies/<study>/discord/get_connected_guild/ 응답 */
+interface ConnectedGuildResponse {
+  study: {
+    leader: number
+    created_at: string
+  }
+  guild: {
+    id: number
+    name: string
+    icon_url: string | null
+    is_active: boolean
+  }
+  channel: {
+    id: number
+    name: string
+    is_active: boolean
+    guild: number
+  } | null
 }
 
-// 프론트는 기존 템플릿 유지하려고, 내부에서 이 형태로 매핑해서 씀
+/** ✅ GET /studies/<study_id>/discord/<guild_id>/fetch_guild_channel/ 응답 */
+interface FetchGuildChannelResponse {
+  guild: {
+    id: number
+    name: string
+  }
+  channels: Array<{
+    id: number
+    name: string
+  }>
+}
+
+/** 템플릿 유지용 */
 interface ConnectedGuild {
   id: string
   name: string
@@ -310,7 +333,6 @@ interface ConnectedGuild {
 interface DiscordChannel {
   id: string
   name: string
-  type?: string
 }
 
 const props = defineProps<{
@@ -365,7 +387,7 @@ function onRoleChange(memberId: number, e: Event) {
   emit('change-role', memberId, value)
 }
 
-/* ---------------- ✅ Discord 연동 (API 스펙 맞춤) ---------------- */
+/* ---------------- ✅ Discord 연동 ---------------- */
 const discordGuild = ref<ConnectedGuild | null>(null)
 const discordChannels = ref<DiscordChannel[]>([])
 const discordSelectedChannelId = ref<string | null>(null)
@@ -379,25 +401,21 @@ const discordChannelsError = ref('')
 
 /* ---------------- ✅ pending studyId 저장 (sessionStorage) ---------------- */
 const DISCORD_PENDING_KEY = 'nestudy-discord-pending'
-
-type PendingDiscord = {
-  studyId: number
-  createdAt: number
-}
+type PendingDiscord = { studyId: number; createdAt: number }
 
 function saveDiscordPending(studyId: number) {
   const pending: PendingDiscord = { studyId, createdAt: Date.now() }
   sessionStorage.setItem(DISCORD_PENDING_KEY, JSON.stringify(pending))
 }
 
-// 1) 연결된 서버 조회: GET /studies/<study_id>/discord/server/
+/** 1) 연동된 서버/채널 조회 */
 async function fetchDiscordGuild() {
   discordError.value = ''
   await ensureCsrf()
   const csrftoken = getCookie('csrftoken')
 
-  const res = await client.get<StudyDiscordServer | null>(
-    `${API_BASE}/studies/${props.studyId}/discord/server/`,
+  const res = await client.get<ConnectedGuildResponse>(
+    `${API_BASE}/studies/${props.studyId}/discord/get_connected_guild/`,
     {
       withCredentials: true,
       headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
@@ -405,22 +423,24 @@ async function fetchDiscordGuild() {
   )
 
   const data = res.data
-  if (!data) {
+
+  // guild가 없으면 미연동 취급
+  if (!data?.guild) {
     discordGuild.value = null
     discordSelectedChannelId.value = null
     return
   }
 
-  // 템플릿은 그대로 쓰기 위해 매핑
   discordGuild.value = {
-    id: data.guild_id,
-    name: data.guild_name,
-    notify_channel_id: data.channel_id ?? null,
+    id: String(data.guild.id),
+    name: data.guild.name,
+    notify_channel_id: data.channel ? String(data.channel.id) : null,
   }
-  discordSelectedChannelId.value = data.channel_id ?? null
+
+  discordSelectedChannelId.value = discordGuild.value.notify_channel_id ?? null
 }
 
-// 2) 서버 채널 목록 조회: GET /discord/<guild_id>/fetch_guild_channel/
+/** 2) 서버 채널 목록 조회 */
 async function fetchDiscordChannels() {
   discordChannelsError.value = ''
   discordChannels.value = []
@@ -431,19 +451,17 @@ async function fetchDiscordChannels() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const res = await client.get<DiscordChannel[]>(
-      `${API_BASE}/discord/${discordGuild.value.id}/fetch_guild_channel/`,
+    const res = await client.get<FetchGuildChannelResponse>(
+      `${API_BASE}/studies/${props.studyId}/discord/${discordGuild.value.id}/fetch_guild_channel/`,
       {
         withCredentials: true,
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
       },
     )
-
-    // text 채널만 보여주고 싶으면 필터
-    discordChannels.value = res.data.filter((c) => {
-      if (!c.type) return true
-      return c.type === 'text' || c.type === 'GUILD_TEXT'
-    })
+    discordChannels.value = res.data.channels.map((c) => ({
+      id: String(c.id),
+      name: c.name,
+    }))
   } catch (e: any) {
     console.error(e)
     discordChannelsError.value =
@@ -453,24 +471,21 @@ async function fetchDiscordChannels() {
   }
 }
 
-// 3) 봇 초대 링크: ✅ GET /studies/<study_id>/discord/bot/invite/  -> { url }
+/** 3) 봇 초대 링크 */
 async function startDiscordServerConnect() {
   discordLoadingConnect.value = true
   try {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // ✅ (추가) 디스코드 초대 시작 시점에 현재 스터디 id를 sessionStorage에 저장
+    // ✅ 초대 시작 시점에 studyId 저장
     saveDiscordPending(props.studyId)
 
-    // ✅ 여기만 바뀜: 스터디 id 포함된 invite 엔드포인트
-    const res = await client.get<{ url: string }>(
-      `${API_BASE}/studies/${props.studyId}/discord/bot/invite/`,
-      {
-        withCredentials: true,
-        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
-      },
-    )
+    const res = await client.get<{ url: string }>(`${API_BASE}/discord/bot/invite/`, {
+      withCredentials: true,
+      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+    })
+
     window.location.href = res.data.url
   } catch (e: any) {
     console.error(e)
@@ -481,7 +496,7 @@ async function startDiscordServerConnect() {
   }
 }
 
-// 4) 채널 연결: POST /studies/<study_id>/discord/connect_channel/
+/** 4) 선택한 채널을 스터디와 연결 */
 async function patchDiscordNotifyChannel(channelId: string) {
   discordSaveStatus.value = 'saving'
   try {
@@ -517,9 +532,7 @@ function onChangeDiscordChannel(e: Event) {
   patchDiscordNotifyChannel(channelId)
 }
 
-/**
- * ✅ 모달 열릴 때마다 최신화 (자동 재오픈/복원 없음)
- */
+/** ✅ 모달 열릴 때마다 최신화 */
 watch(
   () => props.show,
   async (v) => {
@@ -532,7 +545,7 @@ watch(
 </script>
 
 <style scoped>
-/* 헤더 */
+/* (스타일은 이전 그대로) */
 .modal-header-custom {
   padding: 1rem 1.5rem;
   background: white;
@@ -548,7 +561,6 @@ watch(
   margin-top: 0.2rem;
 }
 
-/* 백드롭/모달 */
 .study-manage-backdrop {
   position: fixed;
   inset: 0;
@@ -585,7 +597,6 @@ watch(
   }
 }
 
-/* 내 정보 섹션 */
 .info-section {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -650,7 +661,6 @@ watch(
   color: #16a34a;
 }
 
-/* 참여 코드 박스 */
 .study-code-box {
   min-width: 96px;
   padding: 0.25rem 0.75rem;
@@ -681,7 +691,6 @@ watch(
   color: #0f172a;
 }
 
-/* 멤버 */
 .member-avatar {
   width: 32px;
   height: 32px;
@@ -711,7 +720,6 @@ watch(
   background-color: #fff5f5;
 }
 
-/* ✅ Discord 섹션: 라이트 톤 + 버튼만 디스코드 컬러 */
 .server-pill-light {
   background: #ffffff;
   border: 1px solid #e2e8f0;
