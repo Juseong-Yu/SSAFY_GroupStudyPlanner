@@ -6,7 +6,7 @@ class StudySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Study
-        fields = ('leader', 'created_at')
+        fields = ('id', 'name', 'leader', 'created_at')
         read_only_fields = ('leader', 'created_at')
 
 class StudyMembersSerializer(serializers.ModelSerializer):
