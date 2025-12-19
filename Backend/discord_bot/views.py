@@ -173,7 +173,6 @@ class FetchGuildChannel(APIView):
                 "Authorization": f"Bot {settings.DISCORD_BOT_TOKEN}"
             }
         )
-
         if channel_res.status_code != 200:
             return Response(
                 {"detail": "Failed to fetch channels"},
@@ -199,13 +198,13 @@ class FetchGuildChannel(APIView):
                     }
                 )
                 channel_list.append({
-                    "id": channel.id,
+                    "id": str(channel.id),
                     "name": channel.name,
                 })
         
         return Response({
             "guild": {
-                "id": guild.id,
+                "id": str(guild.id),
                 "name": guild.name,
             },
             "channels": channel_list,
