@@ -35,6 +35,7 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(request.data)
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -43,6 +44,7 @@ class RegisterView(APIView):
             "id": user.id,
             "email": user.email,
             "username": user.username,
+            "discord_id": user.discord_id,
             "profile_img": request.build_absolute_uri(user.profile_img.url) if user.profile_img else None
         }, status=status.HTTP_201_CREATED)
 
@@ -299,21 +301,31 @@ def discord_login_callback(request):
     # 3) 이미 연동된 계정 찾기: discord_id 로 User 검색
     try:
         user = User.objects.get(discord_id=discord_id)
+        
+        # JWT 발급 (SimpleJWT 사용)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'type': 'login',
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.pk,
+                'email': user.email,
+                'username': getattr(user, 'username', None),
+            }
+        })
+    
     except User.DoesNotExist:
-        # 연동된 계정이 없으면 클라이언트가 계정 연동을 유도하도록 400 반환
-        return Response({'detail': 'No linked account for this Discord user. Link Discord in account settings first.'}, status=status.HTTP_400_BAD_REQUEST)
+        # 연동된 사용자가 없음: 회원가입/연동 필요
+        return Response({
+            'type': 'register',
+            'discord': {
+                'discord_id': discord_id,
+                'username': discord_user.get('username'),
+                'email': discord_user.get('email'),
+            }
+        }, status=status.HTTP_200_OK)
 
-    # 4) JWT 발급 (SimpleJWT 사용)
-    refresh = RefreshToken.for_user(user)
-    return Response({
-        'access': str(refresh.access_token),
-        'refresh': str(refresh),
-        'user': {
-            'id': user.pk,
-            'email': user.email,
-            'username': getattr(user, 'username', None),
-        }
-    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

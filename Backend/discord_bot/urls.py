@@ -13,5 +13,6 @@ urlpatterns = [
     path("bot/callback/", DiscordBotCallbackView.as_view()),
     path("<int:guild_id>/fetch_guild_channel/", FetchGuildChannel.as_view()),
     path("connect_channel/", DiscordStudyChannelConnectView.as_view()),
-
+    path("get_connected_guild/", GetConnectedDiscordGuild.as_view()),
+    
 ]

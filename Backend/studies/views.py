@@ -9,7 +9,7 @@ from rest_framework import status
 
 from accounts.models import User
 from .models import Study, StudyMembership
-from .serializers import StudySerializer, StudyMembershipSerializer, StudyRoleSerializer, RoleSerializer
+from .serializers import StudySerializer, StudyMembersSerializer, StudyMembershipSerializer, StudyRoleSerializer, RoleSerializer
 
 # Create your views here.
 
