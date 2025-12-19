@@ -18,4 +18,4 @@ class DiscordStudyMappingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscordStudyMapping
-        fields = '__all__'
+        fields = ('study', 'channel')
