@@ -99,12 +99,12 @@ class DiscordBotInviteView(APIView):
     """
     Discord 봇 초대 OAuth URL 반환
     """
-
-    def get(self, request):
+    def get(self, request, study_id):
         params = {
             "client_id": settings.DISCORD_CLIENT_ID,
             "redirect_uri": settings.DISCORD_REDIRECT_URI_CONNECT_STUDY,
-            # "response_type": "code",
+            # "redirect_uri": "http://localhost:8000/studies/1/discord/bot/callback/",
+            "response_type": "code",
             "scope": "bot",
             "permissions": settings.DISCORD_PERMISSIONS,
         }
@@ -163,8 +163,9 @@ class DiscordBotCallbackView(APIView):
         return Response({"detail": "successfully invited"}, status=status.HTTP_200_OK)
 
 class FetchGuildChannel(APIView):
-
-    # 서버 채널 목록 조회
+    """
+    봇이 초대된 서버의 채널 목록 조회
+    """
     def get(self, request, study_id, guild_id):
         channel_res = requests.get(
             f"https://discord.com/api/guilds/{guild_id}/channels",
