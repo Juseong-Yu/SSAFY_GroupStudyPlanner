@@ -14,8 +14,9 @@ class DiscordChannelSerializer(serializers.ModelSerializer):
 
 class DiscordStudyMappingSerializer(serializers.ModelSerializer):
     study = StudySerializer(read_only=True)
+    guild = DiscordGuildSerializer(read_only=True)
     channel = DiscordChannelSerializer(read_only=True)
 
     class Meta:
         model = DiscordStudyMapping
-        fields = ('study', 'channel')
+        fields = ('study', 'guild', 'channel')

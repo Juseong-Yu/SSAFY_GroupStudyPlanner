@@ -235,3 +235,15 @@ class DiscordStudyChannelConnectView(APIView):
         return Response({
             "detail": "successfully connected"
         }, status=status.HTTP_200_OK)
+
+class GetConnectedDiscordGuild(APIView):
+    """
+    스터디에 연결된 Discord 서버 정보 조회
+    """
+
+    def get(self, request, study_id):
+        mapping = get_object_or_404(DiscordStudyMapping, study_id=study_id)
+        if not mapping.guild:
+            return Response({"detail": "No guild connected"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = DiscordStudyMappingSerializer(mapping)
+        return Response(serializer.data, status=status.HTTP_200_OK)
