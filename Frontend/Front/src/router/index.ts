@@ -74,7 +74,16 @@ const router = createRouter({
       name: 'DiscordLog',
       component: () => import('@/views/auth/DiscordLoginView.vue'),
     },
-
+    {
+      path: '/accounts/OauthInfo',
+      name: 'OauthInfo',
+      component: () => import('@/views/accounts/OauthExtraInfoView.vue'),
+    },
+    {
+    path: '/discord/connect',
+    name: 'DiscordConnect',
+    component: () => import('@/views/DiscordConnectView.vue'),
+    },
 
     // ===== 스터디 관련 라우트들 (모두 role 필요) =====
     {
@@ -85,6 +94,7 @@ const router = createRouter({
         requiresStudyRole: true,
       },
     },
+    
     {
       path: '/studies/:id/notice',
       name: 'NoticeMain',
