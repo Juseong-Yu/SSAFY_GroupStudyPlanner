@@ -163,8 +163,9 @@ class DiscordBotCallbackView(APIView):
         return Response({"detail": "successfully invited"}, status=status.HTTP_200_OK)
 
 class FetchGuildChannel(APIView):
-
-    # 서버 채널 목록 조회
+    """
+    봇이 초대된 서버의 채널 목록 조회
+    """
     def get(self, request, study_id, guild_id):
         channel_res = requests.get(
             f"https://discord.com/api/guilds/{guild_id}/channels",
