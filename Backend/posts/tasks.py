@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
-def send_notice_notification(self, study_id, notice_id):
+def send_notice_notification(self, study_id, notice_id, payload):
 
     try:
         notice = Notice.objects.get(id=notice_id)
@@ -23,15 +23,6 @@ def send_notice_notification(self, study_id, notice_id):
     if not mapping:
         logger.info(f"send_notice_notification: no discord mapping for notice {notice_id}")
         return
-    print(notice.author)
-    payload = {
-                    "channel_id": mapping.channel.id,
-                    "study_name": study.name,
-                    "title": notice.title,
-                    "content": notice.content,
-                    "author": notice.author.username,
-                    "url": f"{settings.VUE_API_URL}studies/{study_id}/notice/{notice.id}"
-                }
     
     url = f"{settings.DISCORD_WEBHOOK_URL}notice/"
 

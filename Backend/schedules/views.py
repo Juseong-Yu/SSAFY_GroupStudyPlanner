@@ -61,7 +61,7 @@ def study_schedule_create(request, study_id):
     if mapping:
 
         payload = {
-            "channel_id": mapping.channel.id,
+            "channel_id": mapping.channel_id,
             "study_name": study.name,
             "title": schedule_serializer.data["title"],
             "content": schedule_serializer.data["description"],
@@ -70,7 +70,7 @@ def study_schedule_create(request, study_id):
             "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
         }
 
-        send_schedule_notification.delay(study_id, schedule.id)
+        send_schedule_notification.delay(study_id, schedule.id, payload)
 
         # reminder 생성
         if reminder_data:
