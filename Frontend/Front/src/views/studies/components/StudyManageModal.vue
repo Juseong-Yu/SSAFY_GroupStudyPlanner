@@ -433,7 +433,7 @@ async function fetchDiscordGuild() {
   }
 
   discordGuild.value = {
-    id: String(data.guild_id),
+    id: String(data.guild.id),
     name: data.guild.name,
     notify_channel_id: data.channel ? String(data.channel.id) : null,
   }

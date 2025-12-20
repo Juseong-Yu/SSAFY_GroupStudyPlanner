@@ -2,13 +2,16 @@
 import { defineStore } from 'pinia'
 import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import type { Dictionary } from '@fullcalendar/core/internal'
 
 export interface AuthState {
   access: string | null
   refresh: string | null
+  discord : Dictionary | null
 }
 
 type DiscordLoginCallbackResponse = {
+  type: 'login' | 'register' | null
   access: string
   refresh: string
   user: {
@@ -16,12 +19,18 @@ type DiscordLoginCallbackResponse = {
     email: string
     username: string | null
   }
+  discord: {
+    discord_id: string,
+    username: string,
+    email: string
+}
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     access: null,
     refresh: null,
+    discord: null
   }),
 
   getters: {
@@ -65,14 +74,17 @@ export const useAuthStore = defineStore('auth', {
         },
       )
 
-      const { access, refresh } = res.data
-
+      const { access, refresh, type } = res.data
       // ✅ persist가 localStorage(nestudy-auth)에 저장
-      this.access = access
-      this.refresh = refresh
-
-      // (선택) user도 저장하고 싶으면 AuthState에 user 추가해서 여기서 넣으면 됨
-      return res.data.user
+      if (type === 'login'){
+        this.access = access
+        this.refresh = refresh
+        // (선택) user도 저장하고 싶으면 AuthState에 user 추가해서 여기서 넣으면 됨
+        return res.data
+      }else if(type === 'register'){
+        this.discord = res.data.discord
+        return res.data
+      } 
     },
 
     logout() {
