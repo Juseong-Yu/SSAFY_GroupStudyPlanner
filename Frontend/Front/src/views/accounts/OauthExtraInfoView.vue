@@ -4,9 +4,7 @@
     <div class="auth-surface w-100 p-4 p-lg-5">
       <div class="row w-100 g-5">
         <!-- 왼쪽 이미지 (원하면 유지) -->
-        <div
-          class="col-lg-6 signup-image d-flex justify-content-center align-items-center"
-        >
+        <div class="col-lg-6 signup-image d-flex justify-content-center align-items-center">
           <img
             src="@/assets/oauth.png"
             alt="추가정보 입력"
@@ -19,11 +17,9 @@
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="signup-form-wrapper">
             <h3 class="fw-bold mb-3 title-text">
-              소셜 로그인 완료!<br />추가정보만 입력하면 끝
+              소셜 로그인 중<br />추가정보를 입력해주세요.
             </h3>
-            <p class="text-muted">
-              스터디 참여를 위해 닉네임/약관 동의가 필요해요.
-            </p>
+            <p class="text-muted">회원가입을 위해 닉네임/비밀번호/약관 동의가 필요해요.</p>
 
             <!-- OAuth 프리필 카드 -->
             <div class="card border-0 shadow-sm mb-3" v-if="prefillLoaded">
@@ -49,9 +45,7 @@
 
                 <div class="flex-grow-1">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge" :class="providerBadgeClass">
-                      {{ providerLabel }}
-                    </span>
+                    <span class="badge" :class="providerBadgeClass">{{ providerLabel }}</span>
                     <span class="fw-semibold">
                       {{ prefill.display_name || prefill.provider_user_id || '사용자' }}
                     </span>
@@ -73,21 +67,6 @@
             </div>
 
             <form @submit.prevent="onSubmit" novalidate>
-              <!-- 이메일(가능하면 readonly) -->
-              <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input
-                  v-model.trim="form.email"
-                  type="email"
-                  class="form-control"
-                  :readonly="!!prefill.email"
-                  :disabled="!!prefill.email"
-                />
-                <div class="form-text">
-                  소셜에서 이메일이 오면 수정 불가로 처리해도 돼요.
-                </div>
-              </div>
-
               <!-- 닉네임 -->
               <div class="mb-3">
                 <label class="form-label">닉네임</label>
@@ -104,75 +83,60 @@
                 </div>
               </div>
 
-              <!-- 선택: 비밀번호 설정 -->
-              <div class="mb-2">
-                <button
-                  type="button"
-                  class="btn btn-link p-0 text-decoration-none"
-                  @click="showPassword = !showPassword"
-                >
-                  <i
-                    class="bi"
-                    :class="showPassword ? 'bi-chevron-up' : 'bi-chevron-down'"
-                  ></i>
-                  <span class="ms-1">비밀번호도 설정하기 (선택)</span>
-                </button>
-                <div class="text-muted small mt-1">
-                  나중에 이메일/비밀번호 로그인도 열어두고 싶으면 설정해.
+              <!-- 이메일(가능하면 readonly) -->
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input
+                  v-model.trim="form.email"
+                  type="email"
+                  class="form-control"
+                  :readonly="!!prefill.email"
+                  :disabled="!!prefill.email"
+                />
+              </div>
+
+              <!-- ✅ 비밀번호(무조건 입력) -->
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input
+                  v-model="form.password"
+                  type="password"
+                  class="form-control"
+                  :class="{ 'is-invalid': passwordError || fieldError('password') }"
+                  placeholder="비밀번호 입력 (8자 이상)"
+                />
+                <div class="invalid-feedback" v-if="passwordError">
+                  {{ passwordError }}
+                </div>
+                <div class="invalid-feedback" v-else-if="fieldError('password')">
+                  {{ fieldError('password') }}
                 </div>
               </div>
 
-              <div v-if="showPassword" class="mb-3">
-                <div class="mb-3">
-                  <label class="form-label">Password</label>
-                  <input
-                    v-model="form.password"
-                    type="password"
-                    class="form-control"
-                    :class="{ 'is-invalid': passwordError || fieldError('password') }"
-                    placeholder="비밀번호 입력"
-                  />
-                  <div class="invalid-feedback" v-if="passwordError">
-                    {{ passwordError }}
-                  </div>
-                  <div class="invalid-feedback" v-else-if="fieldError('password')">
-                    {{ fieldError('password') }}
-                  </div>
+              <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <input
+                  v-model="form.password_confirm"
+                  type="password"
+                  class="form-control"
+                  :class="{
+                    'is-invalid':
+                      (form.password_confirm && !passwordsMatch) ||
+                      fieldError('password_confirm'),
+                  }"
+                  placeholder="비밀번호 확인"
+                />
+                <div class="invalid-feedback" v-if="form.password_confirm && !passwordsMatch">
+                  비밀번호가 일치하지 않습니다.
                 </div>
-
-                <div class="mb-0">
-                  <label class="form-label">Confirm Password</label>
-                  <input
-                    v-model="form.password_confirm"
-                    type="password"
-                    class="form-control"
-                    :class="{
-                      'is-invalid':
-                        (form.password_confirm && !passwordsMatch) ||
-                        fieldError('password_confirm'),
-                    }"
-                    placeholder="비밀번호 확인"
-                  />
-                  <div class="invalid-feedback" v-if="form.password_confirm && !passwordsMatch">
-                    비밀번호가 일치하지 않습니다.
-                  </div>
-                  <div
-                    class="invalid-feedback"
-                    v-else-if="fieldError('password_confirm')"
-                  >
-                    {{ fieldError('password_confirm') }}
-                  </div>
+                <div class="invalid-feedback" v-else-if="fieldError('password_confirm')">
+                  {{ fieldError('password_confirm') }}
                 </div>
               </div>
 
               <!-- 약관 -->
               <div class="form-check mb-3">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="terms"
-                  v-model="form.agree"
-                />
+                <input class="form-check-input" type="checkbox" id="terms" v-model="form.agree" />
                 <label class="form-check-label" for="terms">
                   I accept the
                   <button
@@ -191,11 +155,7 @@
               </div>
 
               <!-- ✅ 버튼 1개: 가입 완료 -->
-              <button
-                type="submit"
-                class="btn btn-login w-100"
-                :disabled="!canSubmit || loading"
-              >
+              <button type="submit" class="btn btn-login w-100" :disabled="!canSubmit || loading">
                 <span v-if="loading" class="spinner-border spinner-border-sm me-2" />
                 가입 완료
               </button>
@@ -213,7 +173,7 @@
     </div>
   </div>
 
-    <!-- ✅ 약관 모달 -->
+  <!-- ✅ 약관 모달 -->
   <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content border-0 shadow">
@@ -226,7 +186,9 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">확인</button>
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+            확인
+          </button>
         </div>
       </div>
     </div>
@@ -240,16 +202,21 @@ import { useRoute, useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import termsMd from '@/legal/terms_ko.md?raw'
 import { marked } from 'marked'
+import { useAuthStore } from '@/stores/authStore'
+import { storeToRefs } from 'pinia'
 
 marked.setOptions({ mangle: false, headerIds: false })
 const termsHtml = ref(marked.parse(termsMd))
+
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
 const route = useRoute()
 const router = useRouter()
 
+const authStore = useAuthStore()
+const { discord } = storeToRefs(authStore)
+
 /**
- * ✅ 백엔드가 OAuth 로그인 후 세션/쿠키로 "임시 상태"를 들고 있고,
- * 이 API가 프리필 정보를 내려주는 형태를 추천
+ * ✅ 프리필 타입
  */
 interface OAuthPrefill {
   provider: string // 'discord' | 'google' | 'github' | ...
@@ -273,7 +240,6 @@ const prefillLoaded = ref(false)
 const loading = ref(false)
 const serverErrors = ref<Record<string, string>>({})
 const nonFieldError = ref('')
-const showPassword = ref(false)
 const passwordError = ref('')
 
 const form = ref({
@@ -295,7 +261,6 @@ const providerLabel = computed(() => {
 })
 
 const providerBadgeClass = computed(() => {
-  // Bootstrap 배지 색상만으로 통일 (디자인 간단하게)
   const p = (prefill.value.provider || '').toLowerCase()
   if (p === 'google') return 'bg-danger'
   if (p === 'github') return 'bg-dark'
@@ -312,9 +277,16 @@ const resetErrors = () => {
   passwordError.value = ''
 }
 
+const passwordsMatch = computed(() => {
+  return (
+    form.value.password_confirm === '' ||
+    form.value.password === form.value.password_confirm
+  )
+})
+
 const validatePassword = () => {
   passwordError.value = ''
-  if (!showPassword.value) return true
+
   if (!form.value.password) {
     passwordError.value = '비밀번호를 입력해주세요.'
     return false
@@ -323,58 +295,67 @@ const validatePassword = () => {
     passwordError.value = '비밀번호는 최소 8자 이상이어야 합니다.'
     return false
   }
+  if (!form.value.password_confirm) {
+    passwordError.value = '비밀번호 확인을 입력해주세요.'
+    return false
+  }
+  if (!passwordsMatch.value) {
+    passwordError.value = '비밀번호가 일치하지 않습니다.'
+    return false
+  }
   return true
 }
 
-const passwordsMatch = computed(() => {
-  if (!showPassword.value) return true
-  return (
-    form.value.password_confirm === '' ||
-    form.value.password === form.value.password_confirm
-  )
-})
-
 const canSubmit = computed(() => {
-  const baseOk = !!form.value.username && !!form.value.agree && !loading.value
-  if (!showPassword.value) return baseOk
   return (
-    baseOk &&
+    !!form.value.username &&
+    !!form.value.agree &&
     !!form.value.password &&
     !!form.value.password_confirm &&
     passwordsMatch.value &&
-    !passwordError.value
+    !passwordError.value &&
+    !loading.value
   )
 })
 
 /**
  * ✅ 프리필 로드
- * GET /api/oauth/prefill/
+ * (변경) authStore.discord 에 저장된 값으로만 프리필 채우기
  */
 const loadPrefill = async () => {
   resetErrors()
   loading.value = true
+
   try {
-    const { data } = await axios.get<OAuthPrefill>(`${API_BASE}/api/oauth/prefill/`, {
-      withCredentials: true,
-    })
+    const d = discord.value as
+      | { discord_id?: string; username?: string; email?: string }
+      | null
 
-    prefill.value = data
-    prefillLoaded.value = true
-
-    // ✅ 이미 추가정보가 필요 없으면 로그인 페이지로
-    if (data.needs_extra_info === false) {
-      router.replace('/login')
+    if (!d) {
+      nonFieldError.value =
+        '추가정보를 불러오지 못했습니다. 디스코드 인증 정보가 없습니다. 다시 로그인 해주세요.'
+      // 필요하면 강제 이동
+      // router.replace('/login')
       return
     }
 
+    prefill.value = {
+      provider: 'discord',
+      provider_user_id: d.discord_id ?? null,
+      email: d.email ?? null,
+      display_name: d.username ?? null,
+      avatar_url: null,
+      needs_extra_info: true,
+    }
+
+    prefillLoaded.value = true
+
     // ✅ 폼 프리필
-    form.value.email = data.email ?? ''
-    form.value.username = data.display_name ?? ''
+    form.value.email = prefill.value.email ?? ''
+    form.value.username = prefill.value.display_name ?? ''
   } catch (err: any) {
     console.error('[oauth prefill] failed', err)
-    nonFieldError.value =
-      err?.response?.data?.detail ||
-      '추가정보를 불러오지 못했습니다. 소셜 로그인 상태를 확인해주세요.'
+    nonFieldError.value = '추가정보를 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
@@ -384,13 +365,13 @@ onMounted(loadPrefill)
 
 /**
  * ✅ 가입 완료
- * POST /api/oauth/complete_signup/
+ * POST /api/signup
  */
 const onSubmit = async () => {
   if (!canSubmit.value) return
   resetErrors()
+
   if (!validatePassword()) return
-  if (!passwordsMatch.value) return
 
   loading.value = true
   try {
@@ -400,15 +381,11 @@ const onSubmit = async () => {
     const payload: Record<string, any> = {
       email: form.value.email,
       username: form.value.username,
-      agree: form.value.agree,
+      password: form.value.password,
+      password_confirm: form.value.password_confirm,
     }
 
-    if (showPassword.value) {
-      payload.password = form.value.password
-      payload.password_confirm = form.value.password_confirm
-    }
-
-    await axios.post(`${API_BASE}/api/oauth/complete_signup/`, payload, {
+    await axios.post(`${API_BASE}/api/signup/`, payload, {
       withCredentials: true,
       headers: {
         ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
@@ -421,6 +398,7 @@ const onSubmit = async () => {
   } catch (err: any) {
     console.error('[oauth complete] failed', err)
     const data = err?.response?.data
+
     if (data && typeof data === 'object') {
       for (const [key, value] of Object.entries(data as Record<string, any>)) {
         const msg = Array.isArray(value) ? value.join(', ') : String(value)
