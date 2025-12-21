@@ -16,36 +16,6 @@ from schedules.serializers import StudyScheduleSerializer
 
 # Create your views here.
 
-# @login_required
-@api_view(['POST'])
-def connect_channel(request, study_id):
-    study = get_object_or_404(Study, id=study_id)
-    data = request.data
-    guild_id = data.get("guild_id")
-
-    guild, _ = DiscordGuild.objects.get_or_create(
-        id = guild_id,
-        defaults={
-            "name": data.get("guild_name"),
-            "icon_url": data.get("icon_url"),
-            "is_active": True,
-        }
-    )
-    channel, _ = DiscordChannel.objects.get_or_create(
-        id = data.get("channel_id"),
-        defaults={
-            "guild": guild,
-            "name": data.get("channel_name"),
-            "is_active": True,
-        }
-    )
-    mapping, _ = DiscordStudyMapping.objects.update_or_create(
-        study = study,
-        defaults = {"channel": channel},
-    )
-    serializer = DiscordStudyMappingSerializer(mapping)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
 @api_view(['GET'])
 def study_schedule_list(request, study_id):
     channel_id = request.query_params.get("channel_id")
