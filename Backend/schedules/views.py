@@ -1,6 +1,4 @@
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
 
@@ -11,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Schedule, StudySchedule, PersonalSchedule, Reminder
+from .models import StudySchedule, PersonalSchedule, Reminder
 from .serializers import ScheduleSerializer, StudyScheduleSerializer, PersonalScheduleSerializer, ReminderSerializer
 from .tasks import send_schedule_notification
 from studies.models import Study, StudyMembership

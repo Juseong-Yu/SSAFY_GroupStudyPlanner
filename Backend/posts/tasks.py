@@ -1,9 +1,7 @@
 import requests
 from django.conf import settings
-from django.utils import timezone
 from celery import shared_task
 from .models import Notice
-from accounts.models import User
 from studies.models import Study
 from discord_bot.models import DiscordStudyMapping
 import logging

@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -8,14 +7,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Notice, Post, UploadedImage
+from .models import Notice, UploadedImage
 from .serializers import NoticeSerializer, NoticeListSerializer, UploadedImageSerializer
 from .tasks import send_notice_notification
 from studies.models import Study, StudyMembership
 from discord_bot.models import DiscordStudyMapping
 
-from django.conf import settings
-import requests
 
 # Create your views here.
 

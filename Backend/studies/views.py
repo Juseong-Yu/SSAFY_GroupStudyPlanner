@@ -1,5 +1,3 @@
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 
 from rest_framework.decorators import api_view, permission_classes
@@ -27,7 +25,6 @@ def error_list(code):
                         json_dumps_params={"ensure_ascii": False})
 
 # 스터디 생성
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def study(request):
