@@ -298,27 +298,29 @@ interface ConnectedGuildResponse {
     created_at: string
   }
   guild: {
-    id: number
+    id: string
     name: string
     icon_url: string | null
     is_active: boolean
   }
   channel: {
-    id: number
+    id: string
     name: string
     is_active: boolean
     guild: number
   } | null
+  guild_id: string
+  channel_id: string | null
 }
 
 /** ✅ GET /studies/<study_id>/discord/<guild_id>/fetch_guild_channel/ 응답 */
 interface FetchGuildChannelResponse {
   guild: {
-    id: number
+    id: string
     name: string
   }
   channels: Array<{
-    id: number
+    id: string
     name: string
   }>
 }
@@ -423,7 +425,6 @@ async function fetchDiscordGuild() {
   )
 
   const data = res.data
-
   // guild가 없으면 미연동 취급
   if (!data?.guild) {
     discordGuild.value = null
@@ -458,6 +459,7 @@ async function fetchDiscordChannels() {
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
       },
     )
+    console.log(res.data)
     discordChannels.value = res.data.channels.map((c) => ({
       id: String(c.id),
       name: c.name,
@@ -481,7 +483,7 @@ async function startDiscordServerConnect() {
     // ✅ 초대 시작 시점에 studyId 저장
     saveDiscordPending(props.studyId)
 
-    const res = await client.get<{ url: string }>(`${API_BASE}/discord/bot/invite/`, {
+    const res = await client.get<{ url: string }>(`${API_BASE}/studies/${props.studyId}/discord/bot/invite/`, {
       withCredentials: true,
       headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
     })
@@ -502,10 +504,10 @@ async function patchDiscordNotifyChannel(channelId: string) {
   try {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-
+    console.log(channelId)
     await client.post(
       `${API_BASE}/studies/${props.studyId}/discord/connect_channel/`,
-      { channel_id: channelId },
+      { channel_id: channelId},
       {
         withCredentials: true,
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,

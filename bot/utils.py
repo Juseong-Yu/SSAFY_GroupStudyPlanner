@@ -9,7 +9,6 @@ logger = logging.getLogger("utils")
 
 def normalize_datetime(dt: str) -> str:
     dt_utc = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-    # kst = dt_utc.astimezone(timezone(timedelta(hours=9)))
     return dt_utc.strftime("%Y-%m-%d %H:%M")
 
 def normalize_description(md: str) -> str:

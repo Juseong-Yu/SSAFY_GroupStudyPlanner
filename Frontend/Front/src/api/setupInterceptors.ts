@@ -56,7 +56,7 @@ export function setupInterceptors(client: AxiosInstance) {
       }
 
       const { access } = getStoredTokens()
-      console.log('[setupInterceptors][request] access from storage:', access)
+      //console.log('[setupInterceptors][request] access from storage:', access)
 
       if (access) {
         config.headers = config.headers ?? {}
