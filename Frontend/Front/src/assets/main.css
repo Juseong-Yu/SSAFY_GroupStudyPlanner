@@ -2,15 +2,32 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
 
 /* Bootstrap의 body font보다 우선순위가 높도록 선언만 해주면 된다 */
-html, body {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont,
-               'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif;
+html,
+body {
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans KR',
+    Arial,
+    sans-serif;
+}
+
+.form-control {
+  border-color: #9ca3af;
+}
+
+.form-control:focus {
+  border-color: #64748b;
+  box-shadow: 0 0 0 0.15rem rgba(100, 116, 139, 0.25);
 }
 
 .study-page-wrapper {
   width: 100%;
-  max-width: 1300px;        /* 전체 폭 중앙 정렬 */
-  padding-left: 1rem;       /* 항상 좌우 여백 유지 */
+  max-width: 1300px; /* 전체 폭 중앙 정렬 */
+  padding-left: 1rem; /* 항상 좌우 여백 유지 */
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
