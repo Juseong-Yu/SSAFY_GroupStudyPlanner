@@ -144,20 +144,43 @@ DISCORD_OAUTH_URL = "https://discord.com/api/oauth2/authorize"
 DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
 DISCORD_USER_URL = "https://discord.com/api/users/@me"
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def connect_discord(request):
+class DiscordAuthView(APIView):
+    """
+    디스코드 인증 URL 생성
+    """
+    client_id = None
+    redirect_uri = None
+
+    def get(self, request):
+        # 파라미터 정의
+        params = {
+            "client_id": self.client_id,
+            "redirect_uri": self.redirect_uri,
+            "response_type": "code",
+            "scope": "identify email"
+        }
+        # url 생성
+        url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
+        return Response({"auth_url": url})
+
+class ConnectDiscord(DiscordAuthView):
     """
     디스코드 연동 시작
     """
-    params = {
-        "client_id": DISCORD_CLIENT_ID,
-        "redirect_uri": DISCORD_REDIRECT_URI,
-        "response_type": "code",
-        "scope": "identify email"
-    }
-    url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
-    return Response({"auth_url": url})
+
+    def __init__(self):
+        self.client_id = DISCORD_CLIENT_ID
+        self.redirect_uri = DISCORD_REDIRECT_URI
+        super().__init__()
+
+class LoginWithDiscord(DiscordAuthView):
+    """
+    디스코드 로그인 시작
+    """
+    def __init__(self):
+        self.client_id = DISCORD_CLIENT_ID
+        self.redirect_uri = DISCORD_REDIRECT_URI_FOR_LOGIN
+        super().__init__()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -226,17 +249,6 @@ def discord_callback(request):
     user.save()
 
     return Response({"detail": "Discord successfully connected"})
-
-@api_view(['GET'])
-def login_with_discord(request):
-    params = {
-        "client_id": DISCORD_CLIENT_ID,
-        "redirect_uri": DISCORD_REDIRECT_URI_FOR_LOGIN,
-        "response_type": "code",
-        "scope": "identify email"
-    }
-    url = f"{DISCORD_OAUTH_URL}?{urllib.parse.urlencode(params)}"
-    return Response({"auth_url": url})
 
 @api_view(['GET'])
 def discord_login_callback(request):
