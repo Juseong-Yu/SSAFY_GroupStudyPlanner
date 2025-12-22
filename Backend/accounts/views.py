@@ -1,12 +1,8 @@
 from django.views.decorators.http import require_POST
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.middleware.csrf import CsrfViewMiddleware
-from django.utils.decorators import method_decorator
-from .forms import CustomUserCreationForm, CustomUserChangeForm
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from .forms import CustomUserChangeForm
+from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 
@@ -35,7 +31,6 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print(request.data)
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()

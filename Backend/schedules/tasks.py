@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
-def send_schedule_notification(self, study_id, schedule_id):
+def send_schedule_notification(self, study_id, schedule_id, payload):
     """
     스케줄 생성 후 디스코드로 새 스케줄 알림을 전송하는 작업.
     실패 시 재시도. idempotency 처리를 위해 DB에서 이미 전송되었는지 확인하도록 확장 가능.
@@ -26,16 +26,6 @@ def send_schedule_notification(self, study_id, schedule_id):
     if not mapping:
         logger.info(f"send_schedule_notification: no discord mapping for schedule {schedule_id}")
         return
-
-    payload = {
-        "channel_id": mapping.channel.id if getattr(mapping, "channel", None) else None,
-        "study_name": study.name,
-        "title": schedule.title,
-        "content": schedule.description,
-        "start_at": schedule.start_at.isoformat() if schedule.start_at else None,
-        "end_at": schedule.end_at.isoformat() if schedule.end_at else None,
-        "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
-    }
 
     url = f"{settings.DISCORD_WEBHOOK_URL}new_schedule/"
 

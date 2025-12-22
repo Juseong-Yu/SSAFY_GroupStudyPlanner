@@ -6,10 +6,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     path("csrf/", views.csrf, name="csrf"),
-    # path('login/', views.login, name='login'),
-    # path('logout/', views.logout, name='logout'),
     path('update/', views.update, name='update'),
-    # path('delete/', views.delete, name='delete'),
     path('password/', views.password_change, name='password_change'),
     path('search/', views.search, name='search'),
     path('check_password/', views.verify_password, name='check_password'),
