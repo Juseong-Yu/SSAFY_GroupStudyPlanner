@@ -12,8 +12,8 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 | 유주성 | 신종혁 |
 | :---: | :---: |
 | Frontend & AI | Backend & Discord Integration |
-| <img src="https://github.com/Juseong-Yu.png" width="150px" /> | <img src="https://github.com/Rasit-NP.png" width="150px" /> |
-| - Vue3 + TS 기반 프론트엔드 개발<br />- AI 문제 생성 기능<br />- UI/UX 설계 | - Django REST API 개발<br />- Discord Webhook 연동<br />- 서버 및 DB 운영 |
+| <a href="https://github.com/Juseong-Yu"><img src="https://github.com/Juseong-Yu.png" width="150px" /></a> | <a href="https://github.com/Rasit-NP"><img src="https://github.com/Rasit-NP.png" width="150px" /></a> |
+| - Vue3 + TS 기반 프론트엔드 개발<br />- AI 문제 생성 기능<br />- UI/UX 설계   | - Django REST API 개발<br />- Discord API 통신<br />- 서버 및 DB 운영 |
 
 
 
@@ -63,8 +63,10 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - 스터디 페이지 / 메인 페이지와 레이아웃 통일
 
 ### 6. 디스코드 연동 
-- ??
-- ??
+- 스터디 $\leftrightarrow$ 디스코드 채널 연동, 봇 초대
+- 디스코드 봇 자동 알림
+  - 공지사항/일정 생성 시
+  - 일정 알림 시각
 ---
 
 ## 🏗 기술 스택 (Tech Stack)
@@ -82,13 +84,15 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 ### Backend
 - **Framework**: Django 5.2
 - **API**: Django REST Framework (DRF)
-- **Async Server**: Uvicorn (ASGI)
-- **Task Queue**: Celery (AMQP 기반)
+- **Task Queue**: Celery
 - **DB**: SQLite (개발용, 운영 시 교체 가능)
-- **Cache / Broker**: Redis
+- **Broker**: Redis
 - **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
-- **기타**
-  - Bot 연동: Discord Bot(별도 bot 디렉토리, aiohttp 기반)
+
+### Discord Bot
+- **Framework**: discord.py 2.6.4
+- **API**: FastAPI
+- **Async Server**: Uvicorn (ASGI)
 
 ### Infra / 기타 
 - Python venv
@@ -97,4 +101,71 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 ---
 
 ## 🗂 프로젝트 구조 
-
+### Frontend
+```
+```
+### Backend
+```
+Backend/
+├── core/
+│   ├── __init__.py
+│   ├── celery.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+├── accounts/
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   └── views.py
+├── studies/
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   └── views.py
+├── posts/
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   ├── tasks.py
+│   └── views.py
+├── schedules/
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   ├── tasks.py
+│   └── views.py
+├── discord_bot/
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   └── views.py
+├── exams/
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   └── views.py
+├── manage.py
+├── requirements.txt
+└── .gitignore
+```
+### Bot
+```
+bot/
+├── api.py
+├── bot.py
+├── config.py
+├── main.py
+├── utils.py
+├── worker.py
+├── requirements.txt
+└── .gitignore
+```
