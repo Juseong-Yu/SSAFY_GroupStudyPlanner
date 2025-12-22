@@ -157,6 +157,7 @@ class FetchGuildChannel(APIView):
         channel_list = []
         for ch in channel_res.json():
             if ch["type"] == 0:
+                print(ch)
                 channel, _ = DiscordChannel.objects.update_or_create(
                     id = ch["id"],
                     guild=guild,

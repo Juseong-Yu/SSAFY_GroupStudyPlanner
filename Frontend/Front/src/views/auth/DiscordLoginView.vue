@@ -41,8 +41,12 @@ onMounted(async () => {
   }
 
   try {
-    await auth.oauthLoginWithDiscord(code)
-    router.replace('/main')
+    const res = await auth.oauthLoginWithDiscord(code)
+    if (res.type === 'login'){
+      router.replace('/main')
+    }else if (res.type ==='register'){
+      router.replace('/accounts/OauthInfo')
+    }
   } catch (e: any) {
     console.error(e)
     error.value =
