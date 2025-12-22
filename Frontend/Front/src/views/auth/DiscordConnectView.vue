@@ -2,7 +2,7 @@
   <div class="d-flex justify-content-center align-items-center min-vh-100">
     <div class="text-center">
       <div class="spinner-border mb-3" role="status"></div>
-      <p class="text-muted">디스코드 서버 연결 중입니다…</p>
+      <p class="text-muted">연결 중입니다…</p>
     </div>
   </div>
 </template>
@@ -66,20 +66,16 @@ onMounted(async () => {
     const csrftoken = getCookie('csrftoken')
 
     // 3️⃣ 복원한 studyId로 callback 호출
-    await client.get(
-      `${API_BASE}/studies/${pending.studyId}/discord/bot/callback/`,
-      {
-        params: {
-          guild_id,
-          permissions,
-        },
-        withCredentials: true,
-        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+    await client.get(`${API_BASE}/studies/${pending.studyId}/discord/bot/callback/`, {
+      params: {
+        guild_id,
+        permissions,
       },
-    )
+      withCredentials: true,
+      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+    })
 
     // ✅ 성공 시 pending 제거
-    
   } catch (e) {
     console.error('discord bot callback failed', e)
   } finally {

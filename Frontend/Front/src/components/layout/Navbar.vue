@@ -488,7 +488,7 @@ const submitJoin = async () => {
     const csrftoken = getCookie('csrftoken')
 
     const payload = {
-      id: join.value.code.trim(),
+      join_code: join.value.code.trim(),
     }
 
     await client.post(`${API_BASE}/studies/join/`, payload, {

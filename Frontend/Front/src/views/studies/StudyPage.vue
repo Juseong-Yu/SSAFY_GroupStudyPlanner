@@ -460,12 +460,14 @@ async function fetchJoinCode() {
   joinCodeError.value = ''
 
   try {
-    await ensureCsrf()
-    const { data } = await client.get<{ join_code: string }>(
-      `${API_BASE}/studies/${studyId.value}/join_code/`,
-      { withCredentials: true },
-    )
-    joinCode.value = data.join_code ?? null
+    if (isLeader.value) {
+      await ensureCsrf()
+      const { data } = await client.get<{ join_code: string }>(
+        `${API_BASE}/studies/${studyId.value}/join_code/`,
+        { withCredentials: true },
+      )
+      joinCode.value = data.join_code ?? null
+    }
   } catch (e) {
     console.error('참여 코드 조회 실패:', e)
     joinCode.value = null
