@@ -14,7 +14,7 @@ urlpatterns = [
     path('<int:study_id>/<int:user_id>/expel_member/', views.expel_member, name='experl_member'),
     path('<int:study_id>/change_role/', views.change_role, name='change_role'),
     path('<int:study_id>/study_delete/', views.study_delete, name='study_delete'),
-    path('<int:study_id>/join_code', views.study_join_code, name='join_code'),
+    path('<int:study_id>/join_code', views.join_code, name='join_code'),
 
 
     path('<int:study_id>/posts/', include('posts.urls')),
