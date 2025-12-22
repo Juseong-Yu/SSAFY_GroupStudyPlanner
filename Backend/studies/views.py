@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from accounts.models import User
-from .models import Study, StudyMembership
+from .models import Study, StudyMembership, StudyJoinCode
 from .serializers import StudySerializer, StudyMembersSerializer, StudyMembershipSerializer, StudyRoleSerializer, RoleSerializer
 
 # Create your views here.
@@ -41,6 +41,9 @@ def study(request):
                 role='leader',     
                 is_active=True
             )
+
+            code = StudyJoinCode.objects.create(study = study)
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -247,3 +250,33 @@ def study_delete(request, study_id):
     
     study.delete()
     return Response(status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def join_code(request, study_id):
+    """
+    스터디 참여 코드
+    """
+
+    user = request.user
+    study = get_object_or_404(Study, id=study_id)
+    membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+    ).first()
+
+    # 외부인 거부
+    if not membership:
+        return error_list(NOT_MEMBER)
+    
+    # 리더 제외 거부
+    if membership.role != 'leader':
+        return error_list(NOT_AUTHORIZED)
+
+    if request.method == 'GET':
+        code = get_object_or_404(StudyJoinCode, study=study)
+        return Response({"join_code": code.join_code}, status=status.HTTP_200_OK)
+    
+    elif request.method == 'PUT':
+        code = get_object_or_404(StudyJoinCode, study=study)
+        code.update_join_code()
+        return Response({"join_code": code.join_code}, status=status.HTTP_200_OK)
