@@ -62,8 +62,10 @@ def notice_create(request, study_id):
                     "author": user.username,
                     "url": f"{settings.VUE_API_URL}studies/{study_id}/notice/{notice.id}"
                 }
-                send_notice_notification(study_id, serializer.data["id"], payload)
-
+                try:
+                    send_notice_notification(study_id, serializer.data["id"], payload)
+                except:
+                    pass
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
