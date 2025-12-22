@@ -71,7 +71,6 @@ class DiscordBotInviteView(APIView):
         params = {
             "client_id": settings.DISCORD_CLIENT_ID,
             "redirect_uri": settings.DISCORD_REDIRECT_URI_CONNECT_STUDY,
-            # "redirect_uri": "http://localhost:8000/studies/1/discord/bot/callback/",
             "response_type": "code",
             "scope": "bot",
             "permissions": settings.DISCORD_PERMISSIONS,
