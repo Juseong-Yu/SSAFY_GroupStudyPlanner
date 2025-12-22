@@ -61,12 +61,21 @@
 
                 <div class="d-flex align-items-center gap-1">
                   <button
+                    v-if="!showStudyCode"
                     type="button"
                     class="btn-icon-ghost"
                     @click="toggleStudyCode"
                     :aria-label="showStudyCode ? '참여 코드 숨기기' : '참여 코드 보기'"
                   >
                     <i :class="showStudyCode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                  </button>
+                  <button
+                    v-if="showStudyCode"
+                    type="button"
+                    class="btn-icon-ghost"
+                    @click="copyJoinCode"
+                  >
+                    <i class="bi bi-copy"></i>
                   </button>
                 </div>
               </div>
@@ -381,6 +390,7 @@ const props = defineProps<{
   members: StudyMember[]
   loadingMembers: boolean
   membersError: string
+  joinCode: string | null
 }>()
 
 const emit = defineEmits<{
@@ -406,8 +416,8 @@ useModalAutoClose(
 const showStudyCode = ref(false)
 
 const displayedStudyCode = computed(() => {
-  const raw = String(props.studyId ?? '')
-  if (!raw) return ''
+  const raw = String(props.joinCode ?? '')
+  if (!raw) return 'CODE ERROR'
   if (showStudyCode.value) return raw
   return '•'.repeat(raw.length)
 })
@@ -572,6 +582,11 @@ async function patchDiscordNotifyChannel(channelId: string) {
     console.error(e)
     discordSaveStatus.value = 'error'
   }
+}
+
+function copyJoinCode() {
+  if (!props.joinCode) return
+  navigator.clipboard.writeText(props.joinCode)
 }
 
 function onChangeDiscordChannel(e: Event) {

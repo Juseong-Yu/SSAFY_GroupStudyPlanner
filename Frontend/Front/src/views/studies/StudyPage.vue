@@ -207,6 +207,9 @@
       :members="members"
       :loadingMembers="loadingMembers"
       :membersError="membersError"
+      :joinCode="joinCode"
+      :joinCodeLoading="joinCodeLoading"
+      :joinCodeError="joinCodeError"
       @close="handleCloseManageModal"
       @leave="handleLeaveStudy"
       @dissolve="handleDissolveStudy"
@@ -244,7 +247,10 @@ const studyTitle = ref('스터디 불러오는 중...')
 const studyLeader = ref<string | null>(null)
 const joinedAt = ref<string | null>(null)
 const createdAt = ref<string | null>(null)
+const joinCode = ref<string | null>(null)
 
+const joinCodeLoading = ref(false)
+const joinCodeError = ref('')
 const isLoaded = ref(false)
 
 /* =========================
@@ -445,6 +451,27 @@ async function fetchStudy() {
   } catch (error) {
     console.error('스터디 조회 실패:', error)
     studyTitle.value = '스터디 정보를 불러오지 못했어요'
+  }
+}
+
+async function fetchJoinCode() {
+  if (!studyId.value) return
+  joinCodeLoading.value = true
+  joinCodeError.value = ''
+
+  try {
+    await ensureCsrf()
+    const { data } = await client.get<{ join_code: string }>(
+      `${API_BASE}/studies/${studyId.value}/join_code/`,
+      { withCredentials: true },
+    )
+    joinCode.value = data.join_code ?? null
+  } catch (e) {
+    console.error('참여 코드 조회 실패:', e)
+    joinCode.value = null
+    joinCodeError.value = '참여 코드를 불러오지 못했습니다.'
+  } finally {
+    joinCodeLoading.value = false
   }
 }
 
@@ -762,6 +789,7 @@ function handleDetailEdit(payload: StoredEvent) {
 function openManageModal() {
   showManageModal.value = true
   fetchMembers()
+  fetchJoinCode()
 }
 
 function handleCloseManageModal() {
