@@ -66,8 +66,8 @@ def study_detail(request, study_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def join(request):
-    study_id = request.data.get('id')
-    study = get_object_or_404(Study, id=study_id)
+    join_code = request.data.get('join_code')
+    study = StudyJoinCode.objects.get(join_code=join_code).study
     user = request.user
 
     # 기존 가입 여부 확인
@@ -81,7 +81,7 @@ def join(request):
             return Response({'message': '재가입되었습니다.'}, status=status.HTTP_202_ACCEPTED) 
     except StudyMembership.DoesNotExist:
         StudyMembership.objects.create(
-            user = request.user,
+            user = user,
             study = study,
             role = 'member'
         )
