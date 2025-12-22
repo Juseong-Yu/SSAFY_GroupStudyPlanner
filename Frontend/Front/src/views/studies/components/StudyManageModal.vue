@@ -1,7 +1,7 @@
 <!-- src/components/StudyManageModal.vue -->
 <template>
   <div v-if="show" class="study-manage-backdrop">
-    <div class="study-manage-modal">
+    <div class="study-manage-modal" ref="modalRootRef">
       <div class="card shadow-sm">
         <!-- 헤더 -->
         <div class="modal-header-custom d-flex justify-content-between align-items-start">
@@ -90,7 +90,9 @@
               <div class="text-muted small mb-2">연결된 서버명</div>
 
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill server-pill-light">
+                <div
+                  class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill server-pill-light"
+                >
                   <span class="server-dot" :class="{ muted: !discordGuild }"></span>
                   <span class="fw-semibold">
                     {{ discordGuild?.name ?? '연결된 서버 없음' }}
@@ -117,9 +119,7 @@
               <div class="mt-3">
                 <div class="text-muted small mb-2">알림 채널</div>
 
-                <div v-if="!discordGuild" class="text-muted small">
-                  서버를 먼저 연결해 주세요.
-                </div>
+                <div v-if="!discordGuild" class="text-muted small">서버를 먼저 연결해 주세요.</div>
 
                 <div v-else>
                   <select
@@ -155,12 +155,10 @@
           </div>
 
           <!-- (리더 전용) 멤버 관리 ... (원래 코드 유지) -->
-          <div v-if="isLeader" class="mb-4">
+          <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="fw-semibold mb-0">스터디 멤버 관리</h6>
-              <span class="badge bg-light text-muted small">
-                {{ members.length }}명
-              </span>
+              <span class="badge bg-light text-muted small"> {{ members.length }}명 </span>
             </div>
 
             <div v-if="membersError" class="alert alert-danger py-2 small mb-2">
@@ -182,6 +180,7 @@
                   :key="m.id"
                   class="list-group-item member-list-item d-flex align-items-center justify-content-between"
                 >
+                  <!-- 왼쪽: 프로필 -->
                   <div class="d-flex align-items-center gap-2">
                     <img
                       v-if="m.profile_img"
@@ -195,29 +194,50 @@
                     </div>
 
                     <div>
-                      <div class="fw-semibold">
-                        {{ m.username }}
-                      </div>
-                      <div class="text-muted small">
-                        {{ m.email }}
-                      </div>
+                      <div class="fw-semibold">{{ m.username }}</div>
+                      <div class="text-muted small">{{ m.email }}</div>
                     </div>
                   </div>
 
+                  <!-- 오른쪽: 역할 -->
                   <div class="d-flex align-items-center gap-2">
+                    <!-- 리더는 항상 badge -->
                     <template v-if="m.role === 'leader'">
                       <span class="badge bg-primary-subtle text-primary">리더</span>
                     </template>
 
-                    <template v-else>
-                      <select class="form-select form-select-sm w-auto" :value="m.role" @change="onRoleChange(m.id, $event)">
+                    <!-- leader인 경우만 수정 가능 -->
+                    <template v-else-if="isLeader">
+                      <select
+                        class="form-select form-select-sm w-auto"
+                        :value="m.role"
+                        @change="onRoleChange(m.id, $event)"
+                      >
                         <option value="admin">관리자</option>
                         <option value="member">멤버</option>
                       </select>
 
-                      <button type="button" class="btn btn-outline-danger btn-sm" @click="$emit('kick', m.id)">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        @click="$emit('kick', m.id)"
+                      >
                         추방
                       </button>
+                    </template>
+
+                    <!-- leader가 아니면 읽기 전용 -->
+                    <template v-else>
+                      <span
+                        class="badge"
+                        :class="
+                          m.role === 'admin'
+                            ? 'bg-warning-subtle text-warning'
+                            : 'bg-secondary-subtle text-secondary'
+                        "
+                      >
+                        {{ roleLabel(m.role) }}
+                      </span>
                     </template>
                   </div>
                 </li>
@@ -237,7 +257,12 @@
                 리더는 스터디를 해산해야만 나갈 수 있습니다.
               </span>
 
-              <button type="button" class="btn btn-danger btn-sm" :disabled="myRole === 'leader'" @click="$emit('leave')">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                :disabled="myRole === 'leader'"
+                @click="$emit('leave')"
+              >
                 스터디 나가기
               </button>
             </div>
@@ -253,7 +278,11 @@
               스터디를 해산하면 일정, 공지사항, 시험 등 모든 데이터가 삭제되며 복구할 수 없습니다.
             </p>
             <div class="d-flex justify-content-end">
-              <button type="button" class="btn btn-outline-danger btn-sm" @click="$emit('dissolve')">
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                @click="$emit('dissolve')"
+              >
                 스터디 해산
               </button>
             </div>
@@ -273,9 +302,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+
+import { useModalAutoClose } from '@/composables/useModalAutoClose' // ✅ [추가]
+
+// 기존 props / emit 그대로
+
+const modalRootRef = ref<HTMLElement | null>(null) // ✅ [추가]
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
 
@@ -355,6 +390,17 @@ const emit = defineEmits<{
   (e: 'kick', memberId: number): void
   (e: 'change-role', memberId: number, role: StudyRole): void
 }>()
+
+// ✅ [추가] 자동 닫기 컴포저블 연결
+useModalAutoClose(
+  toRef(props, 'show'), // 모달 열림 상태
+  modalRootRef, // 모달 "내용 영역" ref
+  () => emit('close'), // 닫기 동작
+  {
+    closeOnEsc: true,
+    closeOnOutside: true,
+  },
+)
 
 /* ---------------- 기존 로직 ---------------- */
 const showStudyCode = ref(false)
@@ -466,8 +512,7 @@ async function fetchDiscordChannels() {
     }))
   } catch (e: any) {
     console.error(e)
-    discordChannelsError.value =
-      e?.response?.data?.detail ?? '채널 목록을 불러오지 못했습니다.'
+    discordChannelsError.value = e?.response?.data?.detail ?? '채널 목록을 불러오지 못했습니다.'
   } finally {
     discordLoadingChannels.value = false
   }
@@ -483,16 +528,18 @@ async function startDiscordServerConnect() {
     // ✅ 초대 시작 시점에 studyId 저장
     saveDiscordPending(props.studyId)
 
-    const res = await client.get<{ url: string }>(`${API_BASE}/studies/${props.studyId}/discord/bot/invite/`, {
-      withCredentials: true,
-      headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
-    })
+    const res = await client.get<{ url: string }>(
+      `${API_BASE}/studies/${props.studyId}/discord/bot/invite/`,
+      {
+        withCredentials: true,
+        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+      },
+    )
 
     window.location.href = res.data.url
   } catch (e: any) {
     console.error(e)
-    discordError.value =
-      e?.response?.data?.detail ?? '디스코드 봇 초대를 시작하지 못했습니다.'
+    discordError.value = e?.response?.data?.detail ?? '디스코드 봇 초대를 시작하지 못했습니다.'
   } finally {
     discordLoadingConnect.value = false
   }
@@ -507,7 +554,7 @@ async function patchDiscordNotifyChannel(channelId: string) {
     console.log(channelId)
     await client.post(
       `${API_BASE}/studies/${props.studyId}/discord/connect_channel/`,
-      { channel_id: channelId},
+      { channel_id: channelId },
       {
         withCredentials: true,
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
@@ -669,8 +716,9 @@ watch(
   border-radius: 999px;
   border: 1px dashed #cbd5e1;
   background-color: #ffffff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'Courier New', monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   letter-spacing: 0.08em;
   text-align: center;
   font-size: 0.8rem;

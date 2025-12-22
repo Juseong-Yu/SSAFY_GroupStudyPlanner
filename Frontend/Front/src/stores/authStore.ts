@@ -7,7 +7,7 @@ import type { Dictionary } from '@fullcalendar/core/internal'
 export interface AuthState {
   access: string | null
   refresh: string | null
-  discord : Dictionary | null
+  discord: Dictionary | null
 }
 
 type DiscordLoginCallbackResponse = {
@@ -20,17 +20,17 @@ type DiscordLoginCallbackResponse = {
     username: string | null
   }
   discord: {
-    discord_id: string,
-    username: string,
+    discord_id: string
+    username: string
     email: string
-}
+  }
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     access: null,
     refresh: null,
-    discord: null
+    discord: null,
   }),
 
   getters: {
@@ -76,15 +76,15 @@ export const useAuthStore = defineStore('auth', {
 
       const { access, refresh, type } = res.data
       // ✅ persist가 localStorage(nestudy-auth)에 저장
-      if (type === 'login'){
+      if (type === 'login') {
         this.access = access
         this.refresh = refresh
         // (선택) user도 저장하고 싶으면 AuthState에 user 추가해서 여기서 넣으면 됨
         return res.data
-      }else if(type === 'register'){
+      } else if (type === 'register') {
         this.discord = res.data.discord
         return res.data
-      } 
+      }
     },
 
     logout() {

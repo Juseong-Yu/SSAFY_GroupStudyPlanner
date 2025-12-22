@@ -1,8 +1,4 @@
-import type {
-  AxiosInstance,
-  AxiosError,
-  InternalAxiosRequestConfig,
-} from 'axios'
+import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
@@ -49,11 +45,11 @@ function setTokens(partial: Partial<StoredTokens>) {
 export function setupInterceptors(client: AxiosInstance) {
   client.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-      const csrftoken = getCookie('csrftoken')
-      if (csrftoken) {
-        config.headers = config.headers ?? {}
-        config.headers['X-CSRFToken'] = csrftoken
-      }
+      // const csrftoken = getCookie('csrftoken')
+      // if (csrftoken) {
+      //   config.headers = config.headers ?? {}
+      //   config.headers['X-CSRFToken'] = csrftoken
+      // }
 
       const { access } = getStoredTokens()
       //console.log('[setupInterceptors][request] access from storage:', access)
@@ -123,14 +119,8 @@ export function setupInterceptors(client: AxiosInstance) {
           const newAccess = data.access
           const newRefresh = data.refresh
 
-          console.log(
-            '[setupInterceptors][response] newAccess from refresh:',
-            newAccess,
-          )
-          console.log(
-            '[setupInterceptors][response] newRefresh from refresh:',
-            newRefresh,
-          )
+          console.log('[setupInterceptors][response] newAccess from refresh:', newAccess)
+          console.log('[setupInterceptors][response] newRefresh from refresh:', newRefresh)
 
           setTokens({
             access: newAccess,

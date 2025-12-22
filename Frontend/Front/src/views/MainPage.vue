@@ -13,11 +13,7 @@
           </div>
 
           <div class="d-flex gap-2">
-            <button
-              type="button"
-              class="btn btn-light-outline btn-sm"
-              @click="openCreateModal"
-            >
+            <button type="button" class="btn btn-light-outline btn-sm" @click="openCreateModal">
               + 개인 일정 추가
             </button>
           </div>
@@ -25,14 +21,13 @@
 
         <!-- ✅ BaseScheduleCalendar 사용 -->
         <BaseScheduleCalendar
+          ref="calendarComponentRef"
           :events="calendarEvents"
           :loading="isLoading && !isMounted"
           @event-click="handleEventClick"
         >
           <template #footer>
-            <div class="mt-3 small text-muted">
-              • 파란색: 스터디 일정 / 보라색: 개인 일정
-            </div>
+            <div class="mt-3 small text-muted">• 파란색: 스터디 일정 / 보라색: 개인 일정</div>
           </template>
         </BaseScheduleCalendar>
       </div>
@@ -45,7 +40,7 @@
       :show="showDetailModal"
       :error="detailError"
       :detail="detail"
-      user-role="member"              
+      user-role="member"
       @close="closeDetailModal"
       @delete="handleDeleteSchedule"
       @edit="handleEditSchedule"
@@ -83,12 +78,7 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">시작 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.startDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
+                    <input v-model="form.startDate" type="date" class="form-control" required />
                     <input v-model="form.startTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -96,12 +86,7 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">종료 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.endDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
+                    <input v-model="form.endDate" type="date" class="form-control" required />
                     <input v-model="form.endTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -128,15 +113,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import AppShell from '@/layouts/AppShell.vue'
 import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
 import type { EventInput, EventClickArg } from '@fullcalendar/core'
-import ScheduleDetailModal, {
-  type StoredEvent,
-} from '@/components/ScheduleDetailModal.vue'
+import ScheduleDetailModal, { type StoredEvent } from '@/components/ScheduleDetailModal.vue'
+import { useUiStore } from '@/stores/ui'
+
+const calendarComponentRef = ref<any>(null)
+const uiStore = useUiStore()
+
+watch(
+  () => uiStore.sidebarOpen,
+  async () => {
+    await nextTick()
+    // 네비 애니메이션 있으면 200~300ms 정도 주는 게 안정적
+    setTimeout(() => {
+      calendarComponentRef.value?.updateSize?.()
+    }, 300)
+  },
+)
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -383,9 +381,7 @@ const onSubmitCreate = async () => {
     closeCreateModal()
   } catch (e) {
     console.error(e)
-    errorMessage.value = isEditing.value
-      ? '일정 수정에 실패했습니다.'
-      : '일정 생성에 실패했습니다.'
+    errorMessage.value = isEditing.value ? '일정 수정에 실패했습니다.' : '일정 생성에 실패했습니다.'
   } finally {
     isSubmitting.value = false
   }
@@ -402,9 +398,7 @@ const handleEditSchedule = (payload: StoredEvent) => {
 
   const toDateStr = (d: Date) => d.toISOString().slice(0, 10) // YYYY-MM-DD
   const toTimeStr = (d: Date) =>
-    `${String(d.getHours()).padStart(2, '0')}:${String(
-      d.getMinutes(),
-    ).padStart(2, '0')}`
+    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
   form.value = {
     title: data.schedule.title,

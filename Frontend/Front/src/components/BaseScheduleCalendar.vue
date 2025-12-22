@@ -27,12 +27,7 @@ import { ref, computed, onMounted } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import type {
-  CalendarOptions,
-  EventInput,
-  DatesSetArg,
-  EventClickArg,
-} from '@fullcalendar/core'
+import type { CalendarOptions, EventInput, DatesSetArg, EventClickArg } from '@fullcalendar/core'
 
 const props = defineProps<{
   events: EventInput[]
@@ -103,6 +98,7 @@ const getApi = () => calendarRef.value?.getApi()
 
 defineExpose({
   getApi,
+  updateSize: () => calendarRef.value?.getApi().updateSize(),
 })
 
 onMounted(() => {
@@ -245,5 +241,4 @@ onMounted(() => {
 :deep(.fc-dayGridWeek-view .fc-daygrid-event) {
   min-height: 40px;
 }
- 
 </style>

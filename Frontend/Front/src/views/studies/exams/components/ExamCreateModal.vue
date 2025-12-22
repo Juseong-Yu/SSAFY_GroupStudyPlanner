@@ -4,17 +4,13 @@
   <div class="modal-backdrop fade show"></div>
 
   <!-- 모달 -->
-  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" ref="modalRootRef">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <!-- 헤더 -->
         <div class="modal-header">
           <h5 class="modal-title">시험 생성</h5>
-          <button
-            type="button"
-            class="btn-close"
-            @click="onClose"
-          ></button>
+          <button type="button" class="btn-close" @click="onClose"></button>
         </div>
 
         <!-- 본문 -->
@@ -57,12 +53,7 @@
 
             <div class="col-md-6">
               <label class="form-label">문제 수</label>
-              <input
-                v-model.number="questionCount"
-                type="number"
-                min="1"
-                class="form-control"
-              />
+              <input v-model.number="questionCount" type="number" min="1" class="form-control" />
             </div>
 
             <div class="col-md-6">
@@ -76,26 +67,14 @@
 
             <div class="col-md-6">
               <label class="form-label">시작 일시 (선택)</label>
-              <input
-                v-model="startDate"
-                type="datetime-local"
-                class="form-control"
-              />
-              <div class="form-text">
-                비워두면 생성 직후부터 응시할 수 있습니다.
-              </div>
+              <input v-model="startDate" type="datetime-local" class="form-control" />
+              <div class="form-text">비워두면 생성 직후부터 응시할 수 있습니다.</div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label">마감 일시 (선택)</label>
-              <input
-                v-model="dueDate"
-                type="datetime-local"
-                class="form-control"
-              />
-              <div class="form-text">
-                비워두면 마감 시간 제한 없이 응시할 수 있습니다.
-              </div>
+              <input v-model="dueDate" type="datetime-local" class="form-control" />
+              <div class="form-text">비워두면 마감 시간 제한 없이 응시할 수 있습니다.</div>
             </div>
           </div>
 
@@ -122,9 +101,7 @@
                 accept=".txt,.md,.doc,.docx,.pdf"
                 @change="onFileChange"
               />
-              <div class="form-text">
-                텍스트 파일, 워드, PDF 등을 업로드할 수 있습니다.
-              </div>
+              <div class="form-text">텍스트 파일, 워드, PDF 등을 업로드할 수 있습니다.</div>
             </div>
           </div>
 
@@ -149,10 +126,7 @@
             :disabled="isSubmitting"
             @click="onSubmit"
           >
-            <span
-              v-if="isSubmitting"
-              class="spinner-border spinner-border-sm me-1"
-            ></span>
+            <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
             다음으로
           </button>
         </div>
@@ -188,7 +162,7 @@ const visibility = ref<'public' | 'score_only' | 'private'>('public')
 
 // ✅ 시작/마감 일시는 datetime-local과 맞춰 string으로 관리
 const startDate = ref<string>('') // "2025-12-10T13:00"
-const dueDate = ref<string>('')   // ""
+const dueDate = ref<string>('') // ""
 
 const aiText = ref('')
 const file = ref<File | null>(null)

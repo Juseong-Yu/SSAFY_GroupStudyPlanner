@@ -18,11 +18,10 @@ export const getCookie = (name: string): string | null => {
  * CSRF 토큰이 없으면 Django에서 새로 받아오는 함수
  */
 export const ensureCsrf = async (): Promise<void> => {
-  const csrf = getCookie('csrftoken')
-
-  if (!csrf) {
-    await axios.get(`${API_BASE}/accounts/csrf/`, {
-      withCredentials: true,
-    })
-  }
+  //const csrf = getCookie('csrftoken')
+  // if (!csrf) {
+  //   await axios.get(`${API_BASE}/api/csrf/`, {
+  //     withCredentials: true,
+  //   })
+  // }
 }
