@@ -34,33 +34,7 @@
                 </div>
               </div>
 
-              <div class="d-flex gap-2">
-                <!-- ✅ 연결 -->
-                <button
-                  v-if="!isDiscordConnected"
-                  class="btn discord-btn d-flex align-items-center gap-2"
-                  type="button"
-                  :disabled="discordLoading"
-                  @click="startDiscordConnect"
-                >
-                  <span v-if="discordLoading" class="spinner-border spinner-border-sm text-light" />
-                  <i v-else class="bi bi-discord"></i>
-                  {{ discordLoading ? '연결 중...' : '디스코드 연결' }}
-                </button>
-
-                <!-- ✅ 해제 -->
-                <button
-                  v-else
-                  class="btn btn-outline-danger d-flex align-items-center gap-2"
-                  type="button"
-                  :disabled="discordLoading"
-                  @click="disconnectDiscord"
-                >
-                  <span v-if="discordLoading" class="spinner-border spinner-border-sm" />
-                  <i v-else class="bi bi-x-circle"></i>
-                  {{ discordLoading ? '해제 중...' : '연동 해제' }}
-                </button>
-              </div>
+              <div class="d-flex gap-2"></div>
             </div>
 
             <hr class="my-4" />
@@ -102,7 +76,10 @@
                   :disabled="googleLoading"
                   @click="startGoogleConnect"
                 >
-                  <span v-if="googleLoading" class="spinner-border spinner-border-sm text-secondary" />
+                  <span
+                    v-if="googleLoading"
+                    class="spinner-border spinner-border-sm text-secondary"
+                  />
                   <img
                     v-else
                     :src="googleLogoSrc"

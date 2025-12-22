@@ -16,9 +16,7 @@
         <!-- 오른쪽 -->
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="signup-form-wrapper">
-            <h3 class="fw-bold mb-3 title-text">
-              소셜 로그인 중<br />추가정보를 입력해주세요.
-            </h3>
+            <h3 class="fw-bold mb-3 title-text">소셜 로그인 중<br />추가정보를 입력해주세요.</h3>
             <p class="text-muted">회원가입을 위해 닉네임/비밀번호/약관 동의가 필요해요.</p>
 
             <!-- OAuth 프리필 카드 -->
@@ -86,13 +84,7 @@
               <!-- 이메일(가능하면 readonly) -->
               <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input
-                  v-model.trim="form.email"
-                  type="email"
-                  class="form-control"
-                  :readonly="!!prefill.email"
-                  :disabled="!!prefill.email"
-                />
+                <input v-model.trim="form.email" type="email" class="form-control" />
               </div>
 
               <!-- ✅ 비밀번호(무조건 입력) -->
@@ -121,8 +113,7 @@
                   class="form-control"
                   :class="{
                     'is-invalid':
-                      (form.password_confirm && !passwordsMatch) ||
-                      fieldError('password_confirm'),
+                      (form.password_confirm && !passwordsMatch) || fieldError('password_confirm'),
                   }"
                   placeholder="비밀번호 확인"
                 />
@@ -214,16 +205,20 @@ const router = useRouter()
 
 const authStore = useAuthStore()
 const { discord } = storeToRefs(authStore)
+// ✅ getter도 같이 쓰고 싶으면 이렇게 바로 접근하면 됨 (반응성은 computed로 감싸도 됨)
+const discordId = computed(() => authStore.discord)
+const isDiscordConnected = computed(() => authStore.isDiscordConnected)
 
 /**
  * ✅ 프리필 타입
  */
 interface OAuthPrefill {
-  provider: string // 'discord' | 'google' | 'github' | ...
+  provider: string
   provider_user_id: string | null
   email: string | null
   display_name: string | null
   avatar_url: string | null
+  discord_id: string | null
   needs_extra_info: boolean
 }
 
@@ -234,6 +229,7 @@ const prefill = ref<OAuthPrefill>({
   display_name: null,
   avatar_url: null,
   needs_extra_info: true,
+  discord_id: null,
 })
 
 const prefillLoaded = ref(false)
@@ -248,6 +244,8 @@ const form = ref({
   agree: false,
   password: '',
   password_confirm: '',
+  // ✅ discord_id는 string|null로 관리 (',' 같은 쓰레기값 금지)
+  discord_id: null as string | null,
 })
 
 const providerLabel = computed(() => {
@@ -278,10 +276,7 @@ const resetErrors = () => {
 }
 
 const passwordsMatch = computed(() => {
-  return (
-    form.value.password_confirm === '' ||
-    form.value.password === form.value.password_confirm
-  )
+  return form.value.password_confirm === '' || form.value.password === form.value.password_confirm
 })
 
 const validatePassword = () => {
@@ -320,22 +315,19 @@ const canSubmit = computed(() => {
 
 /**
  * ✅ 프리필 로드
- * (변경) authStore.discord 에 저장된 값으로만 프리필 채우기
+ * authStore.discord (혹은 getter) 기반으로 프리필 채우기
  */
 const loadPrefill = async () => {
   resetErrors()
   loading.value = true
 
   try {
-    const d = discord.value as
-      | { discord_id?: string; username?: string; email?: string }
-      | null
+    // ✅ 가장 안정적: store state에서 읽기
+    const d = discord.value as { discord_id?: string; username?: string; email?: string } | null
 
-    if (!d) {
+    if (!d || !d.discord_id) {
       nonFieldError.value =
         '추가정보를 불러오지 못했습니다. 디스코드 인증 정보가 없습니다. 다시 로그인 해주세요.'
-      // 필요하면 강제 이동
-      // router.replace('/login')
       return
     }
 
@@ -346,13 +338,14 @@ const loadPrefill = async () => {
       display_name: d.username ?? null,
       avatar_url: null,
       needs_extra_info: true,
+      discord_id: d.discord_id ?? null,
     }
-
     prefillLoaded.value = true
 
     // ✅ 폼 프리필
     form.value.email = prefill.value.email ?? ''
     form.value.username = prefill.value.display_name ?? ''
+    form.value.discord_id = prefill.value.discord_id
   } catch (err: any) {
     console.error('[oauth prefill] failed', err)
     nonFieldError.value = '추가정보를 불러오지 못했습니다.'
@@ -365,13 +358,18 @@ onMounted(loadPrefill)
 
 /**
  * ✅ 가입 완료
- * POST /api/signup
+ * POST /api/signup/
  */
 const onSubmit = async () => {
   if (!canSubmit.value) return
   resetErrors()
-
   if (!validatePassword()) return
+
+  // ✅ 제출 직전 한 번 더 보장 (store getter 기반)
+  // if (!isDiscordConnected.value || !discordId.value) {
+  //   nonFieldError.value = '디스코드 인증 정보가 없습니다. 다시 로그인 해주세요.'
+  //   return
+  // }
 
   loading.value = true
   try {
@@ -383,8 +381,14 @@ const onSubmit = async () => {
       username: form.value.username,
       password: form.value.password,
       password_confirm: form.value.password_confirm,
-    }
 
+      // ✅ 핵심: authStore에 저장된 discord_id 가져와서 전송
+      discord_id: discordId.value.discord_id,
+
+      // 만약 백엔드가 "discord" 키를 기대하면 이것도 같이 보내도 됨
+      // discord: discordId.value,
+    }
+    console.log(payload)
     await axios.post(`${API_BASE}/api/signup/`, payload, {
       withCredentials: true,
       headers: {
@@ -393,7 +397,6 @@ const onSubmit = async () => {
       },
     })
 
-    // ✅ 가입 완료 후 로그인 페이지로 이동
     router.replace('/login')
   } catch (err: any) {
     console.error('[oauth complete] failed', err)

@@ -63,6 +63,7 @@
           <!-- ✅ 캘린더 뷰: BaseScheduleCalendar 사용 -->
           <div v-if="viewMode === 'calendar'" class="schedule-main-calendar">
             <BaseScheduleCalendar
+              ref="calendarComponentRef"
               :events="calendarEvents"
               :loading="isLoading"
               @event-click="handleEventClick"
@@ -161,7 +162,7 @@
                           v-if="getDDay(item) !== null"
                           class="badge rounded-pill bg-success-subtle text-success small"
                         >
-                          {{ getDDay(item) === 0 ? "D-day" : "D-" + getDDay(item) }}
+                          {{ getDDay(item) === 0 ? 'D-day' : 'D-' + getDDay(item) }}
                         </span>
                       </div>
                       <div class="text-muted small text-truncate mb-1">
@@ -255,7 +256,7 @@
         <div class="card shadow-sm">
           <div class="card-header">
             <h5 class="mb-0 fw-bold">
-              {{ isEditing ? "일정 수정" : "일정 추가" }}
+              {{ isEditing ? '일정 수정' : '일정 추가' }}
             </h5>
           </div>
 
@@ -283,12 +284,7 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">시작 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.startDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
+                    <input v-model="form.startDate" type="date" class="form-control" required />
                     <input v-model="form.startTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -296,12 +292,7 @@
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">종료 일시</label>
                   <div class="d-flex gap-2">
-                    <input
-                      v-model="form.endDate"
-                      type="date"
-                      class="form-control"
-                      required
-                    />
+                    <input v-model="form.endDate" type="date" class="form-control" required />
                     <input v-model="form.endTime" type="time" class="form-control" />
                   </div>
                 </div>
@@ -318,7 +309,8 @@
                   <option value="1440">하루 전</option>
                 </select>
                 <div class="form-text small text-muted">
-                  알림 시간은 시작 시간 기준이며, 서버에는 <strong>offset(분 단위)</strong>으로 전송됩니다.
+                  알림 시간은 시작 시간 기준이며, 서버에는 <strong>offset(분 단위)</strong>으로
+                  전송됩니다.
                 </div>
               </div>
 
@@ -345,34 +337,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
-import { useRoute } from "vue-router"
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import client from '@/api/client'
-import AppShell from "@/layouts/AppShell.vue"
-import { ensureCsrf, getCookie } from "@/utils/csrf_cors"
+import AppShell from '@/layouts/AppShell.vue'
+import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
+import { useUiStore } from '@/stores/ui'
 
-import BaseScheduleCalendar from "@/components/BaseScheduleCalendar.vue"
-import ScheduleDetailModal, { type StoredEvent } from "@/components/ScheduleDetailModal.vue"
-import { useStudyRoleStore } from "@/stores/studyRoleStore"
-import type { EventInput, EventClickArg } from "@fullcalendar/core"
+import BaseScheduleCalendar from '@/components/BaseScheduleCalendar.vue'
+import ScheduleDetailModal, { type StoredEvent } from '@/components/ScheduleDetailModal.vue'
+import { useStudyRoleStore } from '@/stores/studyRoleStore'
+import type { EventInput, EventClickArg } from '@fullcalendar/core'
 
 /* ==============================
    라우트 / 상수
 ================================= */
 const route = useRoute()
 const studyId = route.params.id as string
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 /* ==============================
    뷰 전환 상태
 ================================= */
-const viewMode = ref<"calendar" | "list">("calendar")
+const viewMode = ref<'calendar' | 'list'>('calendar')
+const uiStore = useUiStore()
+const calendarComponentRef = ref<any>(null)
+watch(
+  () => uiStore.sidebarOpen,
+  async () => {
+    await nextTick()
+    // 네비 애니메이션 있으면 200~300ms 정도 주는 게 안정적
+    setTimeout(() => {
+      calendarComponentRef.value?.updateSize?.()
+    }, 300)
+  },
+)
 
 /* ==============================
    타입 정의
 ================================= */
 
-type StudyRole = "leader" | "admin" | "member"
+type StudyRole = 'leader' | 'admin' | 'member'
 
 interface ScheduleReminder {
   offset: number // 🔹 분 단위
@@ -421,24 +426,24 @@ const isLoading = ref(false)
 /* 생성/수정 모달 상태 */
 const showCreateModal = ref(false)
 const isSubmitting = ref(false)
-const errorMessage = ref("")
+const errorMessage = ref('')
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
 
 const form = ref({
-  title: "",
-  description: "",
-  startDate: "",
-  startTime: "",
-  endDate: "",
-  endTime: "",
+  title: '',
+  description: '',
+  startDate: '',
+  startTime: '',
+  endDate: '',
+  endTime: '',
   // 'none' 이면 reminder 필드 자체를 보내지 않음
-  reminderOffset: "none" as string, // 분 단위 선택값 (10, 30, 60, 1440, ...)
+  reminderOffset: 'none' as string, // 분 단위 선택값 (10, 30, 60, 1440, ...)
 })
 
 /* 상세 모달 상태 (ScheduleDetailModal용) */
 const showDetailModal = ref(false)
-const detailError = ref("")
+const detailError = ref('')
 const detail = ref<StoredEvent | null>(null)
 
 /* ==============================
@@ -465,14 +470,14 @@ const calendarEvents = computed<EventInput[]>(() =>
       title: item.schedule.title,
       start,
       end,
-      backgroundColor: "#e7f1ff",
-      borderColor: "#b6d4fe",
-      textColor: "#084298",
+      backgroundColor: '#e7f1ff',
+      borderColor: '#b6d4fe',
+      textColor: '#084298',
       extendedProps: {
         reminder: item.schedule.reminder ?? null,
       },
     }
-  })
+  }),
 )
 
 /* ==============================
@@ -486,15 +491,15 @@ const parseUtc = (value: string): Date => {
 
 const formatTimeUtc = (value: string): string => {
   const d = parseUtc(value)
-  if (isNaN(d.getTime())) return ""
-  const h = String(d.getUTCHours()).padStart(2, "0")
-  const m = String(d.getUTCMinutes()).padStart(2, "0")
+  if (isNaN(d.getTime())) return ''
+  const h = String(d.getUTCHours()).padStart(2, '0')
+  const m = String(d.getUTCMinutes()).padStart(2, '0')
   return `${h}:${m}`
 }
 
 const formatShortDateUtc = (value: string): string => {
   const d = parseUtc(value)
-  if (isNaN(d.getTime())) return ""
+  if (isNaN(d.getTime())) return ''
   const month = d.getUTCMonth() + 1
   const day = d.getUTCDate()
   return `${month}월 ${day}일`
@@ -504,21 +509,23 @@ const formatRangeUtc = (startIso: string, endIso?: string | null): string => {
   const s = parseUtc(startIso)
   const e = endIso ? parseUtc(endIso) : null
 
-  if (isNaN(s.getTime())) return ""
+  if (isNaN(s.getTime())) return ''
 
   const sDate = `${s.getUTCMonth() + 1}월 ${s.getUTCDate()}일`
-  const sTime = `${String(s.getUTCHours()).padStart(2, "0")}:${String(
-    s.getUTCMinutes()
-  ).padStart(2, "0")}`
+  const sTime = `${String(s.getUTCHours()).padStart(2, '0')}:${String(s.getUTCMinutes()).padStart(
+    2,
+    '0',
+  )}`
 
   if (!e || isNaN(e.getTime()) || e <= s) {
     return `${sDate} ${sTime}`
   }
 
   const eDate = `${e.getUTCMonth() + 1}월 ${e.getUTCDate()}일`
-  const eTime = `${String(e.getUTCHours()).padStart(2, "0")}:${String(
-    e.getUTCMinutes()
-  ).padStart(2, "0")}`
+  const eTime = `${String(e.getUTCHours()).padStart(2, '0')}:${String(e.getUTCMinutes()).padStart(
+    2,
+    '0',
+  )}`
 
   if (
     s.getUTCFullYear() === e.getUTCFullYear() &&
@@ -532,14 +539,14 @@ const formatRangeUtc = (startIso: string, endIso?: string | null): string => {
 
 /* 폼용: ISO → date/time (로컬 기준) */
 const isoToLocalParts = (iso: string | undefined | null) => {
-  if (!iso) return { date: "", time: "" }
+  if (!iso) return { date: '', time: '' }
   const d = new Date(iso)
-  if (isNaN(d.getTime())) return { date: "", time: "" }
+  if (isNaN(d.getTime())) return { date: '', time: '' }
   const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, "0")
-  const dd = String(d.getDate()).padStart(2, "0")
-  const hh = String(d.getHours()).padStart(2, "0")
-  const mi = String(d.getMinutes()).padStart(2, "0")
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
   return {
     date: `${yyyy}-${mm}-${dd}`,
     time: `${hh}:${mi}`,
@@ -549,20 +556,12 @@ const isoToLocalParts = (iso: string | undefined | null) => {
 /* D-day (다가오는 일정용) */
 const getDDay = (item: ScheduleItem): number | null => {
   const now = new Date()
-  const todayZero = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  ).getTime()
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
 
   const start = parseUtc(item.schedule.start_at)
   if (isNaN(start.getTime())) return null
 
-  const startZero = new Date(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate()
-  ).getTime()
+  const startZero = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
 
   const diffDays = Math.round((startZero - todayZero) / (1000 * 60 * 60 * 24))
   if (diffDays < 0) return null
@@ -584,9 +583,7 @@ const ongoingSchedules = computed<ScheduleItem[]>(() => {
       return s.getTime() <= now && e.getTime() >= now
     })
     .sort(
-      (a, b) =>
-        parseUtc(a.schedule.start_at).getTime() -
-        parseUtc(b.schedule.start_at).getTime()
+      (a, b) => parseUtc(a.schedule.start_at).getTime() - parseUtc(b.schedule.start_at).getTime(),
     )
 })
 
@@ -600,9 +597,7 @@ const upcomingSchedules = computed<ScheduleItem[]>(() => {
       return s.getTime() > now
     })
     .sort(
-      (a, b) =>
-        parseUtc(a.schedule.start_at).getTime() -
-        parseUtc(b.schedule.start_at).getTime()
+      (a, b) => parseUtc(a.schedule.start_at).getTime() - parseUtc(b.schedule.start_at).getTime(),
     )
 })
 
@@ -618,7 +613,7 @@ const pastSchedules = computed<ScheduleItem[]>(() => {
     .sort(
       (a, b) =>
         parseUtc(b.schedule.end_at || b.schedule.start_at).getTime() -
-        parseUtc(a.schedule.end_at || a.schedule.start_at).getTime()
+        parseUtc(a.schedule.end_at || a.schedule.start_at).getTime(),
     )
 })
 
@@ -633,7 +628,7 @@ const fetchSchedules = async () => {
       `${API_BASE}/studies/${studyId}/schedules/study_schedule_list/`,
       {
         withCredentials: true,
-      }
+      },
     )
     schedules.value = res.data || []
   } finally {
@@ -642,24 +637,21 @@ const fetchSchedules = async () => {
 }
 
 const onClickDelete = async (id: number) => {
-  if (!confirm("삭제하시겠습니까?")) return
+  if (!confirm('삭제하시겠습니까?')) return
 
   try {
     await ensureCsrf()
-    const csrftoken = getCookie("csrftoken")
+    const csrftoken = getCookie('csrftoken')
 
-    await client.delete(
-      `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
-      {
-        withCredentials: true,
-        headers: { "X-CSRFToken": csrftoken || "" },
-      }
-    )
+    await client.delete(`${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`, {
+      withCredentials: true,
+      headers: { 'X-CSRFToken': csrftoken || '' },
+    })
 
     schedules.value = schedules.value.filter((i) => i.id !== id)
     await fetchSchedules()
   } catch {
-    alert("삭제에 실패했습니다.")
+    alert('삭제에 실패했습니다.')
   }
 }
 
@@ -669,7 +661,7 @@ const onClickDelete = async (id: number) => {
 
 const openDetailModal = async (id: number) => {
   showDetailModal.value = true
-  detailError.value = ""
+  detailError.value = ''
   detail.value = null
 
   try {
@@ -677,11 +669,11 @@ const openDetailModal = async (id: number) => {
       `${API_BASE}/studies/${studyId}/schedules/${id}/study_schedule_detail/`,
       {
         withCredentials: true,
-      }
+      },
     )
 
     const stored: StoredEvent = {
-      type: "study",
+      type: 'study',
       data: {
         id: res.data.id,
         schedule: {
@@ -698,14 +690,14 @@ const openDetailModal = async (id: number) => {
     detail.value = stored
   } catch (e) {
     console.error(e)
-    detailError.value = "일정 상세를 불러오지 못했습니다."
+    detailError.value = '일정 상세를 불러오지 못했습니다.'
   }
 }
 
 const closeDetailModal = () => {
   showDetailModal.value = false
   detail.value = null
-  detailError.value = ""
+  detailError.value = ''
 }
 
 /* BaseScheduleCalendar → event 클릭 */
@@ -731,21 +723,19 @@ const handleDetailEdit = (payload: StoredEvent) => {
   const endParts = isoToLocalParts(s.end_at || s.start_at)
 
   form.value = {
-    title: s.title ?? "",
-    description: s.description ?? "",
+    title: s.title ?? '',
+    description: s.description ?? '',
     startDate: startParts.date,
     startTime: startParts.time,
     endDate: endParts.date,
     endTime: endParts.time,
     reminderOffset:
-      s.reminder && typeof s.reminder.offset === "number"
-        ? String(s.reminder.offset)
-        : "none",
+      s.reminder && typeof s.reminder.offset === 'number' ? String(s.reminder.offset) : 'none',
   }
 
   isEditing.value = true
   editingId.value = payload.data.id
-  errorMessage.value = ""
+  errorMessage.value = ''
 
   // 상세 모달 닫고, 생성/수정 모달 오픈
   closeDetailModal()
@@ -757,9 +747,9 @@ const handleDetailEdit = (payload: StoredEvent) => {
 ================================= */
 
 const buildDateTime = (date: string, time: string, fallback: string): string => {
-  const d = (date || "").trim()
-  if (!d) return ""
-  const t = (time || "").trim() || fallback
+  const d = (date || '').trim()
+  if (!d) return ''
+  const t = (time || '').trim() || fallback
   return `${d} ${t}`
 }
 
@@ -767,15 +757,15 @@ const openCreateModal = () => {
   isEditing.value = false
   editingId.value = null
   form.value = {
-    title: "",
-    description: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
-    reminderOffset: "none",
+    title: '',
+    description: '',
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: '',
+    reminderOffset: 'none',
   }
-  errorMessage.value = ""
+  errorMessage.value = ''
   showCreateModal.value = true
 }
 
@@ -786,11 +776,11 @@ const closeCreateModal = () => {
 }
 
 const validateForm = (): boolean => {
-  const startStr = buildDateTime(form.value.startDate, form.value.startTime, "00:00")
-  const endStr = buildDateTime(form.value.endDate, form.value.endTime, "23:59")
+  const startStr = buildDateTime(form.value.startDate, form.value.startTime, '00:00')
+  const endStr = buildDateTime(form.value.endDate, form.value.endTime, '23:59')
 
   if (!startStr || !endStr) {
-    errorMessage.value = "날짜를 입력해주세요."
+    errorMessage.value = '날짜를 입력해주세요.'
     return false
   }
 
@@ -798,16 +788,16 @@ const validateForm = (): boolean => {
   const end = new Date(endStr)
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    errorMessage.value = "날짜/시간 형식이 올바르지 않습니다."
+    errorMessage.value = '날짜/시간 형식이 올바르지 않습니다.'
     return false
   }
 
   if (end < start) {
-    errorMessage.value = "종료 시간이 더 빠릅니다."
+    errorMessage.value = '종료 시간이 더 빠릅니다.'
     return false
   }
 
-  errorMessage.value = ""
+  errorMessage.value = ''
   return true
 }
 
@@ -817,21 +807,13 @@ const onSubmitCreate = async () => {
   try {
     isSubmitting.value = true
     await ensureCsrf()
-    const csrftoken = getCookie("csrftoken")
+    const csrftoken = getCookie('csrftoken')
 
-    const start_at = buildDateTime(
-      form.value.startDate,
-      form.value.startTime,
-      "00:00"
-    )
-    const end_at = buildDateTime(
-      form.value.endDate,
-      form.value.endTime,
-      "23:59"
-    )
+    const start_at = buildDateTime(form.value.startDate, form.value.startTime, '00:00')
+    const end_at = buildDateTime(form.value.endDate, form.value.endTime, '23:59')
 
     let reminder: ScheduleReminder | null = null
-    if (form.value.reminderOffset && form.value.reminderOffset !== "none") {
+    if (form.value.reminderOffset && form.value.reminderOffset !== 'none') {
       const minutes = Number(form.value.reminderOffset)
       if (!Number.isNaN(minutes) && minutes > 0) {
         reminder = { offset: minutes }
@@ -857,10 +839,10 @@ const onSubmitCreate = async () => {
         {
           withCredentials: true,
           headers: {
-            "X-CSRFToken": csrftoken || "",
-            "Content-Type": "application/json",
+            'X-CSRFToken': csrftoken || '',
+            'Content-Type': 'application/json',
           },
-        }
+        },
       )
     } else {
       // 생성
@@ -870,10 +852,10 @@ const onSubmitCreate = async () => {
         {
           withCredentials: true,
           headers: {
-            "X-CSRFToken": csrftoken || "",
-            "Content-Type": "application/json",
+            'X-CSRFToken': csrftoken || '',
+            'Content-Type': 'application/json',
           },
-        }
+        },
       )
     }
 
@@ -887,9 +869,9 @@ const onSubmitCreate = async () => {
 /* 제출 버튼 라벨 */
 const submitButtonLabel = computed(() => {
   if (isEditing.value) {
-    return isSubmitting.value ? "수정 중..." : "수정"
+    return isSubmitting.value ? '수정 중...' : '수정'
   }
-  return isSubmitting.value ? "저장 중..." : "저장"
+  return isSubmitting.value ? '저장 중...' : '저장'
 })
 
 /* ==============================
@@ -902,7 +884,7 @@ const canManageSchedules = computed(() => studyRoleStore.isAdmin(studyId))
 
 // Modal에 내려줄 내 역할 (isAdmin이면 admin 취급, 아니면 member)
 const myScheduleRole = computed<StudyRole>(() =>
-  studyRoleStore.isAdmin(studyId) ? "admin" : "member"
+  studyRoleStore.isAdmin(studyId) ? 'admin' : 'member',
 )
 
 /* ==============================

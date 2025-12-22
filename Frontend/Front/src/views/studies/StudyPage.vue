@@ -26,6 +26,7 @@
           <!-- 왼쪽: 달력 -->
           <div class="col-12 col-xl-8">
             <BaseScheduleCalendar
+              ref="calendarComponentRef"
               :events="calendarEvents"
               :loading="!isLoaded && !calendarEvents.length"
               @event-click="handleEventClick"
@@ -190,7 +191,7 @@
       :show="showDetailModal"
       :error="detailError"
       :detail="detail"
-      :user-role="myScheduleRole" 
+      :user-role="myScheduleRole"
       @close="closeDetailModal"
       @delete="handleDetailDelete"
       @edit="handleDetailEdit"
@@ -216,7 +217,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import client from '@/api/client'
 import AppShell from '@/layouts/AppShell.vue'
@@ -226,14 +227,17 @@ import StudyManageModal from '@/views/studies/components/StudyManageModal.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import type { EventInput, EventClickArg } from '@fullcalendar/core'
 import { useStudyRoleStore, type StudyRole } from '@/stores/studyRoleStore'
-
+import { useUiStore } from '@/stores/ui'
+import { useStudiesStore } from '@/stores/studies'
 // 백엔드 베이스 URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string
 
 const route = useRoute()
 const router = useRouter()
 const studyRoleStore = useStudyRoleStore()
-
+const calendarComponentRef = ref<any>(null)
+const uiStore = useUiStore()
+const studiesStroe = useStudiesStore()
 // 🔗 스터디 기본 정보
 const studyId = computed(() => Number(route.params.id))
 const studyTitle = ref('스터디 불러오는 중...')
@@ -277,10 +281,7 @@ const notices = ref<Notice[]>([])
 
 const topNotices = computed(() =>
   [...notices.value]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 2),
 )
 
@@ -511,9 +512,7 @@ async function fetchNotices() {
         id: n.author.id,
         username: n.author.username,
         email: n.author.email,
-        profileImg: n.author.profile_img
-          ? `${API_BASE}${n.author.profile_img}`
-          : null,
+        profileImg: n.author.profile_img ? `${API_BASE}${n.author.profile_img}` : null,
       },
     }))
   } catch (error) {
@@ -526,12 +525,9 @@ async function fetchExams() {
   try {
     await ensureCsrf()
 
-    const { data } = await client.get<any[]>(
-      `${API_BASE}/studies/${studyId.value}/exams/`,
-      {
-        withCredentials: true,
-      },
-    )
+    const { data } = await client.get<any[]>(`${API_BASE}/studies/${studyId.value}/exams/`, {
+      withCredentials: true,
+    })
 
     exams.value = data.map((exam) => ({
       id: exam.id,
@@ -555,15 +551,12 @@ async function fetchMembers() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    const { data } = await client.get<any[]>(
-      `${API_BASE}/studies/${studyId.value}/member_list/`,
-      {
-        withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken || '',
-        },
+    const { data } = await client.get<any[]>(`${API_BASE}/studies/${studyId.value}/member_list/`, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken || '',
       },
-    )
+    })
 
     members.value = data.map((item) => ({
       id: item.user.id,
@@ -603,9 +596,10 @@ function formatScheduleRange(startIso: string, endIso: string) {
   ).padStart(2, '0')}`
 
   const endDate = `${end.getMonth() + 1}/${end.getDate()}`
-  const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(
-    end.getMinutes(),
-  ).padStart(2, '0')}`
+  const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(
+    2,
+    '0',
+  )}`
 
   if (startDate === endDate) {
     return `${startDate} ${startTime} ~ ${endTime}`
@@ -639,9 +633,7 @@ const upcomingSchedules = computed(() =>
       return end.getTime() >= today.getTime()
     })
     .sort(
-      (a, b) =>
-        new Date(a.schedule.start_at).getTime() -
-        new Date(b.schedule.start_at).getTime(),
+      (a, b) => new Date(a.schedule.start_at).getTime() - new Date(b.schedule.start_at).getTime(),
     )
     .slice(0, 2),
 )
@@ -657,9 +649,7 @@ const upcomingExams = computed(() =>
       if (!a.due_at && !b.due_at) return 0
       if (!a.due_at) return 1
       if (!b.due_at) return -1
-      return (
-        new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
-      )
+      return new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
     })
     .slice(0, 2),
 )
@@ -771,9 +761,7 @@ function handleDetailEdit(payload: StoredEvent) {
 
 function openManageModal() {
   showManageModal.value = true
-  if (isLeader.value) {
-    fetchMembers()
-  }
+  fetchMembers()
 }
 
 function handleCloseManageModal() {
@@ -809,6 +797,7 @@ async function handleLeaveStudy() {
     )
 
     alert('스터디에서 탈퇴되었습니다.')
+    studiesStroe.refresh()
     router.push('/main')
   } catch (e) {
     console.error('스터디 탈퇴 실패:', e)
@@ -828,18 +817,15 @@ async function handleDissolveStudy() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    await client.delete(
-      `${API_BASE}/studies/${studyId.value}/study_delete/`,
-      {
-        withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken || '',
-        },
+    await client.delete(`${API_BASE}/studies/${studyId.value}/study_delete/`, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken || '',
       },
-    )
-
+    })
+    studiesStroe.refresh()
     alert('스터디가 해산되었습니다.')
-    router.push('/studies')
+    router.push('/main')
   } catch (e) {
     console.error('스터디 해산 실패:', e)
     alert('스터디 해산 중 오류가 발생했습니다.')
@@ -907,6 +893,18 @@ async function handleChangeRole(memberId: number, role: StudyRole) {
 /* =========================
  *   스터디 ID 변경 감시
  * ========================= */
+watch(
+  () => uiStore.sidebarOpen,
+  async () => {
+    // DOM 반영 기다리고
+    await nextTick()
+
+    // 사이드바 transition 끝난 뒤
+    window.setTimeout(() => {
+      calendarComponentRef.value?.updateSize?.()
+    }, 300) // ← AppShell sidebar transition 시간
+  },
+)
 
 watch(
   studyId,
@@ -915,9 +913,7 @@ watch(
     isLoaded.value = false
 
     try {
-      // 역할 먼저 캐싱
       await studyRoleStore.fetchMyRole(newId)
-
       await fetchStudy()
       await fetchSchedules()
       await fetchNotices()

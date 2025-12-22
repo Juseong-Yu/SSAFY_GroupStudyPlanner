@@ -1,10 +1,6 @@
 <template>
   <!-- 오버레이 (모바일 전용) -->
-  <div
-    v-if="ui.sidebarOpen"
-    class="sidebar-backdrop d-lg-none"
-    @click="ui.closeSidebar"
-  ></div>
+  <div v-if="ui.sidebarOpen" class="sidebar-backdrop d-lg-none" @click="ui.closeSidebar"></div>
 
   <!-- 왼쪽 슬라이딩 사이드바 -->
   <aside
@@ -19,16 +15,10 @@
       class="profile-section d-flex align-items-center justify-content-between p-3 border-bottom"
     >
       <!-- ✅ 프로필 전체 클릭 시 메인으로 이동 -->
-      <div
-        class="d-flex align-items-center profile-click-target"
-        @click="handleProfileClick"
-      >
+      <div class="d-flex align-items-center profile-click-target" @click="handleProfileClick">
         <!-- 프로필 이미지: 로딩/미설정 대비 -->
         <template v-if="user.loading">
-          <span
-            class="placeholder rounded-circle me-2"
-            style="width: 30px; height: 30px"
-          ></span>
+          <span class="placeholder rounded-circle me-2" style="width: 30px; height: 30px"></span>
           <div class="placeholder col-4" style="height: 1rem"></div>
         </template>
         <template v-else>
@@ -242,13 +232,9 @@
 
           <div class="mb-1">
             <label class="form-label">스터디 이름</label>
-            <input
-              v-model.trim="create.form.title"
-              class="form-control"
-              placeholder="예) 알고리즘 스터디"
-            />
+            <input v-model.trim="create.form.title" class="form-control" />
           </div>
-          <small class="text-muted">필수: 스터디 이름만 설정합니다.</small>
+          <small class="text-muted"></small>
         </div>
 
         <div class="modal-footer">
@@ -300,11 +286,7 @@
 
           <div class="mb-3">
             <label class="form-label">참여 코드</label>
-            <input
-              v-model.trim="join.code"
-              class="form-control"
-              placeholder="예) ABCD-1234"
-            />
+            <input v-model.trim="join.code" class="form-control" placeholder="예) ABCD-1234" />
             <div class="form-text">리더가 공유한 참여 코드를 입력하세요.</div>
           </div>
         </div>
@@ -595,12 +577,13 @@ onBeforeUnmount(() => {
   background-color: rgba(100, 116, 139, 0.12); /* slate-500 약한 버전 */
 }
 
-
 /* 메뉴 아이템 */
 .menu-item {
   padding: 0.45rem 0.75rem;
   border-radius: 6px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .menu-item:hover {
@@ -616,5 +599,14 @@ onBeforeUnmount(() => {
 .menu-section {
   padding: 0.3rem 0.5rem;
   overflow: auto;
+}
+
+.form-control {
+  border-color: #9ca3af;
+}
+
+.form-control:focus {
+  border-color: #64748b;
+  box-shadow: 0 0 0 0.15rem rgba(100, 116, 139, 0.25);
 }
 </style>

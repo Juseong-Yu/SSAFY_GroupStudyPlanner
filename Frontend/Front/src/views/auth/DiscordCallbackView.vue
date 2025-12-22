@@ -23,8 +23,8 @@ onMounted(async () => {
   }
 
   try {
-    await ensureCsrf()
-    const csrftoken = getCookie('csrftoken')
+    //await ensureCsrf()
+    //const csrftoken = getCookie('csrftoken')
 
     // ✅ 백엔드로 "마무리" 요청 (여기서 Authorization 헤더는 인터셉터가 붙여줘야 함)
     await client.post(
@@ -32,7 +32,6 @@ onMounted(async () => {
       { code, state },
       {
         withCredentials: true,
-        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
       },
     )
 
