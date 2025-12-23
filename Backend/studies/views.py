@@ -77,6 +77,7 @@ def join(request):
             return Response({'error': '이미 가입된 스터디입니다.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             component.is_active = True
+            component.role = 'member'
             component.save()
             return Response({'message': '재가입되었습니다.'}, status=status.HTTP_202_ACCEPTED) 
     except StudyMembership.DoesNotExist:
