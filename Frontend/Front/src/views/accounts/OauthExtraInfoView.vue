@@ -16,7 +16,10 @@
         <!-- 오른쪽 -->
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="signup-form-wrapper">
-            <h3 class="fw-bold mb-3 title-text">소셜 로그인 중<br />추가정보를 입력해주세요.</h3>
+            <h3 class="fw-bold mb-3 title-text">
+              소셜 로그인 중<br />
+              추가정보를 입력해주세요.
+            </h3>
             <p class="text-muted">회원가입을 위해 닉네임/비밀번호/약관 동의가 필요해요.</p>
 
             <!-- OAuth 프리필 카드 -->
@@ -196,7 +199,8 @@ import { marked } from 'marked'
 import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 
-marked.setOptions({ mangle: false, headerIds: false })
+// ✅ marked 옵션 타입 이슈 회피 (mangle 등은 버전에 따라 타입에서 빠짐)
+marked.setOptions({ headerIds: false } as any)
 const termsHtml = ref(marked.parse(termsMd))
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
@@ -205,9 +209,19 @@ const router = useRouter()
 
 const authStore = useAuthStore()
 const { discord } = storeToRefs(authStore)
-// ✅ getter도 같이 쓰고 싶으면 이렇게 바로 접근하면 됨 (반응성은 computed로 감싸도 됨)
-const discordId = computed(() => authStore.discord)
-const isDiscordConnected = computed(() => authStore.isDiscordConnected)
+
+// ✅ store state 기반으로 사용
+const discordState = computed(
+  () => discord.value as null | { discord_id?: string; username?: string; email?: string },
+)
+const discordId = computed(() => discordState.value?.discord_id ?? null)
+
+// ✅ getter가 있다면 사용 가능 (없어도 아래 computed로 대체 가능)
+const isDiscordConnected = computed(() => {
+  // authStore.isDiscordConnected 가 있으면 우선 사용
+  // 없으면 discordId로 판단
+  return (authStore as any).isDiscordConnected ?? !!discordId.value
+})
 
 /**
  * ✅ 프리필 타입
@@ -244,7 +258,6 @@ const form = ref({
   agree: false,
   password: '',
   password_confirm: '',
-  // ✅ discord_id는 string|null로 관리 (',' 같은 쓰레기값 금지)
   discord_id: null as string | null,
 })
 
@@ -315,15 +328,14 @@ const canSubmit = computed(() => {
 
 /**
  * ✅ 프리필 로드
- * authStore.discord (혹은 getter) 기반으로 프리필 채우기
+ * authStore.discord 기반으로 프리필 채우기
  */
 const loadPrefill = async () => {
   resetErrors()
   loading.value = true
 
   try {
-    // ✅ 가장 안정적: store state에서 읽기
-    const d = discord.value as { discord_id?: string; username?: string; email?: string } | null
+    const d = discordState.value
 
     if (!d || !d.discord_id) {
       nonFieldError.value =
@@ -365,30 +377,26 @@ const onSubmit = async () => {
   resetErrors()
   if (!validatePassword()) return
 
-  // ✅ 제출 직전 한 번 더 보장 (store getter 기반)
-  // if (!isDiscordConnected.value || !discordId.value) {
-  //   nonFieldError.value = '디스코드 인증 정보가 없습니다. 다시 로그인 해주세요.'
-  //   return
-  // }
-
   loading.value = true
   try {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
+
+    // ✅ TS + 런타임 안전 가드 (빌드 에러(TS18047) 해결 포인트)
+    if (!discordId.value) {
+      nonFieldError.value = '디스코드 인증 정보가 없습니다. 다시 로그인 해주세요.'
+      return
+    }
 
     const payload: Record<string, any> = {
       email: form.value.email,
       username: form.value.username,
       password: form.value.password,
       password_confirm: form.value.password_confirm,
-
-      // ✅ 핵심: authStore에 저장된 discord_id 가져와서 전송
-      discord_id: discordId.value.discord_id,
-
-      // 만약 백엔드가 "discord" 키를 기대하면 이것도 같이 보내도 됨
-      // discord: discordId.value,
+      discord_id: discordId.value, // ✅ null 아님 보장
+      // discord: discordState.value, // 백엔드가 전체 객체를 원하면 사용
     }
-    console.log(payload)
+
     await axios.post(`${API_BASE}/api/signup/`, payload, {
       withCredentials: true,
       headers: {
