@@ -6,7 +6,7 @@ import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import router from '@/router'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const TTL_MS = 5 * 60 * 1000 // 5분 캐시
 
 export interface Study {
