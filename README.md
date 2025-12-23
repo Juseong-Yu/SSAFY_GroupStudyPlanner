@@ -85,7 +85,7 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **Framework**: Django 5.2
 - **API**: Django REST Framework (DRF)
 - **Task Queue**: Celery
-- **DB**: SQLite (개발용, 운영 시 교체 가능)
+- **DB**: PostgreSQL
 - **Broker**: Redis
 - **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
 
@@ -155,6 +155,9 @@ Backend/
 │   └── views.py
 ├── manage.py
 ├── requirements.txt
+├── docker-compose.yml
+├── Dockerfile
+├── .dockerignore
 └── .gitignore
 ```
 ### Bot
