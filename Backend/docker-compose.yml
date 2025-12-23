@@ -27,10 +27,12 @@ services:
       - .:/app
     ports:
       - "8000:8000"  # 외부 8000포트를 컨테이너 8000포트로 연결
+    env_file: .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
     depends_on:
+      - db
       - redis
 
   # 4. Celery Worker: 실제 비동기 작업 수행
@@ -39,9 +41,11 @@ services:
     command: celery -A core worker -l info
     volumes:
       - .:/app
+    env_file: .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
+      - db
       - redis
 
   # 5. Celery Beat: 스케줄러 (주기적 작업 예약)
@@ -50,7 +54,12 @@ services:
     command: celery -A core beat -l info
     volumes:
       - .:/app
+    env_file: .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
+      - db
       - redis
+
+volumes:
+  postgres_data:
