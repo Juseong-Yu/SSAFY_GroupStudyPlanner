@@ -163,7 +163,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "nestudy_db",
-        "USER": "nestudy",
+        "USER": "nestudy_user",
         "PASSWORD": DB_PASSWORD,
         "HOST": "db",
         "PORT": "5432",

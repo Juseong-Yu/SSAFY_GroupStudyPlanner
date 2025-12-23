@@ -1,11 +1,22 @@
 services:
-  # 1. Redis: 메시지 브로커 (Django와 Celery 사이의 다리)
+  # 1. PostgreSQL 데이터베이스 서비스 추가
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=nestudy_db            # 사용할 DB 이름
+      - POSTGRES_USER=nestudy_user        # 사용자이름
+      - POSTGRES_PASSWORD=${DB_PASSWORD}  # 비밀번호
+
+  # 2. Redis: 메시지 브로커 (Django와 Celery 사이의 다리)
   redis:
     image: redis:alpine
     expose:
       - "6379"
 
-  # 2. Django Web: 웹 서버
+  # 3. Django Web: 웹 서버
   web:
     build: .
     # Gunicorn으로 실행 (운영 환경 권장)
@@ -21,7 +32,7 @@ services:
     depends_on:
       - redis
 
-  # 3. Celery Worker: 실제 비동기 작업 수행
+  # 4. Celery Worker: 실제 비동기 작업 수행
   worker:
     build: .
     command: celery -A core worker -l info
@@ -32,7 +43,7 @@ services:
     depends_on:
       - redis
 
-  # 4. Celery Beat: 스케줄러 (주기적 작업 예약)
+  # 5. Celery Beat: 스케줄러 (주기적 작업 예약)
   beat:
     build: .
     command: celery -A core beat -l info
