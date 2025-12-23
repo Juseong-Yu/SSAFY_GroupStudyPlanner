@@ -216,6 +216,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://netstudy.s3-website.ap-northeast-2.amazonaws.com"
 ]
 
 CORS_ALLOW_CREDENTIALS = True  # 세션/쿠키 인증 시 필수
@@ -223,6 +224,7 @@ CORS_ALLOW_CREDENTIALS = True  # 세션/쿠키 인증 시 필수
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://netstudy.s3-website.ap-northeast-2.amazonaws.com/"
 ]
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
