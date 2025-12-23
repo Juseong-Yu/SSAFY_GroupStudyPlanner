@@ -95,9 +95,14 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **Async Server**: Uvicorn (ASGI)
 
 ### Infra / 기타 
-- Python venv
-- 배포: ??
-
+- **OS** : Ubuntu 22.04 LTS
+- **Containerization**: Docker, Docker Compose
+- **Web Server**: Nginx (예정)
+- **WSGI**: Gunicorn    (예정)
+- **Runtime Environment**:
+  - **Backend**: Docker Compose (Django, Celery, PostgreSQL, Redis)
+  - **Discord Bot**: Python venv (Native Execution)
+  - **Frontend**: Node.js / npm (Vite)
 ---
 
 ## 🗂 프로젝트 구조 
