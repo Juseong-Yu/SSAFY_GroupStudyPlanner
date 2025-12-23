@@ -492,8 +492,8 @@ const parseUtc = (value: string): Date => {
 const formatTimeUtc = (value: string): string => {
   const d = parseUtc(value)
   if (isNaN(d.getTime())) return ''
-  const h = String(d.getUTCHours()).padStart(2, '0')
-  const m = String(d.getUTCMinutes()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = String(d.getMinutes()).padStart(2, '0')
   return `${h}:${m}`
 }
 
@@ -511,8 +511,8 @@ const formatRangeUtc = (startIso: string, endIso?: string | null): string => {
 
   if (isNaN(s.getTime())) return ''
 
-  const sDate = `${s.getUTCMonth() + 1}월 ${s.getUTCDate()}일`
-  const sTime = `${String(s.getUTCHours()).padStart(2, '0')}:${String(s.getUTCMinutes()).padStart(
+  const sDate = `${s.getMonth() + 1}월 ${s.getDate()}일`
+  const sTime = `${String(s.getHours()).padStart(2, '0')}:${String(s.getMinutes()).padStart(
     2,
     '0',
   )}`
@@ -521,8 +521,8 @@ const formatRangeUtc = (startIso: string, endIso?: string | null): string => {
     return `${sDate} ${sTime}`
   }
 
-  const eDate = `${e.getUTCMonth() + 1}월 ${e.getUTCDate()}일`
-  const eTime = `${String(e.getUTCHours()).padStart(2, '0')}:${String(e.getUTCMinutes()).padStart(
+  const eDate = `${e.getMonth() + 1}월 ${e.getDate()}일`
+  const eTime = `${String(e.getHours()).padStart(2, '0')}:${String(e.getMinutes()).padStart(
     2,
     '0',
   )}`

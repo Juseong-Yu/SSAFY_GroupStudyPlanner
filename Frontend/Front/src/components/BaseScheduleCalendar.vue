@@ -52,7 +52,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   expandRows: true,
   locale: 'ko',
   selectable: true,
-  timeZone: 'UTC',
+  timeZone: 'KST',
 
   headerToolbar: {
     left: 'prev,next today',

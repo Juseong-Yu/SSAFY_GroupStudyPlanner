@@ -238,16 +238,16 @@ const parseUtc = (value: string): Date => {
 const formatTimeUtc = (value: string): string => {
   const d = parseUtc(value)
   if (isNaN(d.getTime())) return ''
-  const h = String(d.getUTCHours()).padStart(2, '0')
-  const m = String(d.getUTCMinutes()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = String(d.getMinutes()).padStart(2, '0')
   return `${h}:${m}`
 }
 
 const formatShortDateUtc = (value: string): string => {
   const d = parseUtc(value)
   if (isNaN(d.getTime())) return ''
-  const month = d.getUTCMonth() + 1
-  const day = d.getUTCDate()
+  const month = d.getMonth() + 1
+  const day = d.getDate()
   return `${month}월 ${day}일`
 }
 

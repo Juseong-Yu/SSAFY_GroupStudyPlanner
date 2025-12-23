@@ -113,7 +113,7 @@ import { useRouter } from 'vue-router'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import { useUserStore } from '@/stores/user'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const router = useRouter()
 
 const form = ref({
