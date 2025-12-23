@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from .models import DiscordGuild, DiscordChannel, DiscordStudyMapping
 from .serializers import DiscordStudyMappingSerializer
-from studies.models import Study
+from studies.models import Study, StudyMembership
 from schedules.models import StudySchedule
 from schedules.serializers import StudyScheduleSerializer
 
@@ -67,6 +67,8 @@ class DiscordBotInviteView(APIView):
     """
     Discord 봇 초대 OAuth URL 반환
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, study_id):
         params = {
             "client_id": settings.DISCORD_CLIENT_ID,
@@ -84,6 +86,7 @@ class DiscordBotCallbackView(APIView):
     봇 초대 완료 후 callback
     - guild_id는 query parameter로 전달됨
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, study_id):
         guild_id = request.query_params.get("guild_id") 
@@ -133,6 +136,9 @@ class FetchGuildChannel(APIView):
     """
     봇이 초대된 서버의 채널 목록 조회
     """
+
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, study_id, guild_id):
         channel_res = requests.get(
             f"https://discord.com/api/guilds/{guild_id}/channels",
@@ -183,13 +189,26 @@ class DiscordStudyChannelConnectView(APIView):
     선택한 Discord 채널을 스터디와 연결
     """
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, study_id):
+
         channel_id = request.data.get("channel_id")
 
         if not channel_id:
             return Response({"detail": "channel_id가 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
         
-        study = Study.objects.get(id=study_id)
+        user = request.user
+        study = get_object_or_404(Study, id=study_id)
+        membership = StudyMembership.objects.filter(
+        user=user, study=study, is_active=True
+        ).first()
+
+        if not membership or membership.role != 'leader':
+            return Response({"error": "권한이 없습니다."},
+                        status=status.HTTP_403_FORBIDDEN,
+                        json_dumps_params={"ensure_ascii": False}) 
+
         channel = DiscordChannel.objects.get(id=channel_id)
 
         DiscordStudyMapping.objects.update_or_create(
@@ -207,6 +226,8 @@ class GetConnectedDiscordGuild(APIView):
     """
     스터디에 연결된 Discord 서버 정보 조회
     """
+
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, study_id):
         mapping = get_object_or_404(DiscordStudyMapping, study_id=study_id)
