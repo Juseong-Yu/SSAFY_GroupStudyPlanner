@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import ProtectedView, LogoutView, RegisterView
+from .views import *
 
 app_name = 'accounts'
 
@@ -14,9 +14,9 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     path('some-protected-endpoint/', ProtectedView.as_view()),
 
-    path("connect_discord/", views.connect_discord, name="connect_discord"),
+    path("connect_discord/", ConnectDiscord.as_view(), name="connect_discord"),
     path("auth/discord/callback/", views.discord_callback, name="discord_callback"),
-    path("login_with_discord/", views.login_with_discord, name="login_with_discord"),
+    path("login_with_discord/", LoginWithDiscord.as_view(), name="login_with_discord"),
     path("auth/discord/login/callback/", views.discord_login_callback, name="discord_login_callback"),
     path("get_connected_oauth/", views.get_connected_oauth, name="get_connected_oauth"),
 
