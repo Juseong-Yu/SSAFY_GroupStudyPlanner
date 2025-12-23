@@ -47,14 +47,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container py-5">
-    <div class="card shadow-sm">
-      <div class="card-body p-4">
-        <h5 class="fw-bold mb-2">Discord 연동 처리 중</h5>
-        <p v-if="loading" class="text-muted mb-0">잠시만요…</p>
-        <p v-else-if="error" class="text-danger mb-0">{{ error }}</p>
-        <p v-else class="text-success mb-0">연동 완료!</p>
-      </div>
+  <div class="d-flex justify-content-center align-items-center min-vh-100">
+    <div class="text-center">
+      <div class="spinner-border mb-3" role="status"></div>
+      <p class="text-muted">연결 중입니다…</p>
     </div>
   </div>
 </template>

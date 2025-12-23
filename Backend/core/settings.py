@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-&+gh+z#80sh=t116m4m(w7ae8am1ne3dkrh59a=mg8f8)lv_&@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '13.209.87.32',
+    'localhost:8000',
+    'localhost',
+]
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -45,6 +49,7 @@ DISCORD_REDIRECT_URI_CONNECT_STUDY = os.getenv("DISCORD_REDIRECT_URI_CONNECT_STU
 DISCORD_PERMISSIONS = os.getenv("DISCORD_PERMISSIONS")
 DISCORD_OAUTH_URL = os.getenv("DISCORD_OAUTH_URL")
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # GMS
 GMS_API_URL = os.getenv("GMS_API_URL")
@@ -155,6 +160,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "NAME": "Nestudy_db",
+    #     "USER": "nestudy",
+    #     "PASSWORD": DB_PASSWORD,
+    #     "HOST": "localhost",
+    #     "PORT": "5432",
+    # }
 }
 
 
@@ -212,8 +225,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = "redis://redis:6379/1"
 
 from celery.schedules import crontab
 

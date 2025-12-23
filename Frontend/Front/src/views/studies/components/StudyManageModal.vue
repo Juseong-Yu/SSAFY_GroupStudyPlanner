@@ -44,7 +44,7 @@
               </div>
 
               <!-- 참여 코드 -->
-              <div class="info-row">
+              <div v-if="isLeader" class="info-row">
                 <div class="d-flex align-items-center gap-2">
                   <div class="info-icon code">
                     <i class="bi bi-key"></i>
@@ -67,7 +67,7 @@
                     @click="toggleStudyCode"
                     :aria-label="showStudyCode ? '참여 코드 숨기기' : '참여 코드 보기'"
                   >
-                    <i :class="showStudyCode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <i :class="showStudyCode ? 'bi bi-eye-slash fs-5' : 'bi bi-eye fs-5'"></i>
                   </button>
                   <button
                     v-if="showStudyCode"
@@ -75,8 +75,9 @@
                     class="btn-icon-ghost"
                     @click="copyJoinCode"
                   >
-                    <i class="bi bi-copy"></i>
+                    <i class="bi bi-copy fs-5"></i>
                   </button>
+                  <i v-if="copyJoinActivate" class="bi bi-check2 fs-5" style="color: green"></i>
                 </div>
               </div>
             </div>
@@ -109,6 +110,7 @@
                 </div>
 
                 <button
+                  v-if="isLeader"
                   type="button"
                   class="btn btn-discord"
                   :disabled="discordLoadingConnect"
@@ -133,7 +135,7 @@
                 <div v-else>
                   <select
                     class="form-select"
-                    :disabled="discordLoadingChannels || discordChannels.length === 0"
+                    :disabled="discordLoadingChannels || discordChannels.length === 0 || !isLeader"
                     :value="discordSelectedChannelId ?? ''"
                     @change="onChangeDiscordChannel"
                   >
@@ -320,6 +322,7 @@ import { useModalAutoClose } from '@/composables/useModalAutoClose' // ✅ [추�
 // 기존 props / emit 그대로
 
 const modalRootRef = ref<HTMLElement | null>(null) // ✅ [추가]
+const copyJoinActivate = ref(false)
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
 
@@ -587,6 +590,7 @@ async function patchDiscordNotifyChannel(channelId: string) {
 function copyJoinCode() {
   if (!props.joinCode) return
   navigator.clipboard.writeText(props.joinCode)
+  copyJoinActivate.value = true
 }
 
 function onChangeDiscordChannel(e: Event) {
