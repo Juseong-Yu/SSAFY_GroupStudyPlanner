@@ -65,7 +65,7 @@ def study_schedule_create(request, study_id):
             "content": schedule_serializer.data["description"],
             "start_at": schedule_serializer.data["start_at"],
             "end_at": schedule_serializer.data["end_at"],
-            "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
+            "url": f"{settings.VUE_API_URL}/studies/{study_id}/schedule/"
         }
 
         send_schedule_notification.delay(study_id, schedule.id, payload)
@@ -154,7 +154,7 @@ def study_schedule_detail(request, study_id, schedule_id):
                 "content": serializer.data["description"],
                 "start_at": serializer.data["start_at"],
                 "end_at": serializer.data["end_at"],
-                "url": f"{settings.VUE_API_URL}studies/{study_id}/schedule/"
+                "url": f"{settings.VUE_API_URL}/studies/{study_id}/schedule/"
             }
             offset = int(reminder_data.get('offset'))
             sent_time = schedule.start_at - timedelta(minutes=offset)

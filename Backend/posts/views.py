@@ -60,7 +60,7 @@ def notice_create(request, study_id):
                     "title": serializer.data["title"],
                     "content": serializer.data["content"],
                     "author": user.username,
-                    "url": f"{settings.VUE_API_URL}studies/{study_id}/notice/{notice.id}"
+                    "url": f"{settings.VUE_API_URL}/studies/{study_id}/notice/{notice.id}"
                 }
                 try:
                     send_notice_notification(study_id, serializer.data["id"], payload)
