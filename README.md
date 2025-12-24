@@ -86,7 +86,7 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **API**: Django REST Framework (DRF)
 - **Task Queue**: Celery
 - **DB**: PostgreSQL
-- **Broker**: Redis
+- **Message Broker**: Redis
 - **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
 
 ### Discord Bot
@@ -158,6 +158,8 @@ Backend/
 │   ├── serializers.py
 │   ├── urls.py
 │   └── views.py
+├── nginx/
+│   └── default.conf
 ├── manage.py
 ├── requirements.txt
 ├── docker-compose.yml

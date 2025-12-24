@@ -13,6 +13,7 @@ services:
 
   # 2. Redis: 메시지 브로커 (Django와 Celery 사이의 다리)
   redis:
+    restart: always
     image: redis:alpine
     expose:
       - "6379"
@@ -20,6 +21,7 @@ services:
   # 3. Django Web: 웹 서버
   web:
     build: .
+    restart: always
     # Gunicorn으로 실행 (운영 환경 권장)
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     # command: python manage.py runserver 0.0.0.0:8000
@@ -41,6 +43,7 @@ services:
   
   # 4. Nginx 서버
   nginx:
+    restart: always
     image: nginx:latest
     ports:
       - "80:80" # 외부 80포트를 Nginx로 연결
@@ -53,6 +56,7 @@ services:
   # 5. Celery Worker: 실제 비동기 작업 수행
   worker:
     build: .
+    restart: always
     command: celery -A core worker -l info
     volumes:
       - .:/app
@@ -66,6 +70,7 @@ services:
   # 6. Celery Beat: 스케줄러 (주기적 작업 예약)
   beat:
     build: .
+    restart: always
     command: celery -A core beat -l info
     volumes:
       - .:/app
