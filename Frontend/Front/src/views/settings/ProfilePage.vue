@@ -193,21 +193,16 @@ const onConfirmPassword = async () => {
     const params = new URLSearchParams()
     const payload = {
       password: password.value.trim(),
-    
     }
     params.set('password', String(password.value).trim())
 
-    const res = await client.post(
-      `${API_BASE}/api/check_password/`,
-      payload,
-      {
-        withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    const res = await client.post(`${API_BASE}/api/check_password/`, payload, {
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json',
+      },
+    })
 
     if (res.status === 200) {
       errorMsg.value = ''
