@@ -27,6 +27,7 @@ def _extract_text_from_file(django_file) -> str:
     업로드된 파일에서 텍스트 추출.
     - txt : utf-8 디코딩
     - docx: python-docx 설치되어 있으면 파싱
+    - pdf : pypdf 설치되어 있으면 파싱
     """
     if not django_file:
         return ""
@@ -53,9 +54,36 @@ def _extract_text_from_file(django_file) -> str:
             document = Document(io.BytesIO(blob))
             paragraphs = [p.text for p in document.paragraphs]
             return "\n".join(paragraphs)
+        
+        # pdf
+        if content_type == "application/pdf" or name.endswith(".pdf"):
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                print("PDF import error: pypdf not installed")
+                return ""
+            except Exception as e:
+                print("PDF parse error:", repr(e))
+                return ""
+            
+            import io
+            django_file.seek(0)
+            blob = django_file.read()
 
+            # PDFReader 객체 생성
+            reader = PdfReader(io.BytesIO(blob))
+            text_list = []
+
+            # 페이지별 텍스트 추출
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text_list.append(extracted)
+            
+            return "\n".join(text_list)
 
         return ""
+
     finally:
         django_file.close()
 
