@@ -138,10 +138,10 @@
                 ref="fileInputRef"
                 type="file"
                 class="form-control"
-                accept=".txt,.docx"
+                accept=".txt,.docx,.pdf"
                 @change="onFileChange"
               />
-              <div class="form-text">TXT, DOCX 파일만 업로드 가능</div>
+              <div class="form-text">TXT, DOCX, PDF 파일 업로드 가능</div>
             </div>
           </div>
 
@@ -241,18 +241,19 @@ const onFileChange = (e: Event) => {
   }
 
   const name = selectedFile.name.toLowerCase()
-  const extOk = name.endsWith('.txt') || name.endsWith('.docx')
+  const extOk = name.endsWith('.txt') || name.endsWith('.docx') || name.endsWith('.pdf')
 
-  // ✅ 일부 환경에서 docx MIME이 비거나 octet-stream으로 오는 경우가 있어서 허용
   const mimeOk =
     selectedFile.type === 'text/plain' ||
     selectedFile.type ===
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    selectedFile.type === 'application/pdf' ||
+    // ✅ 일부 브라우저/환경 대응
     selectedFile.type === '' ||
     selectedFile.type === 'application/octet-stream'
 
   if (!(extOk && mimeOk)) {
-    errorMessage.value = 'TXT 또는 DOCX 파일만 업로드할 수 있습니다.'
+    errorMessage.value = 'TXT, DOCX, PDF 파일만 업로드할 수 있습니다.'
     target.value = ''
     file.value = null
     return

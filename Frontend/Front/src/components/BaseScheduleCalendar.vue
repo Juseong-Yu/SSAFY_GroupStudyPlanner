@@ -29,6 +29,45 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import type { CalendarOptions, EventInput, DatesSetArg, EventClickArg } from '@fullcalendar/core'
 
+function normalizeKst(value: unknown): unknown {
+  if (!value) return value
+
+  // Date 객체면 -> 로컬 기준으로 문자열(+09:00)로 고정
+  if (value instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(
+      value.getHours(),
+    )}:${pad(value.getMinutes())}:00+09:00`
+  }
+
+  if (typeof value === 'string') {
+    const v = value.trim().replace(' ', 'T')
+
+    // 이미 오프셋(+09:00)이나 Z면 그대로
+    if (/(Z|[+-]\d\d:\d\d)$/.test(v)) return v
+
+    // "YYYY-MM-DDTHH:mm"이면 초 붙이고 +09:00
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) return `${v}:00+09:00`
+
+    // "YYYY-MM-DDTHH:mm:ss"면 +09:00
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(v)) return `${v}+09:00`
+
+    return v
+  }
+
+  return value
+}
+
+const normalizedEvents = computed<EventInput[]>(() =>
+  (props.events ?? []).map((e: any) => ({
+    ...e,
+    // ✅ 시간 일정이면 allDay를 확실히 false로(원치 않으면 이 줄 제거)
+    allDay: typeof e.allDay === 'boolean' ? e.allDay : false,
+    start: normalizeKst(e.start) as any,
+    end: normalizeKst(e.end) as any,
+  })),
+)
+
 const props = defineProps<{
   events: EventInput[]
   loading?: boolean
@@ -52,7 +91,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   expandRows: true,
   locale: 'ko',
   selectable: true,
-  timeZone: 'KST',
+  timeZone: 'local',
+  events: normalizedEvents.value,
 
   headerToolbar: {
     left: 'prev,next today',
@@ -82,8 +122,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       api.changeView('dayGridWeek', info.date)
     }
   },
-
-  events: props.events,
 
   eventClick: (info: EventClickArg) => {
     emit('event-click', info)
