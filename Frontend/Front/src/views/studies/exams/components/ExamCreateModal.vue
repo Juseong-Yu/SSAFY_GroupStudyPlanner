@@ -240,14 +240,20 @@ const onFileChange = (e: Event) => {
     return
   }
 
-  const allowedTypes = [
-    'text/plain',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ]
+  const name = selectedFile.name.toLowerCase()
+  const extOk = name.endsWith('.txt') || name.endsWith('.docx')
 
-  if (!allowedTypes.includes(selectedFile.type)) {
+  // ✅ 일부 환경에서 docx MIME이 비거나 octet-stream으로 오는 경우가 있어서 허용
+  const mimeOk =
+    selectedFile.type === 'text/plain' ||
+    selectedFile.type ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    selectedFile.type === '' ||
+    selectedFile.type === 'application/octet-stream'
+
+  if (!(extOk && mimeOk)) {
     errorMessage.value = 'TXT 또는 DOCX 파일만 업로드할 수 있습니다.'
-    target.value = '' // 파일 선택 초기화
+    target.value = ''
     file.value = null
     return
   }
@@ -359,6 +365,7 @@ const onSubmit = async () => {
     console.error(error)
     errorMessage.value = 'AI 문제 생성 중 오류가 발생했습니다.'
   } finally {
+    console.log('file.value:', file.value)
     isSubmitting.value = false
   }
 }

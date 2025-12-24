@@ -42,13 +42,18 @@ def _extract_text_from_file(django_file) -> str:
         # docx
         if name.endswith(".docx"):
             try:
-                from docx import Document  # python-docx 필요
-            except ImportError:
+                from docx import Document
+            except Exception as e:
+                print("DOCX import/parse error:", repr(e))
                 return ""
 
-            document = Document(django_file)
+            import io
+            django_file.seek(0)
+            blob = django_file.read()
+            document = Document(io.BytesIO(blob))
             paragraphs = [p.text for p in document.paragraphs]
             return "\n".join(paragraphs)
+
 
         return ""
     finally:
