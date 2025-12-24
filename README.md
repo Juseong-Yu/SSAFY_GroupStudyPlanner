@@ -97,8 +97,8 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 ### Infra / 기타 
 - **OS** : Ubuntu 22.04 LTS
 - **Containerization**: Docker, Docker Compose
-- **Web Server**: Nginx (예정)
-- **WSGI**: Gunicorn    (예정)
+- **Web Server**: Nginx
+- **WSGI**: Gunicorn
 - **Runtime Environment**:
   - **Backend**: Docker Compose (Django, Celery, PostgreSQL, Redis)
   - **Discord Bot**: Python venv (Native Execution)
