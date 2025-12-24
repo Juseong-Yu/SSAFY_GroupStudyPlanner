@@ -29,6 +29,8 @@ ALLOWED_HOSTS = [
     '13.209.87.32',
     'localhost:8000',
     'localhost',
+    'netstudy.s3-website.ap-northeast-2.amazonaws.com',
+    'web',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -124,7 +126,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -225,6 +226,7 @@ CORS_ALLOW_CREDENTIALS = True  # 세션/쿠키 인증 시 필수
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://13.209.87.32",
     VUE_API_URL,
 ]
 
