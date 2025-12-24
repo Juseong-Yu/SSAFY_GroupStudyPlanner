@@ -92,7 +92,7 @@ import QuestionList from '@/views/studies/exams/components/QuestionList.vue'
 import ProblemView from '@/views/studies/exams/components/ProblemView.vue'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 interface BackendExamQuestion {
   id: number

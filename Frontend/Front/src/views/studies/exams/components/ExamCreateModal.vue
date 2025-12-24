@@ -65,15 +65,55 @@
               </select>
             </div>
 
+            <!-- ✅ 시작 일시: date + time으로 쪼개기 -->
             <div class="col-md-6">
               <label class="form-label">시작 일시 (선택)</label>
-              <input v-model="startDate" type="datetime-local" class="form-control" />
+
+              <div class="row g-2">
+                <div class="col-7">
+                  <input
+                    v-model="startDateDate"
+                    type="date"
+                    class="form-control"
+                    aria-label="시작 날짜"
+                  />
+                </div>
+                <div class="col-5">
+                  <input
+                    v-model="startDateTime"
+                    type="time"
+                    class="form-control"
+                    aria-label="시작 시간"
+                  />
+                </div>
+              </div>
+
               <div class="form-text">비워두면 생성 직후부터 응시할 수 있습니다.</div>
             </div>
 
+            <!-- ✅ 마감 일시: date + time으로 쪼개기 -->
             <div class="col-md-6">
               <label class="form-label">마감 일시 (선택)</label>
-              <input v-model="dueDate" type="datetime-local" class="form-control" />
+
+              <div class="row g-2">
+                <div class="col-7">
+                  <input
+                    v-model="dueDateDate"
+                    type="date"
+                    class="form-control"
+                    aria-label="마감 날짜"
+                  />
+                </div>
+                <div class="col-5">
+                  <input
+                    v-model="dueDateTime"
+                    type="time"
+                    class="form-control"
+                    aria-label="마감 시간"
+                  />
+                </div>
+              </div>
+
               <div class="form-text">비워두면 마감 시간 제한 없이 응시할 수 있습니다.</div>
             </div>
           </div>
@@ -136,12 +176,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 interface Props {
   studyId: number
@@ -160,9 +200,23 @@ const title = ref('')
 const questionCount = ref<number>(5)
 const visibility = ref<'public' | 'score_only' | 'private'>('public')
 
-// ✅ 시작/마감 일시는 datetime-local과 맞춰 string으로 관리
-const startDate = ref<string>('') // "2025-12-10T13:00"
-const dueDate = ref<string>('') // ""
+// ✅ (기존) startDate/dueDate는 "YYYY-MM-DDTHH:mm" 형태로 유지 (다른 로직은 그대로 두기 위함)
+const startDate = computed<string>(() => {
+  if (!startDateDate.value && !startDateTime.value) return ''
+  if (!startDateDate.value || !startDateTime.value) return ''
+  return `${startDateDate.value}T${startDateTime.value}`
+})
+const dueDate = computed<string>(() => {
+  if (!dueDateDate.value && !dueDateTime.value) return ''
+  if (!dueDateDate.value || !dueDateTime.value) return ''
+  return `${dueDateDate.value}T${dueDateTime.value}`
+})
+
+// ✅ 쪼갠 입력값 (date / time)
+const startDateDate = ref<string>('') // "2025-12-10"
+const startDateTime = ref<string>('') // "13:00"
+const dueDateDate = ref<string>('') // ""
+const dueDateTime = ref<string>('') // ""
 
 const aiText = ref('')
 const file = ref<File | null>(null)
@@ -193,6 +247,7 @@ const validate = () => {
   }
 
   // ✅ 시작/마감 둘 다 있으면 관계 검증
+  // (쪼갠 입력이지만 computed startDate/dueDate가 기존 포맷으로 만들어줌)
   if (startDate.value && dueDate.value) {
     const start = new Date(startDate.value).getTime()
     const due = new Date(dueDate.value).getTime()

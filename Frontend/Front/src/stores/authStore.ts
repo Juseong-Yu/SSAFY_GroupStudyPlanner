@@ -97,6 +97,6 @@ export const useAuthStore = defineStore('auth', {
   persist: {
     key: 'nestudy-auth',
     storage: localStorage,
-    paths: ['access', 'refresh'],
+    pick: ['access', 'refresh'],
   },
 })

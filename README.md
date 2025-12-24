@@ -85,7 +85,7 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **Framework**: Django 5.2
 - **API**: Django REST Framework (DRF)
 - **Task Queue**: Celery
-- **DB**: SQLite (개발용, 운영 시 교체 가능)
+- **DB**: PostgreSQL
 - **Broker**: Redis
 - **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
 
@@ -95,9 +95,14 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 - **Async Server**: Uvicorn (ASGI)
 
 ### Infra / 기타 
-- Python venv
-- 배포: ??
-
+- **OS** : Ubuntu 22.04 LTS
+- **Containerization**: Docker, Docker Compose
+- **Web Server**: Nginx (예정)
+- **WSGI**: Gunicorn    (예정)
+- **Runtime Environment**:
+  - **Backend**: Docker Compose (Django, Celery, PostgreSQL, Redis)
+  - **Discord Bot**: Python venv (Native Execution)
+  - **Frontend**: Node.js / npm (Vite)
 ---
 
 ## 🗂 프로젝트 구조 
@@ -155,6 +160,9 @@ Backend/
 │   └── views.py
 ├── manage.py
 ├── requirements.txt
+├── docker-compose.yml
+├── Dockerfile
+├── .dockerignore
 └── .gitignore
 ```
 ### Bot

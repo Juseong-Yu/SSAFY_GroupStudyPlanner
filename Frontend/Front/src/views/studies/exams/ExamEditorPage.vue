@@ -280,7 +280,7 @@ import client from '@/api/client'
 import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 import AppShell from '@/layouts/AppShell.vue'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 interface Props {
   studyId: number

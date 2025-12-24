@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-&+gh+z#80sh=t116m4m(w7ae8am1ne3dkrh59a=mg8f8)lv_&@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '13.209.87.32',
@@ -162,10 +162,10 @@ DATABASES = {
     # }
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "Nestudy_db",
-        "USER": "nestudy",
+        "NAME": "nestudy_db",
+        "USER": "nestudy_user",
         "PASSWORD": DB_PASSWORD,
-        "HOST": "localhost",
+        "HOST": "db",
         "PORT": "5432",
     }
 }
@@ -205,7 +205,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -216,6 +217,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    VUE_API_URL,
 ]
 
 CORS_ALLOW_CREDENTIALS = True  # 세션/쿠키 인증 시 필수
@@ -223,6 +225,7 @@ CORS_ALLOW_CREDENTIALS = True  # 세션/쿠키 인증 시 필수
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    VUE_API_URL,
 ]
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'

@@ -56,6 +56,11 @@
                         {{ displayedStudyCode }}
                       </span>
                     </div>
+
+                    <!-- ✅ 조인 코드 관련 에러 -->
+                    <div v-if="joinCodeError" class="alert alert-danger py-2 small mt-2 mb-0">
+                      {{ joinCodeError }}
+                    </div>
                   </div>
                 </div>
 
@@ -69,15 +74,31 @@
                   >
                     <i :class="showStudyCode ? 'bi bi-eye-slash fs-5' : 'bi bi-eye fs-5'"></i>
                   </button>
-                  <button
-                    v-if="showStudyCode"
-                    type="button"
-                    class="btn-icon-ghost"
-                    @click="copyJoinCode"
-                  >
-                    <i class="bi bi-copy fs-5"></i>
-                  </button>
-                  <i v-if="copyJoinActivate" class="bi bi-check2 fs-5" style="color: green"></i>
+
+                  <!-- ✅ 코드 보일 때: 복사 + 리프레시 -->
+                  <template v-if="showStudyCode">
+                    <i v-if="copyJoinActivate" class="bi bi-check2 fs-5" style="color: green"></i>
+                    <button type="button" class="btn-icon-ghost" @click="copyJoinCode">
+                      <i class="bi bi-copy fs-5"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon-ghost"
+                      :disabled="refreshJoinCodeLoading"
+                      @click="refreshJoinCode"
+                      aria-label="참여 코드 새로 발급"
+                      title="참여 코드 새로 발급"
+                    >
+                      <i
+                        :class="
+                          refreshJoinCodeLoading
+                            ? 'bi bi-arrow-repeat fs-5 spin'
+                            : 'bi bi-arrow-clockwise fs-5'
+                        "
+                      ></i>
+                    </button>
+
+                  </template>
                 </div>
               </div>
             </div>
@@ -100,9 +121,7 @@
               <div class="text-muted small mb-2">연결된 서버명</div>
 
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div
-                  class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill server-pill-light"
-                >
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill server-pill-light">
                   <span class="server-dot" :class="{ muted: !discordGuild }"></span>
                   <span class="fw-semibold">
                     {{ discordGuild?.name ?? '연결된 서버 없음' }}
@@ -147,12 +166,8 @@
                     </option>
                   </select>
 
-                  <div v-if="discordSaveStatus === 'saving'" class="text-muted small mt-2">
-                    반영 중...
-                  </div>
-                  <div v-else-if="discordSaveStatus === 'saved'" class="text-success small mt-2">
-                    반영 완료
-                  </div>
+                  <div v-if="discordSaveStatus === 'saving'" class="text-muted small mt-2">반영 중...</div>
+                  <div v-else-if="discordSaveStatus === 'saved'" class="text-success small mt-2">반영 완료</div>
                   <div v-else-if="discordSaveStatus === 'error'" class="text-danger small mt-2">
                     반영 실패 (잠시 후 다시 시도)
                   </div>
@@ -228,11 +243,7 @@
                         <option value="member">멤버</option>
                       </select>
 
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm"
-                        @click="$emit('kick', m.id)"
-                      >
+                      <button type="button" class="btn btn-outline-danger btn-sm" @click="$emit('kick', m.id)">
                         추방
                       </button>
                     </template>
@@ -289,11 +300,7 @@
               스터디를 해산하면 일정, 공지사항, 시험 등 모든 데이터가 삭제되며 복구할 수 없습니다.
             </p>
             <div class="d-flex justify-content-end">
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                @click="$emit('dissolve')"
-              >
+              <button type="button" class="btn btn-outline-danger btn-sm" @click="$emit('dissolve')">
                 스터디 해산
               </button>
             </div>
@@ -319,10 +326,7 @@ import { ensureCsrf, getCookie } from '@/utils/csrf_cors'
 
 import { useModalAutoClose } from '@/composables/useModalAutoClose' // ✅ [추가]
 
-// 기존 props / emit 그대로
-
 const modalRootRef = ref<HTMLElement | null>(null) // ✅ [추가]
-const copyJoinActivate = ref(false)
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
 
@@ -405,21 +409,29 @@ const emit = defineEmits<{
 }>()
 
 // ✅ [추가] 자동 닫기 컴포저블 연결
-useModalAutoClose(
-  toRef(props, 'show'), // 모달 열림 상태
-  modalRootRef, // 모달 "내용 영역" ref
-  () => emit('close'), // 닫기 동작
-  {
-    closeOnEsc: true,
-    closeOnOutside: true,
+useModalAutoClose(toRef(props, 'show'), modalRootRef, () => emit('close'), {
+  closeOnEsc: true,
+  closeOnOutside: true,
+})
+
+/* ---------------- 조인 코드(표시/복사/리프레시) ---------------- */
+const showStudyCode = ref(false)
+const copyJoinActivate = ref(false)
+
+const localJoinCode = ref<string | null>(props.joinCode)
+const refreshJoinCodeLoading = ref(false)
+const joinCodeError = ref('')
+
+// props가 바뀌면 로컬도 동기화
+watch(
+  () => props.joinCode,
+  (v) => {
+    localJoinCode.value = v
   },
 )
 
-/* ---------------- 기존 로직 ---------------- */
-const showStudyCode = ref(false)
-
 const displayedStudyCode = computed(() => {
-  const raw = String(props.joinCode ?? '')
+  const raw = String(localJoinCode.value ?? '')
   if (!raw) return 'CODE ERROR'
   if (showStudyCode.value) return raw
   return '•'.repeat(raw.length)
@@ -429,6 +441,76 @@ function toggleStudyCode() {
   showStudyCode.value = !showStudyCode.value
 }
 
+// ✅ 임시 해결 포함 (HTTP에서도 안 터지고, 폴백으로 복사)
+function copyJoinCode() {
+  if (!localJoinCode.value) return
+  joinCodeError.value = ''
+
+  const text = localJoinCode.value
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        copyJoinActivate.value = true
+      })
+      .catch(() => {
+        fallbackCopy(text)
+      })
+    return
+  }
+
+  fallbackCopy(text)
+}
+
+function fallbackCopy(text: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+
+  textarea.select()
+  document.execCommand('copy')
+
+  document.body.removeChild(textarea)
+  copyJoinActivate.value = true
+}
+
+// ✅ 조인 코드 리프레시 (백엔드 엔드포인트만 맞추면 됨)
+async function refreshJoinCode() {
+  if (!props.studyId) return
+  refreshJoinCodeLoading.value = true
+  joinCodeError.value = ''
+  copyJoinActivate.value = false
+
+  try {
+    await ensureCsrf()
+    const csrftoken = getCookie('csrftoken')
+
+    // TODO: 너희 백엔드 URL에 맞게 경로만 수정해줘
+    const res = await client.put<{ join_code: string }>(
+      `${API_BASE}/studies/${props.studyId}/join_code/`,
+      {},
+      {
+        withCredentials: true,
+        headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
+      },
+    )
+
+    localJoinCode.value = res.data.join_code
+    showStudyCode.value = true
+  } catch (e: any) {
+    console.error(e)
+    joinCodeError.value = e?.response?.data?.detail ?? '참여 코드를 새로 발급하지 못했습니다.'
+  } finally {
+    refreshJoinCodeLoading.value = false
+  }
+}
+
+/* ---------------- 기존 유틸 ---------------- */
 function initials(name: string) {
   const parts = name.trim().split(/\s+/)
   const first = parts[0]?.[0] ?? ''
@@ -484,7 +566,6 @@ async function fetchDiscordGuild() {
   )
 
   const data = res.data
-  // guild가 없으면 미연동 취급
   if (!data?.guild) {
     discordGuild.value = null
     discordSelectedChannelId.value = null
@@ -518,7 +599,7 @@ async function fetchDiscordChannels() {
         headers: csrftoken ? { 'X-CSRFToken': csrftoken } : undefined,
       },
     )
-    console.log(res.data)
+
     discordChannels.value = res.data.channels.map((c) => ({
       id: String(c.id),
       name: c.name,
@@ -538,7 +619,6 @@ async function startDiscordServerConnect() {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
 
-    // ✅ 초대 시작 시점에 studyId 저장
     saveDiscordPending(props.studyId)
 
     const res = await client.get<{ url: string }>(
@@ -564,7 +644,7 @@ async function patchDiscordNotifyChannel(channelId: string) {
   try {
     await ensureCsrf()
     const csrftoken = getCookie('csrftoken')
-    console.log(channelId)
+
     await client.post(
       `${API_BASE}/studies/${props.studyId}/discord/connect_channel/`,
       { channel_id: channelId },
@@ -587,12 +667,6 @@ async function patchDiscordNotifyChannel(channelId: string) {
   }
 }
 
-function copyJoinCode() {
-  if (!props.joinCode) return
-  navigator.clipboard.writeText(props.joinCode)
-  copyJoinActivate.value = true
-}
-
 function onChangeDiscordChannel(e: Event) {
   const target = e.target as HTMLSelectElement
   const channelId = target.value
@@ -613,7 +687,6 @@ watch(
 </script>
 
 <style scoped>
-/* (스타일은 이전 그대로) */
 .modal-header-custom {
   padding: 1rem 1.5rem;
   background: white;
@@ -735,9 +808,8 @@ watch(
   border-radius: 999px;
   border: 1px dashed #cbd5e1;
   background-color: #ffffff;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
   letter-spacing: 0.08em;
   text-align: center;
   font-size: 0.8rem;
@@ -780,6 +852,7 @@ watch(
 .member-list-group {
   border-radius: 12px;
 }
+
 .member-list-item {
   padding-top: 0.55rem;
   padding-bottom: 0.55rem;
@@ -800,6 +873,7 @@ watch(
   border-radius: 999px;
   background: #5865f2;
 }
+
 .server-dot.muted {
   background: rgba(100, 116, 139, 0.35);
 }
@@ -812,12 +886,24 @@ watch(
   border-radius: 10px;
   padding: 10px 14px;
 }
+
 .btn-discord:hover {
   background-color: #4752c4;
   border-color: #4752c4;
   color: #fff;
 }
+
 .btn-discord:disabled {
   opacity: 0.65;
+}
+
+/* ✅ 리프레시 로딩 아이콘 회전 */
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

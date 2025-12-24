@@ -16,9 +16,7 @@
         <!-- 오른쪽 회원가입 폼 -->
         <div class="col-lg-6 col-12 d-flex align-items-center">
           <div class="signup-form-wrapper">
-            <h3 class="fw-bold mb-3 title-text">
-              당신의 목표를 함께 이뤄줄<br />스터디 파트너
-            </h3>
+            <h3 class="fw-bold mb-3 title-text">당신의 목표를 함께 이뤄줄<br />스터디 파트너</h3>
             <p class="text-muted">집중을 위한 출석 관리<br />목표 달성을 돕는 일정 알림</p>
 
             <!-- 소셜 버튼 -->
@@ -173,7 +171,9 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">확인</button>
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+            확인
+          </button>
         </div>
       </div>
     </div>
@@ -189,7 +189,7 @@ import termsMd from '@/legal/terms_ko.md?raw'
 import { marked } from 'marked'
 import { useAuthStore } from '@/stores/authStore'
 
-marked.setOptions({ mangle: false, headerIds: false })
+marked.setOptions({ headerIds: false } as any)
 const termsHtml = ref(marked.parse(termsMd))
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
@@ -216,10 +216,9 @@ const onSocial = async (provider: SocialProvider) => {
     }
 
     // ✅ 디스코드 "로그인 링크 반환" 엔드포인트
-    const { data } = await axios.get<{ auth_url: string }>(
-      `${API_BASE}/api/login_with_discord/`,
-      { withCredentials: true },
-    )
+    const { data } = await axios.get<{ auth_url: string }>(`${API_BASE}/api/login_with_discord/`, {
+      withCredentials: true,
+    })
 
     if (!data?.auth_url) throw new Error('auth_url missing')
 
@@ -387,8 +386,9 @@ const onSubmit = async () => {
 
 /* 약관 본문 */
 .terms-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR',
-    'Apple SD Gothic Neo', 'Malgun Gothic', 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.92rem;
   line-height: 1.65;
   color: #2b2f36;
@@ -404,7 +404,10 @@ const onSubmit = async () => {
   border-radius: 999px;
   padding: 0.6rem 1rem;
   font-weight: 600;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 .btn-signup:hover {
   background-color: rgba(148, 163, 184, 0.08);
@@ -416,7 +419,9 @@ const onSubmit = async () => {
   background-color: #ffffff;
   color: #444444;
   border: 1px solid #dddddd;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 .btn-google:hover {
   background-color: #f5f5f5;
@@ -427,7 +432,9 @@ const onSubmit = async () => {
   background-color: #5865f2; /* Discord blurple */
   color: #ffffff;
   border: 1px solid #5865f2;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 .btn-discord:hover {
   background-color: #4752c4;
