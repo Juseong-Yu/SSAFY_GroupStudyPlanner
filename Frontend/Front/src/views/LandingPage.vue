@@ -4,21 +4,16 @@
       <h1 class="display-3 fw-bold landing-title">Nestudy</h1>
       <p class="text-muted mt-2">당신의 스터디를 더 효율적으로</p>
       <div class="mt-4 d-flex gap-3 justify-content-center">
-        <RouterLink to="/signup" class="btn btn-auth">
-          회원 가입
-        </RouterLink>
-        <RouterLink to="/login" class="btn btn-auth">
-          로그인
-        </RouterLink>
+        <RouterLink to="/signup" class="btn btn-auth"> 회원 가입 </RouterLink>
+        <RouterLink to="/login" class="btn btn-auth"> 로그인 </RouterLink>
       </div>
-
     </div>
   </main>
 </template>
 
 <script setup>
 // 랜딩은 로직 없음
-</script>a
+</script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
@@ -26,10 +21,26 @@
 /* 화면 정중앙 배치 */
 .landing {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
   position: relative;
 }
 
+.landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+
+  background-image: url('@/assets/background.png');
+  background-size: cover;
+  background-position: center;
+
+  opacity: 0.65;
+  z-index: 0;
+}
+
+.landing > * {
+  position: relative;
+  z-index: 1;
+}
 
 .btn-auth {
   min-width: 120px;
@@ -44,11 +55,8 @@
   background: transparent;
 }
 .btn-auth:hover {
-  background-color: rgba(148,163,184,0.1);
+  background-color: rgba(148, 163, 184, 0.1);
 }
-
-
-
 
 /* 헤드라인을 세리프로 (이미지 느낌) */
 

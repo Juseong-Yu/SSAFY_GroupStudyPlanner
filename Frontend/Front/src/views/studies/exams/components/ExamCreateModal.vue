@@ -138,10 +138,10 @@
                 ref="fileInputRef"
                 type="file"
                 class="form-control"
-                accept=".txt,.md,.doc,.docx,.pdf"
+                accept=".txt,.docx"
                 @change="onFileChange"
               />
-              <div class="form-text">텍스트 파일, 워드, PDF 등을 업로드할 수 있습니다.</div>
+              <div class="form-text">TXT, DOCX 파일만 업로드 가능</div>
             </div>
           </div>
 
@@ -233,7 +233,27 @@ const onClose = () => {
 
 const onFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement
-  file.value = target.files?.[0] ?? null
+  const selectedFile = target.files?.[0] ?? null
+
+  if (!selectedFile) {
+    file.value = null
+    return
+  }
+
+  const allowedTypes = [
+    'text/plain',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]
+
+  if (!allowedTypes.includes(selectedFile.type)) {
+    errorMessage.value = 'TXT 또는 DOCX 파일만 업로드할 수 있습니다.'
+    target.value = '' // 파일 선택 초기화
+    file.value = null
+    return
+  }
+
+  errorMessage.value = ''
+  file.value = selectedFile
 }
 
 const validate = () => {
