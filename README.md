@@ -84,10 +84,9 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 ### Backend
 - **Framework**: Django 5.2
 - **API**: Django REST Framework (DRF)
-- **Task Queue**: Celery
 - **DB**: PostgreSQL
-- **Message Broker**: Redis
-- **Auth**: Django 기본 인증 + 커스텀 User (예정/진행 상황에 맞게 수정)
+- **Asynchronous Processing**: Celery + Redis(Message Broker)
+- **Authentication**: JWT (django-simplejwt), Discord OAuth2
 
 ### Discord Bot
 - **Framework**: discord.py 2.6.4
@@ -105,10 +104,10 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
   - **Frontend**: Node.js / npm (Vite)
 ---
 
+## ERD
+<img src="https://cdn.discordapp.com/attachments/1421025527615197196/1453194724650520737/Nestudy_ERD_3.png?ex=695916cd&is=6957c54d&hm=aae0dc36adf15f72628427db2114c014b1255deb415c726d60805971eeb5d4f1&">
+
 ## 🗂 프로젝트 구조 
-### Frontend
-```
-```
 ### Backend
 ```
 Backend/
