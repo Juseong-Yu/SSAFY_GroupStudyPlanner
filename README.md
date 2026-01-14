@@ -5,7 +5,7 @@
 스터디 일정, 공지, 시험, 개인 스케줄까지 한 번에 관리할 수 있는 그룹 스터디 관리 서비스입니다.  
 Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 프로젝트입니다.
 
-- [발표자료 보기](https://github.com/Juseong-Yu/SSAFY_GroupStudyPlanner/blob/main/발표.pptx)
+- [발표자료 다운로드](https://github.com/Juseong-Yu/SSAFY_GroupStudyPlanner/blob/main/발표.pptx?raw=true)
 ---
 
 ## 👨‍👩‍👧‍👦 Team List
