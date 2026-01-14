@@ -190,3 +190,112 @@ bot/
 ├── requirements.txt
 └── .gitignore
 ```
+
+# Frontend 
+```
+Frontend/
+└── Front/
+    ├── public/
+    │   ├── favicon.ico
+    │   └── icons/
+    │       ├── web_dark_rd_na@3x.png
+    │       ├── web_light_rd_na@3x.png
+    │       └── web_neutral_rd_na@3x.png
+    ├── src/
+    │   ├── api/
+    │   │   ├── client.ts
+    │   │   └── setupInterceptors.ts
+    │   ├── assets/
+    │   │   ├── background.png
+    │   │   ├── base.css
+    │   │   ├── kakao_icon.png
+    │   │   ├── login.png
+    │   │   ├── logo.png
+    │   │   ├── logo.svg
+    │   │   ├── main.css
+    │   │   ├── oauth.png
+    │   │   ├── signup.png
+    │   │   └── wait.png
+    │   ├── components/
+    │   │   ├── __tests__/
+    │   │   │   └── HelloWorld.spec.ts
+    │   │   ├── icons/
+    │   │   │   ├── IconCommunity.vue
+    │   │   │   ├── IconDocumentation.vue
+    │   │   │   ├── IconEcosystem.vue
+    │   │   │   ├── IconSupport.vue
+    │   │   │   └── IconTooling.vue
+    │   │   ├── layout/
+    │   │   │   ├── Navbar.vue
+    │   │   │   ├── SettingNavBar.vue
+    │   │   │   └── TopNavBar.vue
+    │   │   ├── BaseScheduleCalendar.vue
+    │   │   └── ScheduleDetailModal.vue
+    │   ├── composables/
+    │   │   └── useModalAutoClose.ts
+    │   ├── layouts/
+    │   │   └── AppShell.vue
+    │   ├── legal/
+    │   │   └── terms_ko.md
+    │   ├── router/
+    │   │   └── index.ts
+    │   ├── stores/
+    │   │   ├── authStore.ts
+    │   │   ├── counter.ts
+    │   │   ├── fetchAllStores.ts
+    │   │   ├── resetAllStores.ts
+    │   │   ├── studies.ts
+    │   │   ├── studyRoleStore.ts
+    │   │   ├── ui.ts
+    │   │   └── user.ts
+    │   ├── utils/
+    │   │   └── csrf_cors.ts
+    │   ├── views/
+    │   │   ├── accounts/
+    │   │   │   ├── LoginPage.vue
+    │   │   │   ├── LoginPageold.vue
+    │   │   │   ├── OauthExtraInfoView.vue
+    │   │   │   ├── PasswordCheckPage.vue
+    │   │   │   └── SignUpPage.vue
+    │   │   ├── auth/
+    │   │   │   ├── DiscordCallbackView.vue
+    │   │   │   ├── DiscordConnectView.vue
+    │   │   │   └── DiscordLoginView.vue
+    │   │   ├── settings/
+    │   │   │   ├── ConnectPage.vue
+    │   │   │   ├── ProfilePage.vue
+    │   │   │   └── ProfileUpdatePage.vue
+    │   │   ├── studies/
+    │   │   │   ├── components/
+    │   │   │   │   └── StudyManageModal.vue
+    │   │   │   ├── exams/
+    │   │   │   │   ├── components/
+    │   │   │   │   │   ├── ExamCreateModal.vue
+    │   │   │   │   │   ├── ExamResultModal.vue
+    │   │   │   │   │   ├── ProblemView.vue
+    │   │   │   │   │   └── QuestionList.vue
+    │   │   │   │   ├── ExamEditorPage.vue
+    │   │   │   │   ├── ExamTakePage.vue
+    │   │   │   │   └── StudyExamsPage.vue
+    │   │   │   ├── notice/
+    │   │   │   │   ├── NoticeCreatePage.vue
+    │   │   │   │   ├── NoticeDetailPage.vue
+    │   │   │   │   ├── NoticeEditPage.vue
+    │   │   │   │   └── StudyNoticePage.vue
+    │   │   │   ├── schedule/
+    │   │   │   │   └── SchedulePage.vue
+    │   │   │   └── StudyPage.vue
+    │   │   ├── AboutView.vue
+    │   │   ├── LandingPage.vue
+    │   │   └── MainPage.vue
+    │   ├── App.vue
+    │   └── main.ts
+    ├── .gitignore
+    ├── .prettierrc.json
+    ├── env.d.ts
+    ├── eslint.config.ts
+    ├── index.html
+    ├── package-lock.json
+    ├── package.json
+
+```
