@@ -70,6 +70,12 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
   - 일정 알림 시각
 ---
 
+## 시연
+![미디어1](https://github.com/user-attachments/assets/cdf78d3d-a906-4a12-baa9-99a54cb90ede)
+![미디어2](https://github.com/user-attachments/assets/bcbe387e-778a-4aed-8202-b0671a909846)
+
+---
+
 ## 🏗 기술 스택 (Tech Stack)
 
 ### Frontend
