@@ -16,6 +16,9 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 | <a href="https://github.com/Juseong-Yu"><img src="https://github.com/Juseong-Yu.png" width="150px" /></a> | <a href="https://github.com/Rasit-NP"><img src="https://github.com/Rasit-NP.png" width="150px" /></a> |
 | - Vue3 + TS 기반 프론트엔드 개발<br />- AI 문제 생성 기능<br />- UI/UX 설계   | - Django REST API 개발<br />- Discord API 통신<br />- 서버 및 DB 운영 |
 
+---
+### 🔀 시스템 아키텍처
+<img width="4925" height="2475" alt="그림1" src="https://github.com/user-attachments/assets/2b38b3e2-026f-46f6-a65d-cbd5db3582c6" />
 
 
 ---
