@@ -120,7 +120,7 @@ Vue3 + TypeScript + Django + Bootstrap 5 조합으로 만든 풀스택 토이 �
 ---
 
 ## ERD
-<img src="https://cdn.discordapp.com/attachments/1421025527615197196/1453194724650520737/Nestudy_ERD_3.png?ex=695916cd&is=6957c54d&hm=aae0dc36adf15f72628427db2114c014b1255deb415c726d60805971eeb5d4f1&">
+![Nestudy_ERD](https://github.com/user-attachments/assets/8e46d4ee-793c-4471-a5e5-c86c7ff33d48)
 
 ## 🗂 프로젝트 구조 
 ### Backend
