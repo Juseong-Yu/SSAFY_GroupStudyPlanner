@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-&+gh+z#80sh=t116m4m(w7ae8am1ne3dkrh59a=mg8f8)lv_&@
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    '13.209.87.32',
+    '3.35.24.190',
     'localhost:8000',
     'localhost',
     'netstudy.s3-website.ap-northeast-2.amazonaws.com',
